@@ -90,7 +90,7 @@ deterministic today only through `t/run.q:7` loading files alphabetically:
   verdict into an exit code. See C18: they are not run by the suite anyway.
 
 ### C9 — engine state is restored at the example boundary, from run-level values
-- [ ] **bug** `qc.q:246-247` — `tidy` restores the run flag, `cf`, `dp` and `st`, but not `bs`. `chk1` resets every
+- [x] **bug** `qc.q:246-247` — `tidy` restores the run flag, `cf`, `dp` and `st`, but not `bs`. `chk1` resets every
   example with the run's size (`c`sz` or the ramped size, `qc.q:255`), so `bs` ends the run at the last
   example's size. Reproduced: after `.qc.chk[`sz!enlist 3; .qc.list .qc.int 0 9; {1b}]`, `.qc.bs` is 2 and
   every later top-level `.qc.draw` produces lists of at most two elements until `.qc.new[]`. `recheck1`

@@ -243,7 +243,7 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
-tidy:{run::0b; cf::cfg; dp::0; st::();}                  / the example boundary on the way out: flag, config, depth, spans (C9)
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz;}   / the example boundary on the way out: flag, config, depth, spans, base size (C9)
 chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;

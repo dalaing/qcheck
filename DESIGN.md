@@ -570,8 +570,8 @@ never by retrying.
 changed; `reset` sets every piece of per-example state from values the run owns. The size has a *base* `bs`
 (set per example by `chk`, by `new` interactively); `reset` sets `sz` from it and the entry points' error
 handlers restore it. `small` and `sized` still restore on success, but correctness does not depend on that. The audit in the review
-rounds extended this to every exit: `chk` and `recheck` restore the run flag *and* the effective config on
-error; a state machine's `fini` runs on every way out of a step, including a discard inside `gen`; and the
+rounds extended this to every exit: `chk` and `recheck` restore the run flag, the effective config *and* the base
+size on every exit (the audit found `bs` leaking a run's size into later interactive draws); a state machine's `fini` runs on every way out of a step, including a discard inside `gen`; and the
 label dict is keyed by structure so a composition built per draw cannot grow it.
 Origin: an error inside `.qc.small` at the REPL left the size halved for good, because the next top-level draw
 reset with the halved value.
