@@ -12,7 +12,8 @@ the hazard and works around it (kept here so a cleanup does not undo it); **expo
 Every actionable item carries a `[ ]` checkbox; tick it when the cleanup lands. Notes and *relies* entries have
 none — there is nothing to do for them.
 
-Headline: four bugs (C9 size leak, C18 empty rerun line, C18 vacuous test, C7 `such` over a constant), one
+Headline: three bugs (C9 size leak, C18 empty rerun line, C18 vacuous test; a fourth, C7 `such` over a constant,
+was withdrawn on review), one
 harness weakness that turns failing assertions into skipped files (C2), a family of bare q errors where usage
 errors should be (C14 / pitfall 28), unpinned seeds in five test files (C8), and residual long arithmetic on
 bounds (C21). The spikes are validation scripts with their own mini-engines and are audited only for the
@@ -70,10 +71,10 @@ which is reserved — the pitfall is alive.)
 Clean. `t/core.q:119-125` pins it. `.qc.note` at the REPL accumulates until the next draw, by design.
 
 ### C7 — zero choices means exhausted, so every structure records at least one
-- [ ] **bug** `qc.q:89` `such` records no decision of its own, so `such[p] g` over a constant `g` records nothing:
-  `.qc.minimal .qc.such[{x>0}] 5` leaves `count .qc.C` at 0 (reproduced). A property over it looks exhausted
-  after one example, which is the mistake C7 exists to prevent. The generic tests (`t/core.q:106`,
-  `t/types.q:56`, contract c3) cover every library generator except this composition.
+- [x] ~~**bug** `qc.q:89` `such` over a constant records nothing~~ — **withdrawn.** `such[p] 5` is a constant
+  at every size, and C7 says a constant spec honestly runs once; the dual is about generators that *could*
+  vary, and `such` over a varying `g` records through `g`. Recording a forced bit per try would add a choice
+  to every filter for no information. No change.
 
 ### C8 — tests pin seeds
 Files whose fresh draws depend on the RNG state the previous file left behind rather than a pin. They are
@@ -326,10 +327,9 @@ failing when the value is not a table.
 
 ## Part 4 — Suggested order for the cleanup pass
 
-1. [ ] **Bugs.** C9: `tidy` (or the end of `chk1`) restores `bs`/`sz` from `cfg`sz`. C18: the rerun line spells an
-   empty vector (`` `long$() ``) and `t/reportx.q:7` draws `lst[0 300]`. C7: `such` records its retry decision
-   (one forced bit per try) so a constant inside it still counts. C18: `t/types.q:29` becomes
-   `x=(floor x*4)%4`. `t/dist.q:34` stops clobbering `q`.
+1. [x] **Bugs.** C9: `tidy` (or the end of `chk1`) restores `bs`/`sz` from `cfg`sz`. C18: the rerun line spells an
+   empty vector (`` `long$() ``) and `t/reportx.q:7` draws `lst[0 300]`. C18: `t/types.q:29` becomes an exact
+   test. `t/dist.q:34` stops clobbering `q`. (C7 `such`: withdrawn, see above.)
 2. [ ] **The harness (C2).** Make `.t.t` fail, not raise, on a raising assertion — take the condition as a lambda or
    have the harness trap each test — so one broken property no longer hides the rest of its file. Then the
    dependent `and` chains in `t/` can stay as they are or become conds at leisure.
