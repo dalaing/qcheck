@@ -4,7 +4,7 @@
 \d .qc
 
 / ---- configuration ----------------------------------------------------------------------------------
-cfg:`n`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v!(100;0Ni;100;2000;10;50;200;8192;1b;1b;`:.qc;`;20;1)
+cfg:`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v!(100;0N;0Ni;100;2000;10;50;200;8192;1b;1b;`:.qc;`;20;1)
 cf:cfg                                                / effective config of the current run
 
 / ---- engine state: global, reset per example --------------------------------------------------------
@@ -71,9 +71,9 @@ bool:bit[0.5]
 const:{[x;d] dd[d;".qc.const x"]; x}
 sized:{[f;d] dd[d;".qc.sized f"]; draw f sz}
 small:{[g;d] dd[d;".qc.small g"]; s:sz; sz::s div 2; r:draw g; sz::s; r}
-elem:{[xs;d] dd[d;".qc.elem xs"]; xs:(),xs; xs ch[(0;-1+count xs;0);`u]}
-one:{[gs;d] dd[d;".qc.one gs"]; gs:(),gs; draw gs ch[(0;-1+count gs;0);`u]}
-freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; gs:(),gs; draw gs ch[(0;-1+count gs;0);"f"$(),w]}
+elem:{[xs;d] dd[d;".qc.elem xs"]; xs:(),xs; if[0=count xs; '"qc: elem of nothing"]; xs ch[(0;-1+count xs;0);`u]}
+one:{[gs;d] dd[d;".qc.one gs"]; gs:(),gs; if[0=count gs; '"qc: one of nothing"]; draw gs ch[(0;-1+count gs;0);`u]}
+freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; gs:(),gs; w:"f"$(),w; if[(0=count gs) or count[w]<>count gs; '"qc: freq needs one weight per alternative"]; draw gs ch[(0;-1+count gs;0);w]}
 such:{[p;g;d] dd[d;".qc.such[p] g"]; k:0; while[k<cf`tries; beg`try; x:draw g; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}
 discard:{'"qc.discard"}
 / list: continue bit before each element (forced while under lo); size caps the length; the bit's
@@ -114,7 +114,7 @@ dbl:{[d] dd[d;".qc.dbl"]; s:ch[(0;1;0);0.3]; e:ch[(-1022;970;0);::]; m:ch[(0;900
 / 0 (or the nearest bound) is simplest, integers before halves before quarters, uniform within each k
 flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[(2<>count r) or r[0]>r 1; '"qc: range"]; lo:r 0; hi:r 1;
   s:ch[(hi<0;lo<0;0);0.3]; a:$[s; neg 0&hi; 0|lo]; b:$[s; neg lo; hi];
-  k:ch[(0;52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}
+  k:ch[(0;0|52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}   / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
 gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:draw 16#enlist int 0 255; $[k; 0Ng; 0x0 sv "x"$b]}
 AZ:.Q.a,.Q.A,.Q.n," "
 chrc:{[s;d] dd[d;".qc.chrc s"]; s:(),s; s ch[(0;-1+count s;0);`u]}        / (),s: a one-char alphabet arrives as an atom (C16)
@@ -148,15 +148,15 @@ smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[i] ::};{[m;i;o] 1b};{[m;i;o] m})
 smh:`m0`init`fini`steps!(::;{};{};0 0W)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
-sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; h:smh,h; c:$[99h=type cmds; 0!cmds; 98h=type cmds; cmds; '"qc: cmds"];
+sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   r:rng h`steps; lo:r 0; mx:r[1]&lo+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
-    $[go; [j:av ch[(0;-1+count av;0);`u]; i:draw c[j;`gen] m; end[];
-        o:@[c[j;`run];i;{[R;e] note smtab R; '"qc.run ",e}[R]];           / an error in the system is a failure, not a generator bug
-        ok:@[c[j;`post][m;i;];o;{[R;e] note smtab R; '"qc.post ",e}[R]]; ok:$[(::)~ok; 1b; all ok];
-        m2:c[j;`upd][m;i;o]; R,:enlist (n;c[j;`cmd];i;o;m2;ok);
+    $[go; [j:av ch[(0;-1+count av;0);`u]; a:draw c[j;`gen] m; end[];                    / (a, not i: i is the engine's cursor)
+        o:@[c[j;`run];a;{[h;R;e] note smtab R; h[`fini][]; '"qc.run ",e}[h;R]];   / an error in the system is a failure, not a generator bug
+        ok:@[c[j;`post][m;a;];o;{[h;R;e] note smtab R; h[`fini][]; '"qc.post ",e}[h;R]]; ok:$[(::)~ok; 1b; all ok];
+        m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
         if[not ok; h[`fini][]; note smtab R; '"qc.post"]; m:m2; n+:1];
       end[]]];
   h[`fini][]; smtab R}
@@ -169,7 +169,7 @@ collect:{label `$.Q.s1 x}                              / label by value (bounded
 RQ:(`symbol$())!`float$()                              / coverage requirements of the run: label -> percent
 cover:{[s;pct;b] RQ[s]:"f"$pct; if[not s in key LB; LB[s]:0]; if[b; label s];}
 / eq: q's match, explained. on failure the diff table is noted and the property fails with qc.eq
-eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:1#dft; d[0;`why`a`b]:(`order;shape a;shape b)]; note d; '"qc.eq"}
+eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:flip `path`why`a`b!(enlist ();enlist `order;enlist shape a;enlist shape b)]; note d; '"qc.eq"}
 shape:{$[99h=type x; key x; 98h=type x; cols x; x]}
 
 / ---- the runner -------------------------------------------------------------------------------------
@@ -193,39 +193,54 @@ named:{[spec;prop;x] $[99h=type spec; x; 0h=type spec; pnames[prop;count x]!x; e
 pnames:{[p;n] $[100h=type p; $[n=count a:(value p)[1]; a; `$"x",/:string til n]; `$"x",/:string til n]}
 / Wilson 95% upper bound of a rate: a requirement fails only when the run is confident the rate is below it (C15)
 wil:{[n;N] z:1.96; p:n%N; (p+(z*z%2*N)+z*sqrt((p*1-p)%N)+z*z%4*N*N)%1+z*z%N}
+wlo:{[n;N] z:1.96; p:n%N; (p+(z*z%2*N)-z*sqrt((p*1-p)%N)+z*z%4*N*N)%1+z*z%N}
 covt:{[tests] N:1|tests; t:([]label:key LB;n:value LB;pct:100*value[LB]%N);
-  t:update req:.qc.RQ label,hi:100*.qc.wil[n;N] from t;             / q-sql resolves globals in the root, not the namespace
+  t:update req:.qc.RQ label,lo:100*.qc.wlo[n;N],hi:100*.qc.wil[n;N] from t;   / q-sql resolves globals in the root, not the namespace
   update ok:(hi>=req) or null req,bar:{`$(floor x%5)#"#"} each pct from t}
-result:{[why;tests;seed;spec;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`shrinks`attempts`hist!(0;0;0#H)),o;
-  `ok`why`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale!(ok;why;tests;o`shrinks;o`attempts;seed;
+result:{[why;tests;seed;spec;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`shrinks`attempts`hist`stop!(0;0;0#H;`n)),o;
+  `ok`why`stop`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale!(ok;why;o`stop;tests;o`shrinks;o`attempts;seed;
    $[(why=`falsified) and not (::)~o`x; named[spec;prop;o`x]; (::)]; $[f; o`err; ""]; $[f; o`bt; ""]; $[f; o`notes; ()]; covt tests;
    $[f; o`choices; C`v]; o`hist; o`disc; 0b)}
-chk:{[c;spec;prop] if[run; '"qc: nested check"]; c:conf c; cf::c; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
-  LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; dc:(`symbol$())!`long$(); tests:0; nd:0; o:(`symbol$())!(); k:0; ex:0b; run::1b;
+/ a coverage requirement is open while the run is not yet confident either way (C15, C19)
+opn:{[tests] t:covt tests; any (t[`lo]<t`req)&t[`req]<=t`hi}
+wid:{[lo;hi] $[null d:hi-lo; 0w; d<0; 0w; 1+"f"$d]}      / a range's width as a float; a full long range is infinite, not null
+/ the run stops when it has learned what it can (C19): a failure, a give-up, an exhausted space, the budget n
+/ with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
+/ minimal input; if the space it reveals fits the budget the run enumerates it in shortlex order instead of
+/ sampling (every input once), abandoning enumeration if a replay's structure differs from example 0's.
+chk:{[c;spec;prop] if[run; '"qc: nested check"]; @[chk1[c;spec];prop;{run::0b; 'x}]}   / an error inside must not leave the run flag set (C9)
+chk1:{[c;spec;prop] c:conf c; cf::c; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
+  LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; nmax:$[null c`nmax; 10*n; c`nmax]; dc:(`symbol$())!`long$();
+  tests:0; nd:0; o:(`symbol$())!(); k:0; en:0b; t:0; ns:1f; VS:(); LO:(); HI:(); W:(); ext:0b; run::1b;
   f:dbf[spec;prop]; if[not null f; if[count key f; reset[get f;c`sz;0b;0b]; r:run1[spec;prop]; $[`fail=r`st; o:r; hdel f]]];
-  while[(tests<n) and (nd<=n*c`disc) and (0=count o) and not ex;
-    reset[`long$(); $[0=k; 0; (c[`sz]*tests) div n]; 0=k; 0b];
+  while[$[count o; 0b; nd>n*c`disc; 0b; en; t<ns; tests<n; 1b; not opn tests; 0b; tests<nmax];
+    if[tests>=n; ext:1b];
+    $[0=k; reset[`long$();c`sz;1b;0b]; en; reset[VS@'W vs t;c`sz;0b;0b]; reset[`long$();c[`sz]&(c[`sz]*tests) div n;0b;0b]];   / example 0: origins, at full size so the ranges are the real ones
     r:run1[spec;prop];
-    $[`pass=r`st; [tests+:1; {LB[x]:1+0^LB x} each LX; ex:0=count C];       / no choices: the space is exhausted (C7)
-      `disc=r`st; [nd+:1; dc[r`why]:1+0^dc r`why]; o:r];
+    if[0=k; LO:C`lo; HI:C`hi; W:$[count LO; wid'[LO;HI]; 1#1f]; ns:prd W; en:ns<=n; W:"j"$W; t:1;
+      if[en and count LO; VS:{[lo;hi;o] r:lo+til 1+hi-lo; r iasc zig r-o}'[LO;HI;C`o]]];   / each range's values, nearest the origin first
+    if[en and k>0; if[not (i=count P) and (C[`lo]~LO) and C[`hi]~HI; en:0b]; t+:1];
+    $[`pass=r`st; [tests+:1; {LB[x]:1+0^LB x} each LX]; `disc=r`st; [nd+:1; dc[r`why]:1+0^dc r`why]; o:r];
     k+:1];
+  gu:(nd>n*c`disc) or (0=tests) and nd>0;                          / gave up: too many discards, or nothing but discards
+  stp:$[count o; `fail; gu; `gaveup; en; `exhausted; not ext; `n; opn tests; `nmax; `cover];   / (stp, not st: st is the span stack)
   if[(count o) and c[`shrinks]>0; o:shr[spec;prop;o]];
   if[count o; if[not null f; f set o`choices]];
-  run::0b; why:$[count o; $[`gen=o`ph; `error; `falsified]; nd>n*c`disc; `gaveup; not all (covt tests)`ok; `cover; `ok];
+  run::0b; why:$[count o; $[`gen=o`ph; `error; `falsified]; gu; `gaveup; not all (covt tests)`ok; `cover; `ok];
   if[count o; lf::`spec`prop`choices!(spec;prop;o`choices)];
-  res:result[why;tests;seed;spec;prop;o,enlist[`disc]!enlist dc];
+  res:result[why;tests;seed;spec;prop;o,`disc`stop!(dc;stp)];
   if[c[`v]>0; rep res]; res}
 check:chk[::]
 lf:`spec`prop`choices!(::;::;`long$())               / the last failure; again[] rechecks it
 again:{recheck[lf`spec;lf`prop;lf`choices]}
 / a suite: dict of name -> (spec;prop); one report per failure, one row per property
-chks:{[c;d] r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`n;o`shrinks;o`seed)}[c]'[key d;value d];
-  t:flip `name`ok`why`n`shrinks`seed!flip r; if[0<conf[c]`v; show t]; t}
+chks:{[c;d] r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed)}[c]'[key d;value d];
+  t:flip `name`ok`why`stop`n`shrinks`seed!flip r; if[0<conf[c]`v; show t]; t}
 checks:chks[::]
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded
 recheck:{[spec;prop;p] if[run; '"qc: nested check"]; cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;prop]; run::0b;
   why:$[`pass=o`st; `ok; `disc=o`st; `gaveup; `gen=o`ph; `error; `falsified];
-  res:result[why;1;system"S";spec;prop;o,enlist[`disc]!enlist (`symbol$())!`long$()];
+  res:result[why;1;system"S";spec;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];
   if[not `fail=o`st; res[`choices]:C`v];
   res[`stale]:(i<>count P) or not (count[P]#C`v)~"j"$p; if[cfg[`v]>0; rep res]; res}
 
@@ -335,7 +350,8 @@ dtab:{[p;a;b] ca:cols a; cb:cols b; n:count[a]&count b;
   raze {[p;a;b;c] df[p,c;a c;b c]}[p;n#a;n#b] each ca inter cb}
 
 / ---- reporting -------------------------------------------------------------------------------------
-report:{[r] c:cf; s:$[r`ok; enlist "ok ",string[r`n]," tests (seed ",string[r`seed],")";
+sfx:`exhausted`cover`nmax!(", exhausted";", coverage settled";", coverage undecided")
+report:{[r] c:cf; s:$[r`ok; enlist "ok ",string[r`n]," tests",$[(r`stop) in key sfx; sfx r`stop; ""]," (seed ",string[r`seed],")";
   `gaveup=r`why; enlist "FAIL gave up after ",string[r`n]," tests; discards: ",", " sv {string[x]," ",string y}'[key r`disc;value r`disc];
   `cover=r`why; enlist "FAIL coverage not met after ",string[r`n]," tests";
   (enlist "FAIL ",string[r`why]," after ",string[r`n]," tests, ",string[r`shrinks]," shrinks (",string[r`attempts]," attempts, seed ",string[r`seed],")"),

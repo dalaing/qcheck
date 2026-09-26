@@ -51,13 +51,13 @@ r:.qc.chk[q,enlist[`shrinks]!enlist 0;.qc.lst[80 80] .qc.int 0 99;{x~asc x}]; l:
 r:.qc.chk[q;.qc.int 0 9;{.qc.cover[`big;90;x>5]; .qc.classify[`small;x<5]; 1b}]
 .t.t["cover: unmet requirement fails the run as cover"; (`cover=r`why) and not r`ok]
 c:r`cover
-.t.t["cover: table has label n pct req hi ok bar"; (`label`n`pct`req`hi`ok`bar~cols c) and (90f=exec first req from c where label=`big) and not exec first ok from c where label=`big]
+.t.t["cover: table has label n pct req lo hi ok bar"; (`label`n`pct`req`lo`hi`ok`bar~cols c) and (90f=exec first req from c where label=`big) and not exec first ok from c where label=`big]
 .t.t["cover: labels without a requirement are ok"; exec first ok from c where label=`small]
 .t.t["cover: a requirement that is never hit still appears"; `never in exec label from (.qc.chk[q;.qc.int 0 9;{.qc.cover[`never;1;0b]; 1b}])`cover]
 / C15: confidence, not a threshold. uniform draws via elem; observed rates near 92% and 80% over 100 tests
 .t.t["cover: 92% observed passes a 90% requirement (upper bound ~96%)"; (.qc.chk[q;.qc.elem til 100;{.qc.cover[`big;90;x<92]; 1b}])`ok]
 .t.t["cover: 80% observed fails a 90% requirement (upper bound ~87%)"; `cover=(.qc.chk[q;.qc.elem til 100;{.qc.cover[`big;90;x<80]; 1b}])`why]
-.t.t["cover: never hit passes a 1% requirement (cannot tell) and fails 10%"; ((.qc.chk[q;.qc.int 0 9;{.qc.cover[`never;1;0b]; 1b}])`ok) and `cover=(.qc.chk[q;.qc.int 0 9;{.qc.cover[`never;10;0b]; 1b}])`why]
+.t.t["cover: never hit passes a 0.1% requirement (cannot tell by nmax) and fails 10%"; ((.qc.chk[q;.qc.int 0 999;{.qc.cover[`never;0.1;0b]; 1b}])`ok) and `cover=(.qc.chk[q;.qc.int 0 999;{.qc.cover[`never;10;0b]; 1b}])`why]
 .t.t["cover: hi column is the Wilson upper bound in percent"; 3.7>abs 96.2-exec first hi from (.qc.chk[q;.qc.elem til 100;{.qc.cover[`big;90;x<92]; 1b}])`cover]
 .t.t["cover: met requirement passes"; (.qc.chk[q;.qc.int 0 9;{.qc.cover[`any;1;1b]; 1b}])`ok]
 .t.t["cover: report prints the table"; any (.qc.report r) like "label*"]

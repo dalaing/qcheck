@@ -128,7 +128,7 @@ r:.qc.chk[q;42;{x=42}]
 r:.qc.chk[q;::;{1b}]
 .t.t["C7 exhausted: a property that draws nothing runs once"; (r`ok) and 1=r`n]
 r:.qc.chk[q;::;{0<.qc.draw .qc.int 1 9}]
-.t.t["C7 not exhausted: interactive draws keep the run going"; 100=r`n]
+.t.t["C7/C19 interactive draws: the space of int 1 9 is exhausted at 9"; (9=r`n) and `exhausted=r`stop]
 r:.qc.chk[q;.qc.int 0 9;{1b}]
 .t.t["C4 result shape: absent composites are empty, x is ::"; ((::)~r`x) and (0=count r`disc) and (0=count r`cover) and 98h=type r`cover]
 / C16: the remaining list-configuration entry points accept an atom

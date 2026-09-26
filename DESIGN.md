@@ -1,6 +1,6 @@
 # qcheck — property-based testing for q
 
-*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`.*
+*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
@@ -260,18 +260,25 @@ observed rate is below it, C15),
 `.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its spec, property and choices.
 `.qc.checks d` runs a dict of name → `(spec;prop)` and returns a table (`.qc.chks[cfg;d]` with config).
 
-Run loop for one property: (0) replay the saved failure from the db if there is one (`cfg`db`, default `` `:.qc ``,
+Run loop for one property — **`n` is a budget; the run stops when it has learned what it can** (C19):
+(0) replay the saved failure from the db if there is one (`cfg`db`, default `` `:.qc ``,
 one file per property keyed by `cfg`name` or an md5 of the spec and property source; a saved example that no
 longer fails is deleted, a shrunk one is saved) — if the replay overruns or clamps any choice the generator has
 changed since it was saved, and `recheck` says so rather than silently testing a different input; (1) example 0 in *minimal mode* — every fresh draw returns its origin, so the
-simplest input is always tried first, for free — and a passing example that drew **no choices** has exhausted
-the space, so the run ends after it with `n` 1 (a constant spec, or a property that never draws; C7);
-(2) `n` examples with size ramping 0→100; (3) on failure,
+simplest input is always tried first, for free — and it reveals the input space's ranges: if their product
+fits the budget, (2a) the run **enumerates** the space in shortlex order instead of sampling (example `t` is the
+mixed-radix digits `w vs t` mapped onto each range's values nearest the origin first), every input once, and
+stops `exhausted` when it has tried them all — `ok 4 tests, exhausted` is a proof, not a sample; a constant
+spec is the one-input case. If a replay's structure differs from example 0's (the structure depended on a
+value), enumeration is abandoned and no exhaustion is claimed. Otherwise (2b) `n` examples with size ramping
+0→100, and if a coverage requirement is still open at the budget (the requirement lies between the Wilson
+lower and upper bounds) the run continues until it is settled or `cfg`nmax` (default `10*n`) is reached; (3) on failure,
 shrink (§1.5); (4) report (§1.6). Discards are counted by cause (`filter`, `toodeep`, `toolarge`, explicit);
 more than `disc`×`n` of them ends the run as "gave up", and the report names the dominant cause.
 
-The result is data: `` `ok`why`n`shrinks`seed`x`err`bt`notes`cover`choices`disc`stale `` with `why` one of
-`` `ok`falsified`gaveup`cover`error ``. Every field is always present and typed the same way: absent
+The result is data: `` `ok`why`stop`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale `` with `why` one
+of `` `ok`falsified`gaveup`cover`error `` and `stop` — why the loop ended — one of `` `exhausted`n`cover`nmax`fail`gaveup ``.
+Every field is always present and typed the same way: absent
 composites are empty (`disc` an empty dict, `cover` an empty table, `notes` an empty list, `err` an empty
 string); only `x` is `::` when there is no counterexample (C4).
 
@@ -394,8 +401,9 @@ comparable cases (`[1, 0]`, `[0, 1]`, `[0, 0]`, five zeros, `51`, `-1`, a three-
 - Notes in order (a noted table prints as a table, which is how `eq`'s diff arrives); the error text unless
   it is the plain `false` of a property that returned `0b`; the `.Q.trp` backtrace at `cfg`v` 2; the seed;
   and a rerun line naming `.qc.again[]` and the shrunk choice vector, rendered exactly.
-- The coverage table `label n pct req hi ok bar` whenever a label was used — `hi` is the Wilson upper bound
-  `ok` is judged against — and a requirement that was never hit still has its row, with `n` 0.
+- The coverage table `label n pct req lo hi ok bar` whenever a label was used — `lo`/`hi` are the Wilson
+  bounds: `ok` is judged against `hi`, and a requirement between them is *open* (C19) — and a requirement
+  that was never hit still has its row, with `n` 0.
 - **Display is not transport.** `.Q.s` and `.Q.s1` truncate to the console and are used only for looking at
   data; the one line meant to be copied back, the rerun line, renders the choice vector exactly with `string`
   and `sv`. (Found by an 81-choice failure whose rerun line ended in `..`.)
@@ -538,8 +546,8 @@ capacity 0 records its stop bit, `rec` at size 0 records its node count, a singl
 its degenerate index. (Found the hard way: at size 0 an unrecorded empty list made every list property look
 exhausted after example 0.) A user generator that is constant at size 0 but not later should draw something
 at size 0 too. The dual is enforced by a generic test in `t/core.q`: `minimal` at size 0 over every library
-generator must leave at least one recorded choice. Enumerating small finite spaces from the recorded bounds
-(`prd 1+hi-lo` ≤ `n`) is a future item.
+generator must leave at least one recorded choice. The zero-choice rule is now the one-input case of C19's
+enumeration.
 
 **C8 — tests pin seeds.** Probabilistic tests ("check finds a counterexample") run under a fixed `seed`; a
 counterexample not found under the pinned seed is a test bug, fixed by strengthening the property or the seed,
@@ -591,8 +599,8 @@ disabled shrinking for every `eq` property.
 observed over a random sample; comparing the sample percentage with the requirement fails 18% of runs when the
 true rate is 92% and the requirement 90. `cover` fails only when the run is confident the rate is below the
 requirement — the Wilson 95% upper bound of the observed rate is under it — and a run that cannot tell passes
-rather than flakes. This is the same concern as C8 seen from the library's side. Hedgehog's answer, keep
-generating until confident either way, is better and is deferred because it changes the run loop.
+rather than flakes. This is the same concern as C8 seen from the library's side. Hedgehog's other half —
+keep generating until confident either way — is C19's coverage extension.
 
 **C16 — at the API boundary an atom is a one-element list.** `"z"` is a char atom, `` `a `` a symbol atom, `7`
 a long atom; a user who means "the alphabet z", "the one command a" or "the single value 7" will write the
@@ -600,6 +608,20 @@ atom. Every library function that takes a list configuration begins with `(),x`:
 alphabets, `elem`, `one`, `freq`, `spc`'s specials, `reset`'s prefix (so `replay[5]` is a one-choice prefix, not
 IPC handle 5), and `rec`'s arity as `2#(),k`, which makes `rec[2;…]` read as "exactly two children". Origin:
 `symc["z";1 1]` indexing a char atom.
+
+**C19 — `n` is a budget; the run stops when it has learned what it can.** One rule replaced three stopping
+conditions added one at a time. A run ends `exhausted` (every input tried: the minimal example, run at full
+size so its ranges are the real ones, reveals the space; when the product of the widths fits the budget the
+run enumerates the space in shortlex order — `w vs t` for the digits, each range's values nearest the origin
+first — and abandons the claim if a replay's structure differs from example 0's), at the budget `n` with no
+coverage question open, `cover` when an open question was settled by extending the run, `nmax` when it stayed
+open to the cap, or `fail`/`gaveup` (a space whose every input was discarded is a give-up, not a pass).
+Exhaustion is exact for value-independent structure (booleans, enums, small ranges, tuples and records of
+them, the `spc` layout) and silent otherwise; Hypothesis's DataTree, which enumerates value-dependent
+structure too, is the next step if it is ever wanted. Two things it taught while being built: the widths of
+full-range choices overflow and a null compares *low*, so `prd` must see `0w` not `0N`; and an error that
+escapes `chk` must clear the run flag on its way out (C9), or every later run in the session refuses as
+nested. Origin: the two items deferred from C7 and C15, which turned out to be the same question.
 
 **C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` as a script and fails
 on the first error, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,

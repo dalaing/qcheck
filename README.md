@@ -53,7 +53,10 @@ spec:.qc.int 0 9; prop:{x<10}
 .qc.checks `comm`sorted!((( .qc.int 0 9;.qc.int 0 9);{(x+y)=y+x}); (.qc.list .qc.int 0 9;{x~asc x}))
 ```
 
-A property passes if it returns `::` or all of a boolean result; any signal fails it. Inside a property:
+A run stops when it has learned what it can: `ok 2 tests, exhausted` means every input the spec can produce
+was tried (small spaces are enumerated, simplest first); otherwise it samples `n` inputs, and keeps going only
+to settle an open coverage question. A property passes if it returns `::` or all of a boolean result; any
+signal fails it. Inside a property:
 `.qc.eq[a;b]` explains a mismatch as a diff table, `.qc.note x` attaches a value to the report,
 `.qc.classify[`big;x>5]`, `.qc.collect x` and `.qc.cover[`big;90;x>5]` build the coverage table, and `cover`
 fails the run only when it is confident the rate is under the requirement.

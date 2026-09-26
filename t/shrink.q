@@ -36,9 +36,9 @@ r:.qc.chk[q;::;{n:.qc.draw .qc.int 0 99; .qc.note n; n<10}]
 .t.t["interactive draws shrink: choices are 10, note follows"; (enlist[10]~r`choices) and (enlist[10]~r`notes)]
 / the same-error rule
 two:{$[x>50; '"type"; x<10]}
-r:.qc.chk[q,`same`seed!(1b;11);.qc.int 0 99;two]              / seed 11: the first failure found is the error
+r:.qc.chk[q,`same`seed!(1b;11);.qc.int 0 999;two]             / a sampled range (0 99 would be enumerated and hit the false region first)
 .t.t["same=1b keeps the original error: type at 51"; ("type"~r`err) and 51~r[`x]`x]
-r:.qc.chk[q,`same`seed!(0b;11);.qc.int 0 99;two]
+r:.qc.chk[q,`same`seed!(0b;11);.qc.int 0 999;two]
 .t.t["same=0b may cross into another failure: false at 10"; ("false"~r`err) and 10~r[`x]`x]
 / budgets
 r0:.qc.chk[q,enlist[`shrinks]!enlist 0;ints;{x~asc x}]
