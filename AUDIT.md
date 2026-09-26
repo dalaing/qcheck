@@ -79,12 +79,12 @@ Clean. `t/core.q:119-125` pins it. `.qc.note` at the REPL accumulates until the 
 ### C8 — tests pin seeds
 Files whose fresh draws depend on the RNG state the previous file left behind rather than a pin. They are
 deterministic today only through `t/run.q:7` loading files alphabetically:
-- [ ] **break** `t/contracts.q` — no `system"S"` anywhere; c1, c4–c9 draw fresh (`:7,10,13-17`); only c11's `chk`
+- [x] **break** `t/contracts.q` — no `system"S"` anywhere; c1, c4–c9 draw fresh (`:7,10,13-17`); only c11's `chk`
   reseeds.
-- [ ] **break** `t/core.q:14-17` (before the pin at `:18`) and `:119-125`.
-- [ ] **break** `t/ranges.q:12,14,15,22,24,25` — every `modes` draw.
-- [ ] **break** `t/review.q:5`, `t/sm.q:12,29`.
-- [ ] **break** `t/readme.q` — runs the README's blocks with `cfg`seed` null, i.e. a time-based seed
+- [x] **break** `t/core.q:14-17` (before the pin at `:18`) and `:119-125`.
+- [x] **break** `t/ranges.q:12,14,15,22,24,25` — every `modes` draw.
+- [x] **break** `t/review.q:5`, `t/sm.q:12,29`.
+- [x] **break** `t/readme.q` — runs the README's blocks with `cfg`seed` null, i.e. a time-based seed
   (`qc.q:249`); only "loads without error" is asserted, so it cannot flake on a verdict, but it is the one place
   the suite executes unpinned properties. `tools/doc_child.q:3` pins 7 for the transcripts.
 - `examples/*.q` are unpinned by design (they are demos), and `examples/sm_ipc.q:15` turns a probabilistic
@@ -338,7 +338,7 @@ failing when the value is not a table.
 3. [x] **Usage errors (C14, pitfall 28, C20).** `qc: …` for: keyed tables at `conf`, `tabr`, `chks`, `sm`'s `h`;
    non-symbol labels in `label`/`classify`/`cover`; unknown config keys; all-zero `freq` weights; non-pair
    `checks` entries; `one`/`freq` given a dict. Spell `qc: tree` as an internal error or drop it.
-4. [ ] **Seeds (C8).** One `system"S n"` at the top of `t/contracts.q`, `t/core.q`, `t/ranges.q`, `t/review.q`,
+4. [x] **Seeds (C8).** One `system"S n"` at the top of `t/contracts.q`, `t/core.q`, `t/ranges.q`, `t/review.q`,
    `t/sm.q`; pin `t/readme.q`.
 5. [ ] **Test hygiene (C9, C10).** A test-visible owner for strict replay (or a `.qc.strict` entry) so tests stop
    setting `.qc.run` and calling `.qc.dr`; set the interactive size through `cfg`sz`+`new[]` rather than

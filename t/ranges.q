@@ -2,6 +2,7 @@
 .qc.new[]
 .qc.cfg[`v]:0
 q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
+system"S 7"                                                                       / fresh draws in modes (C8)
 RS:(0 0;0 1;-1 1;0 9;5 5;-0W 0W;0 0W;-0W 0;0W 0W;-0W -0W;7 9 8;{0,x};{(neg x;x)};.qc.lin[0;1000])
 nmr:{$[.qc.fn x; .Q.s1 x; .Q.s1 x]}
 inr:{[r;v] rr:.qc.rng r; all v within rr 0 1}                                / at the current size

@@ -1,7 +1,7 @@
 / C18: the README's code blocks run. Every ```q block that is not a transcript (no line starting q)) is loaded
 / as a script under a trap; a block that errors fails the test and names its first line.
 .qc.new[]
-.qc.cfg[`v`db]:(0;`)
+.qc.cfg[`v`db`seed]:(0;`;7i)                                / the blocks run their own checks: pinned (C8)
 L:read0 `:README.md
 fence:where L like "```*"
 blocks:{[L;se] L (1+se 0)+til (se 1)-1+se 0}[L] each 2 cut fence
@@ -14,4 +14,4 @@ errs:errs where 0<count each errs
 .t.t["every runnable README block loads without error"; (2<count qb) and 0=count errs]
 if[count errs; -1 "  ",/:errs]
 system"rm -rf ",1_string d
-.qc.cfg[`v]:1
+.qc.cfg[`v`seed]:(1;0Ni)

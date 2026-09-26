@@ -2,6 +2,7 @@
 .qc.new[]
 .qc.cfg[`v]:0
 q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
+system"S 7"
 / a real system: a counter in a global, with a planted bug (wraps after 3)
 N:0; NI:0
 inc:{N::N+1; if[N>3; N::0]; N}

@@ -2,6 +2,7 @@
 .qc.new[]
 .qc.cfg[`v]:0
 q:.qc.cfg,`v`n`seed`db!(0;5;7;`)
+system"S 7"                                                                       / fresh draws below are pinned too (C8)
 sizes:0 1 2 5 30 100
 at:{[s;f;a] .qc.reset[`long$();s;0b;0b]; r:f a; .qc.new[]; r}                    / run f a with base size s
 c1:{[g] all {[g;s] at[s;{[g] `ok~@[{.qc.draw x; `ok};g;{`ERR}]};g]}[g] each sizes}
