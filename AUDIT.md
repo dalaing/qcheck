@@ -37,7 +37,7 @@ generator, so the canary fires there too. Spikes that define generators use `.qc
   Harmless (a null row) but the second term is meaningful only when the first holds.
 - [ ] **spirit** `qc.q:128` `flt`: `(2<>count r) or r[0]>r 1` evaluates the comparison on a malformed range. Same
   outcome either way, same shape as the origin of C2.
-- [ ] **break, with a consequence** — the tests. Chained `and` whose later terms assume the earlier ones raise
+- [x] **break, with a consequence** — the tests. *(Fixed in the harness: `t/run.q` evaluates per statement; the chains stay.)* Chained `and` whose later terms assume the earlier ones raise
   instead of failing when the property under test misbehaves. Reproduced with a passing run (`x` is `::`,
   `notes` is `()`): `t/core.q:63` raises `type`, `t/sm.q:22` raises `type`, `t/shrink.q:33` raises `rank`,
   `t/types.q:52` raises `rank`. The shape recurs (`t/core.q:65`, `t/sm.q:38`, `t/report.q:38`). Because
@@ -330,7 +330,7 @@ failing when the value is not a table.
 1. [x] **Bugs.** C9: `tidy` (or the end of `chk1`) restores `bs`/`sz` from `cfg`sz`. C18: the rerun line spells an
    empty vector (`` `long$() ``) and `t/reportx.q:7` draws `lst[0 300]`. C18: `t/types.q:29` becomes an exact
    test. `t/dist.q:34` stops clobbering `q`. (C7 `such`: withdrawn, see above.)
-2. [ ] **The harness (C2).** Make `.t.t` fail, not raise, on a raising assertion — take the condition as a lambda or
+2. [x] **The harness (C2).** Make `.t.t` fail, not raise, on a raising assertion — take the condition as a lambda or
    have the harness trap each test — so one broken property no longer hides the rest of its file. Then the
    dependent `and` chains in `t/` can stay as they are or become conds at leisure.
 3. [ ] **Usage errors (C14, pitfall 28, C20).** `qc: …` for: keyed tables at `conf`, `tabr`, `chks`, `sm`'s `h`;

@@ -661,7 +661,9 @@ strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`
 mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
 tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
 promised and never written). The harness fails a test whose result is not a boolean instead of letting
-`all` coerce it — a dozen test bugs across the milestones had passed that way. And every `q)` transcript in
+`all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
+top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
+broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
 README.md, EXAMPLES.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
 (seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
 by hand once, and a dispatcher the dogfooding had not reached.
