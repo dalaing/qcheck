@@ -59,7 +59,7 @@ call:{[g] dp+:1; if[cf[`depth]<dp; '"qc.toodeep"]; beg g; r:g[]; end[]; dp-:1; r
 dr:{$[(::)~x; x; type[x] within 100 112; call x; 99h=type x; $[98h=type key x; x; key[x]!.z.s each value x];
   0h=type x; .z.s each x; x]}
 / the interactive entry points own the example boundary: reset, run flag, protected dr, restore (C6, C9, C10)
-top:{[p;m;s] reset[p;bs;m;0b]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; 'x}]; run::0b; r}
+top:{[p;m;s] if[run; '"qc: nested check"]; reset[p;bs;m;0b]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; 'x}]; run::0b; r}
 draw:{$[run or dp>0; dr x; top[`long$();0b;x]]}      / fresh draws; inside a run or a draw, just interpret
 minimal:top[`long$();1b]                              / the simplest value of a spec: every draw is its origin
 replay:{[p;s] top[p;0b;s]}                            / the value a recorded choice vector produces

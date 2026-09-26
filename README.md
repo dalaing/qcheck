@@ -28,8 +28,11 @@ a general list draws a tuple, a dict draws a record, anything else is a constant
 {n:.qc.draw .qc.int 1 9; .qc.draw .qc.lst[n,n] .qc.sym}   / bind is a lambda
 .qc.one (.qc.int 0 9; .qc.sym)         / alternatives; .qc.freq[3 1] gs weights them
 .qc.such[{x>0}] .qc.int -9 9           / a filter (bounded retries, then a discard)
-.qc.t"j"  .qc.t"p"  .qc.t"jf"          / any atom type's full domain, nulls and infinities included
-.qc.flt 0 1  .qc.dbl  .qc.str  .qc.sym  .qc.vec[0 5]"d"
+.qc.t"j"                               / any atom type's full domain, nulls and infinities included
+.qc.t"jf"                              / a pair of them
+.qc.flt 0 1                            / a float in a range; .qc.dbl is any finite double
+.qc.str                                / a string; .qc.sym a symbol over a bounded alphabet
+.qc.vec[0 5]"d"                        / a typed vector, here of dates
 .qc.tab `a`b!(.qc.int 0 9; .qc.sym)    / a table; .qc.ktab[`a;0 9] cols keyed
 .qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
 ```
@@ -41,6 +44,7 @@ simplest value fails its filter discards), and see what a recorded choice vector
 ## Properties
 
 ```q
+spec:.qc.int 0 9; prop:{x<10}
 .qc.check[spec; prop]                  / a list spec applies prop . x; a dict spec by parameter name; else prop @ x
 .qc.check[(.qc.int 0 9; .qc.int 0 9); {x>=y}]
 .qc.check[`xs`n!(.qc.list .qc.int 0 9; .qc.int 0 5); {[n;xs] n<=count xs}]

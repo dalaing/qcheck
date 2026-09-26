@@ -35,4 +35,12 @@ sh:{[sp;pr] r:.qc.chk[q;sp;pr]; h:r`hist; (all 0>=1_deltas h`len) and (r[`x]~(.q
 .t.t["shrink history is non-increasing in length and the result rechecks"; all (sh[.qc.list .qc.int 0 99;{x~asc x}];sh[.qc.rec[2 2;.qc.int 0 9;{(x 0;x 1)}];{3>count raze x}];sh[(.qc.int 0 9;.qc.int 0 9);{x>=y}])]
 / the engine is not reentrant, and says so
 .t.t["a nested check signals"; "qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.check[.qc.int 0 9;{1b}]}])`err]
+/ C3 mechanised: every dispatcher in the runner is total over one fixed shape zoo (this is where byname failed)
+zoo:(1;1 2;"ab";"a";`s;`a`b;();(1;`a);(1;(2 3;`b));`a`b!1 2;()!();([]a:1 2);([a:1 2]b:3 4);(::);{x+1};{x+y};.qc.int 0 9;0#([]a:1 2))
+tot:{[f] all {[f;x] `ok~@[{[f;x] f x; `ok}[f];x;{`ERR}]}[f] each zoo}
+.t.t["C3 kind, blocky, fmt, named, byname, app and diff are total over the shape zoo";
+  all tot each (.qc.kind;.qc.blocky;.qc.fmt;.qc.named[.qc.int 0 9;{x}];.qc.byname[{[a;b] a}];.qc.app[{x};.qc.int 0 9];{.qc.diff[x;x]})]
+.t.t["C3 app by name only for a real dict with matching keys"; (.qc.byname[{[a;b] a};`a`b!1 2]) and not any .qc.byname[{[a;b] a}] each (([a:1 2]b:3 4);`a`c!1 2;1 2;(::))]
+/ C10 completeness: the interactive entry points refuse to run inside a run, as chk does
+.t.t["minimal and replay inside a property signal instead of resetting it"; ("qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.minimal .qc.int 0 9}])`err) and "qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.replay[1 2] .qc.int 0 9}])`err]
 .qc.cfg[`v]:1

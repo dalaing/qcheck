@@ -601,6 +601,12 @@ alphabets, `elem`, `one`, `freq`, `spc`'s specials, `reset`'s prefix (so `replay
 IPC handle 5), and `rec`'s arity as `2#(),k`, which makes `rec[2;…]` read as "exactly two children". Origin:
 `symc["z";1 1]` indexing a char atom.
 
+**C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` as a script and fails
+on the first error, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
+strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
+mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
+tested over. Origin: README snippets verified by hand once, and a dispatcher the dogfooding had not reached.
+
 **C17 — measure the distribution you ship, on the ranges people use.** A5 measured the integer mixture on a
 symmetric range and it looked right; on `int 0 1000`, the commonest shape, a random sign on the magnitude
 clamped half the draws to the bound and 56% of values were 0 — and the same draw set `rec`'s node count, so
@@ -689,7 +695,9 @@ history never lengthens and every shrunk result rechecks — and the design's "a
 enforced by a guard in `chk` and `recheck`, which the dogfooding is exactly where one would have tried.
 Dogfooding found one real bug: `byname` took any 99h value for a dict of parameters, so a property over a
 *keyed table* failed with a type error from `key`; the fix's first draft then broke twenty tests by writing
-the guard with `and` — C2 and C3 in one line, and the reason the conventions exist.
+the guard with `and` — C2 and C3 in one line, and the reason the conventions exist. Folded back afterwards (the M6
+check): the interactive entry points refuse to run inside a run, as `chk` does (C10 complete); every runner
+dispatcher is exercised over one shape zoo; the README's blocks are executed by `t/readme.q` (C18).
 
 ---
 
