@@ -151,10 +151,10 @@ Clean at every documented site. `classify`/`cover` with a symbol *list* label re
 Clean (`t/dist.q`, `t/core.q:136-144`). The one distribution assertion that is vacuous is under C18.
 
 ### C18 — examples are tests
-- [ ] **gap** `examples/reverse.q`, `tree.q`, `sm_table.q`, `sm_ipc.q` are not executed by `t/run.q`; only README
+- [x] **gap** `examples/reverse.q`, `tree.q`, `sm_table.q`, `sm_ipc.q` are not executed *(now `t/examples.q`)* by `t/run.q`; only README
   blocks (`t/readme.q`) and `q)` transcripts (`t/doctest.q`) are. The layout (`DESIGN.md` §1.9) lists them next
   to the tests as if they were covered.
-- [ ] **gap** `DESIGN.md`'s non-transcript ```` ```q ```` blocks (lines 47, 56, 63, 69, 91, 141, 232) are neither
+- [x] **gap** `DESIGN.md`'s non-transcript ```` ```q ```` blocks *(now loaded by `t/readme.q`; loading them found `.qc.str 0 5` in §1.3)* (lines 47, 56, 63, 69, 91, 141, 232) are neither
   loaded nor doctested; `t/docs.q` checks only that the `.qc.` names they mention exist.
 - [x] **bug** `t/types.q:29` — the predicate `{x=x*4 div 4}` parses as `x=x*(4 div 4)`, i.e. `x=x`; the assertion
   "a quarter of values are dyadic" is `0.15<1` and cannot fail (reproduced: mean 1 on `0.1 0.3 0.7 0.123`). The
@@ -343,7 +343,7 @@ failing when the value is not a table.
 5. [x] **Test hygiene (C9, C10).** A test-visible owner for strict replay (or a `.qc.strict` entry) so tests stop
    setting `.qc.run` and calling `.qc.dr`; set the interactive size through `cfg`sz`+`new[]` rather than
    `.qc.reset`; restore `cf` from `cfg` in `t/core.q:57`.
-6. [ ] **Coverage (C18).** A `t/examples.q` that loads each example under a trap with a pinned seed (sm_ipc.q
+6. [x] **Coverage (C18).** A `t/examples.q` that loads each example under a trap with a pinned seed (sm_ipc.q
    optional or skipped without a spare port); load `DESIGN.md`'s snippet blocks the way `t/readme.q` loads the
    README's.
 7. [ ] **Bounds arithmetic (C21).** `skey`/`bkey` in floats before `0W^`; `pdup`, `pred`, `mix` and `lin` in floats

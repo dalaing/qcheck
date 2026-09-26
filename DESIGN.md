@@ -141,7 +141,7 @@ depth ≈ log₂ size and the same silhouette (A15: depth IQR ≤ 4, max depth 5
 ```q
 tree:.qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}]                     / binary tree
 rose:.qc.rec[0 4; .qc.sym;     {(`n;x)}]                        / rose tree, 0..4 children
-json:.qc.rec[0 4; .qc.one (.qc.int -9 9;.qc.str 0 5;.qc.bool);
+json:.qc.rec[0 4; .qc.one (.qc.int -9 9;.qc.strc[.qc.AZ;0 5];.qc.bool);
              {$[.qc.draw .qc.bool; x; (.qc.draw .qc.lst[n,n:count x] .qc.sym)!x]}]   / list or dict node
 ```
 
@@ -229,7 +229,7 @@ forever: 1e5 unbounded symbols cost 5.4 MB that is never reclaimed (A11).
 
 ### 1.4 Properties and the runner
 
-```q
+```
 .qc.check[spec; prop]            / .qc.cfg defaults
 .qc.chk[cfg; spec; prop]         / cfg: dict merged over defaults, e.g. `n`seed!1000 42i; a long means n; :: means defaults
 .qc.recheck[spec; prop; choices] / exact replay, no shrinking
@@ -508,7 +508,8 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
                 doctest (every q) transcript in README, EXAMPLES and this file), docs (names in docs exist),
-                names (reserved words, shadowing), readme (README code blocks load), and the per-milestone files
+                names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
+                examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 examples/       reverse.q tree.q sm_table.q sm_ipc.q   (sm_ipc.q starts a child q process)
@@ -656,8 +657,9 @@ not fail, it quietly makes the wrong branch look smaller. `wid`, the shortlex ke
 midpoint and the space size (`prd`) all compute in floats; `rec` refuses sizes whose counting tables would
 overflow. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null.
 
-**C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` as a script and fails
-on the first error, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
+**C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` and of this document
+as a script and fails on the first error (which is how a stale `.qc.str 0 5` in §1.3 was found), `t/examples.q`
+runs every `examples/*.q` as a child q and checks that it exits cleanly and reports what its prose promises, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
 strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
 mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
 tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
