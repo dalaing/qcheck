@@ -2,9 +2,8 @@
 .qc.new[]
 .qc.cfg[`v]:0
 q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
-line:{"rerun: .qc.again[]  or  .qc.recheck[spec;prop;",(" " sv string x),"]"}
 back:{value -1_last ";" vs x}
-r:.qc.chk[q,enlist[`n]!enlist 200;.qc.lst[1 300] .qc.one (.qc.int -1000 1000;.qc.elem 0W -0W 0);{x~(),back line x}]   / a one-choice line reads back as an atom (C16)
+r:.qc.chk[q,enlist[`n]!enlist 200;.qc.lst[0 300] .qc.one (.qc.int -1000 1000;.qc.elem 0W -0W 0);{c:"j"$(),x; c~(),back .qc.rerun c}]   / a choice vector is long; a one-choice line reads back as an atom (C16); the empty vector is example 0
 .t.t["rerun line round-trips for any choice vector (a property)"; r`ok]
 pat:{[r] first .qc.report r}
 .t.t["report: one first line per outcome"; all

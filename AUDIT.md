@@ -157,7 +157,7 @@ Clean (`t/dist.q`, `t/core.q:136-144`). The one distribution assertion that is v
 - [ ] **bug** `t/types.q:29` — the predicate `{x=x*4 div 4}` parses as `x=x*(4 div 4)`, i.e. `x=x`; the assertion
   "a quarter of values are dyadic" is `0.15<1` and cannot fail (reproduced: mean 1 on `0.1 0.3 0.7 0.123`). The
   harness rejects non-boolean results but cannot see a vacuous one.
-- [ ] **bug** `qc.q:396` — the rerun line for an empty choice vector prints `.qc.recheck[spec;prop;]`, a projection
+- [x] **bug** `qc.q:396` — the rerun line for an empty choice vector prints `.qc.recheck[spec;prop;]`, a projection
   with the argument elided, so it does not round-trip. Reachable: `.qc.check[42;{x<>42}]`. The round-trip
   property `t/reportx.q:7` draws `lst[1 300]`, never the empty vector.
 

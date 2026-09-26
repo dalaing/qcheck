@@ -387,13 +387,14 @@ dtab:{[p;a;b] ca:cols a; cb:cols b; n:count[a]&count b;
 
 / ---- reporting -------------------------------------------------------------------------------------
 sfx:`exhausted`cover`nmax!(", exhausted";", coverage settled";", coverage undecided")
+rerun:{[c] "rerun: .qc.again[]  or  .qc.recheck[spec;prop;",$[count c; " " sv string c; "`long$()"],"]"}   / exact: .Q.s1 truncates; an empty vector is spelled, not elided
 report:{[r] c:cf; s:$[r`ok; enlist "ok ",string[r`n]," tests",$[(r`stop) in key sfx; sfx r`stop; ""]," (seed ",string[r`seed],")";
   `gaveup=r`why; enlist "FAIL gave up after ",string[r`n]," tests; discards: ",", " sv {string[x]," ",string y}'[key r`disc;value r`disc];
   `cover=r`why; enlist "FAIL coverage not met after ",string[r`n]," tests";
   (enlist "FAIL ",string[r`why]," after ",string[r`n]," tests, ",string[r`shrinks]," shrinks (",string[r`attempts]," attempts, seed ",string[r`seed],")"),
    $[(::)~r`x; (); enlist fmt r`x],$[(r`err)~"false"; (); enlist r`err],(fmt each r`notes),$[c[`v]>1; enlist r`bt; ()],
    $[r`stale; enlist "stale: the generator has changed since these choices were recorded"; ()],
-   enlist "rerun: .qc.again[]  or  .qc.recheck[spec;prop;",(" " sv string r`choices),"]"];   / exact: .Q.s1 truncates
+   enlist rerun r`choices];
   s,$[count r`cover; enlist ftab r`cover; ()]}
 rep:{-1 "\n" sv report x;}
 
