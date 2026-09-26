@@ -13,7 +13,7 @@ modes:{[nm;g;r;f;org;ex]
   .t.t[nm,": 200 fresh draws in range"; inr[r] f each {.qc.draw x} each 200#enlist g];
   .t.t[nm,": minimal is the documented origin"; org[.qc.rng r]~f .qc.minimal g];
   .t.t[nm,": replays its own choices"; {[g] v:.qc.draw g; v~.qc.replay[.qc.C`v] g} g];
-  .t.t[nm,": shrink-mode replay is exact"; {[g] v:.qc.draw g; c:.qc.C`v; .qc.run:1b; .qc.reset[c;100;0b;1b]; rr:@[.qc.dr;g;{`ERR}]; ii:.qc.i; .qc.run:0b; .qc.new[]; (rr~v) and ii=count c} g];
+  .t.t[nm,": shrink-mode replay is exact"; {[g] v:.qc.draw g; c:.qc.C`v; rr:@[.qc.strict[c];g;{`ERR}]; (rr~v) and .qc.i=count c} g];
   if[ex; w:.qc.wid . .qc.rng[r] 0 1;
     if[w<=100; .t.t[nm,": a space that fits the budget is exhausted"; (`exhausted=res`stop) and w=(res:.qc.chk[q;g;{1b}])`n]];
     if[w>100; .t.t[nm,": a space beyond the budget samples"; `n=(.qc.chk[q;g;{1b}])`stop]]];}

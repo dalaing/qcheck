@@ -29,12 +29,12 @@ fl:D[.qc.flt 0 1;2000]
 .t.t["flt 0 1: mean near a half, both halves populated"; near[avg fl;0.5;0.06] and (0.3<avg fl<0.5) and 0.3<avg fl>0.5]
 .t.t["dbl: negatives near 30%"; near[avg 0>D[.qc.dbl;2000];0.3;0.06]]
 / structures: node counts of rec spread over the budget; step counts of sm spread over the cap
-.qc.reset[`long$();30;0b;0b]
+.t.sz 30
 nb:D[.qc.rec[2 2;0;{1+sum x}];1000]
 qs:asc[nb] 250 500 750                                                     / (not q: every other test file's config dict)
 .t.t["rec at size 30: quartiles spread across the budget (A15: 7 15 22)"; (qs[0] within 3 12) and (qs[1] within 10 20) and qs[2] within 17 28]
 cm:([cmd:enlist `a] run:enlist {[a] ::})
 st:count each D[.qc.sm[`m0`steps!(0;0 10)] cm;1000]
 .t.t["sm steps 0..10 at size 30: every count appears and none is rare"; (11=count distinct st) and all 0.04<(count each group st)%1000]
-.qc.new[]
+.t.sz 100
 .qc.cfg[`v]:1

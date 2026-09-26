@@ -39,9 +39,9 @@ sy:.qc.draw 300#enlist .qc.sym                                     / (sv is a ke
 .t.t["C16 elem/one/freq accept a single item as an atom"; (7~.qc.draw .qc.elem 7) and (3~.qc.draw .qc.one 3) and 4~.qc.draw .qc.freq[1] 4]
 / typed vectors
 .t.t["vec: typed for every type char"; all {[c] (.Q.t?c)=type .qc.draw .qc.vec[1 5] c} each cs]
-.qc.reset[`long$();0;0b;0b]
+.t.sz 0
 .t.t["vec: typed when empty"; all {[c] (.Q.t?c)=type .qc.draw .qc.vec[0 0] c} each cs]
-.qc.new[]
+.t.sz 100
 / tables
 cg:`a`b`c!(.qc.int 0 9;.qc.sym;.qc.list .qc.int 0 9)
 tb:.qc.draw .qc.tab cg
@@ -54,10 +54,10 @@ r:.qc.chk[q;.qc.tab `a`b!(.qc.int 0 9;.qc.int 0 9);{3>count x}]
 .t.t["tab: shrinks by rows to three zero rows"; (3=count r[`x]`x) and all 0=raze value flip r[`x]`x]
 / C7 and C11 over the zoo: every generator records a choice at size 0, and replays across sizes
 gs:(value .qc.t),(.qc.flt 0 1;.qc.dbl;.qc.chr;.qc.str;.qc.sym;.qc.vec[0 3]"j";.qc.tab cg;.qc.ktab[`a;0 3] cg;.qc.gid)
-.qc.reset[`long$();0;0b;0b]
+.t.sz 0
 .t.t["C7 every zoo generator records a choice at size 0"; all {.qc.minimal x; 0<count .qc.C} each gs]
 system"S 3"
-.t.t["C11 every zoo generator replays across sizes"; all {[g] .qc.reset[`long$();5;0b;0b]; v:.qc.draw g; c:.qc.C`v; .qc.new[]; v~.qc.replay[c] g} each gs]
-.qc.new[]
+.t.t["C11 every zoo generator replays across sizes"; all {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} each gs]
+.t.sz 100
 .t.t["canary: zoo defaults reject an extra argument"; all {(@[x;1;{x}]) like "qc: too many*"} each (.qc.str;.qc.sym;.qc.chr;.qc.dbl;.qc.gid)]
 .qc.cfg[`v]:1

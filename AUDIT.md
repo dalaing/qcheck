@@ -98,7 +98,7 @@ deterministic today only through `t/run.q:7` loading files alphabetically:
   (`qc.q:277`) resets with `cfg`sz`, so it does not leak; the error path of `chk` leaves `bs` at the run's size.
 - [ ] **spirit** `qc.q:354` `wide` restores the console by hand under a trap — the "restore what you changed"
   pattern C9 replaced, kept here because the console is not engine state. `small` (`qc.q:85`) is documented.
-- [ ] **break** in tests — direct edits of engine state with hand-written restores:
+- [x] **break** in tests — direct edits of engine state with hand-written restores: *(now `.t.sz` via `cfg\`sz`+`new[]`, the harness restores the defaults per file, and the budget test uses `cfg\`choices`)*
   `t/core.q:57` sets `.qc.cf[`choices]:100` (the *effective* config, outside a run) and restores it to a
   hard-coded `8192` instead of `.qc.cfg`choices``; `t/contracts.q:13` and `t/ranges.q:15` set `.qc.run` by
   hand; `.qc.reset[…]` is called directly to change the size in `t/contracts.q:6`, `t/core.q:30,42,105,140`,
@@ -106,7 +106,7 @@ deterministic today only through `t/run.q:7` loading files alphabetically:
   size other than `cfg`sz` followed by `new[]`.
 
 ### C10 — the four sources of a choice are four entry points
-- [ ] **break** `t/contracts.q:13` (c5) and `t/ranges.q:15` rebuild the shrinker's strict-prefix source by hand
+- [x] **break** `t/contracts.q:13` (c5) and `t/ranges.q:15` rebuild the shrinker's strict-prefix source by hand *(now `.qc.strict`)*
   (`.qc.run:1b; .qc.reset[c;100;0b;1b]; .qc.dr; .qc.i; .qc.run:0b`). That is the exact thing C10's origin says
   the tests should not have to do; the fourth source has no owner the tests can call.
 
@@ -340,7 +340,7 @@ failing when the value is not a table.
    `checks` entries; `one`/`freq` given a dict. Spell `qc: tree` as an internal error or drop it.
 4. [x] **Seeds (C8).** One `system"S n"` at the top of `t/contracts.q`, `t/core.q`, `t/ranges.q`, `t/review.q`,
    `t/sm.q`; pin `t/readme.q`.
-5. [ ] **Test hygiene (C9, C10).** A test-visible owner for strict replay (or a `.qc.strict` entry) so tests stop
+5. [x] **Test hygiene (C9, C10).** A test-visible owner for strict replay (or a `.qc.strict` entry) so tests stop
    setting `.qc.run` and calling `.qc.dr`; set the interactive size through `cfg`sz`+`new[]` rather than
    `.qc.reset`; restore `cf` from `cfg` in `t/core.q:57`.
 6. [ ] **Coverage (C18).** A `t/examples.q` that loads each example under a trap with a pinned seed (sm_ipc.q

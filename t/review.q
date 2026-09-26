@@ -28,9 +28,9 @@ r:.qc.chk[q;.qc.int -0W 0W;{x<1000000}]
 .t.t["binary search shrinks a full-range long to the boundary"; 1000000~r[`x]`x]
 r:.qc.chk[q;.qc.t"j";{$[null x; 1b; x<1000000]}]
 .t.t["full-domain longs shrink to the boundary too"; 1000000~r[`x]`x]
-.qc.reset[`long$();500;0b;0b]
+.t.sz 500
 .t.t["rec at an oversized budget fails loudly, before counting"; (@[.qc.draw;.qc.rec[2 2;0;{x}];{x}]) like "qc: rec:*"]
-.qc.new[]
+.t.sz 100
 / round 7
 .t.t["freq: negative weights are refused"; (@[.qc.draw;.qc.freq[1 -1] (1;2);{x}]) like "qc: freq*"]
 / the audit (AUDIT.md, C14 and pitfall 28): malformed input is a usage error, never a bare q error

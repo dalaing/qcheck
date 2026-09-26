@@ -41,9 +41,9 @@ t:last r`notes
 .t.t["sm: cmds must be a table with a cmd column"; ("qc: cmds"~@[.qc.draw;.qc.sm[h] 5;{x}]) and "qc: cmds"~@[.qc.draw;.qc.sm[h] ([]a:1 2);{x}]]
 .t.t["sm: canary"; (@[.qc.sm[h;cm];1;{x}]) like "qc: too many*"]
 / C7, C11
-.qc.reset[`long$();0;0b;0b]
+.t.sz 0
 .t.t["C7 sm records a choice at size 0"; {.qc.minimal x; 0<count .qc.C} .qc.sm[h] cm]
 system"S 3"
-.t.t["C11 sm replays across sizes"; {[g] .qc.reset[`long$();5;0b;0b]; v:.qc.draw g; c:.qc.C`v; .qc.new[]; v~.qc.replay[c] g} .qc.sm[h] cm2]
-.qc.new[]
+.t.t["C11 sm replays across sizes"; {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.sm[h] cm2]
+.t.sz 100
 .qc.cfg[`v]:1

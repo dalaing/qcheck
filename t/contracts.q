@@ -4,14 +4,14 @@
 q:.qc.cfg,`v`n`seed`db!(0;5;7;`)
 system"S 7"                                                                       / fresh draws below are pinned too (C8)
 sizes:0 1 2 5 30 100
-at:{[s;f;a] .qc.reset[`long$();s;0b;0b]; r:f a; .qc.new[]; r}                    / run f a with base size s
+at:{[s;f;a] .t.sz s; r:@[f;a;{[e] .t.sz 100; 'e}]; .t.sz 100; r}                  / run f a at size s
 c1:{[g] all {[g;s] at[s;{[g] `ok~@[{.qc.draw x; `ok};g;{`ERR}]};g]}[g] each sizes}
 c2:{[g;o] o~.qc.minimal g}
 c3:{[g] all {[g;s] at[s;{[g] .qc.minimal g; 0<count .qc.C};g]}[g] each sizes}
-c4:{[g] .qc.reset[`long$();5;0b;0b]; v:.qc.draw g; c:.qc.C`v; .qc.new[]; v~.qc.replay[c] g}
+c4:{[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g}
 / self-replay exactness in shrink mode: the recorded choices, replayed with the prefix strict, give the same
 / value, consume exactly that many choices, and record the same vector — what every shrink candidate relies on
-c5:{[g] .qc.new[]; v:.qc.draw g; c:.qc.C`v; .qc.run:1b; .qc.reset[c;100;0b;1b]; r:@[.qc.dr;g;{(`ERR;x)}]; .qc.run:0b; ok:(r~v) and (.qc.i=count c) and c~.qc.C`v; .qc.new[]; ok}
+c5:{[g] .qc.new[]; v:.qc.draw g; c:.qc.C`v; r:@[.qc.strict[c];g;{(`ERR;x)}]; (r~v) and (.qc.i=count c) and c~.qc.C`v}
 c6:{[g] 1=count distinct type each {.qc.draw x} each 30#enlist g}
 c7:{[g;ok] all ok each {.qc.draw x} each 200#enlist g}
 c8:{[g] .qc.new[]; .qc.draw g; a:count .qc.L; l1:.qc.lbl g; do[50; .qc.draw g]; (a=count .qc.L) and l1=.qc.lbl g}

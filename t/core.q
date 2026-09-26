@@ -28,9 +28,9 @@ ls:.qc.draw 200#enlist .qc.lst[3 5] .qc.int 0 9
 .t.t["list: lengths within range, typed when homogeneous"; (all (count each ls) within 3 5) and all 7h=type each ls]
 .qc.new[]
 .t.t["list: default range 0..size"; all (count each .qc.draw 30#enlist .qc.list .qc.int 0 9) within 0 100]
-.qc.reset[`long$();0;0b;0b]
+.t.sz 0
 .t.t["list: size 0 gives empty lists"; ()~.qc.draw .qc.list .qc.int 0 9]
-.qc.new[]
+.t.sz 100
 .t.t["list: general when elements are lists"; 0h=type .qc.draw .qc.lst[2 2] .qc.lst[1 1] .qc.int 0 9]
 / alternatives and filters
 .t.t["elem: from the list"; all (.qc.draw 100#enlist .qc.elem `a`b`c) in `a`b`c]
@@ -40,14 +40,14 @@ ls:.qc.draw 200#enlist .qc.lst[3 5] .qc.int 0 9
 .t.t["such: impossible predicate discards"; "qc.discard"~@[.qc.draw;.qc.such[{0b}] .qc.int 0 9;{x}]]
 .t.t["such: rejected spans are marked discarded"; 0<sum exec x from .qc.E]
 / recursion: node function {1+sum x} on leaf 0 computes the internal node count
-.qc.reset[`long$();30;0b;0b]
+.t.sz 30
 nb:{.qc.draw x} each 200#enlist .qc.rec[2 2;0;{1+sum x}]; nr:{.qc.draw x} each 200#enlist .qc.rec[0 4;0;{1+sum x}]; nu:{.qc.draw x} each 200#enlist .qc.recb[2 2;0;{1+sum x}]   / one example each: 200 trees in one would exceed the choice budget
 .t.t["rec: binary node count <= size"; all nb<=30]
 .t.t["rec: rose node count <= size"; all nr<=30]
 .t.t["recb: node count <= size"; all nu<=30]
 .t.t["rec: node counts vary"; 5<count distinct nb]
 .t.t["rec: k=0 0 never exceeds the feasible size"; all 1>=.qc.draw 50#enlist .qc.rec[0 0;0;{1+sum x}]]
-.qc.new[]
+.t.sz 100
 .t.t["rec: counting tables are Catalan"; 1 1 2 5 14 42f~.qc.TB[`$"2,2"][`T] til 6]
 v:.qc.replay[enlist 5] .qc.rec[2 2;.qc.int 0 9;{(`n;x 0;x 1)}]        / the prefix forces a 5-node tree
 .t.t["rec: children arrive as values"; (0h=type v) and (`n~v 0) and 3=count v]
@@ -55,8 +55,7 @@ v:.qc.replay[enlist 5] .qc.rec[2 2;.qc.int 0 9;{(`n;x 0;x 1)}]        / the pref
 deep:{[d] .qc.draw deep}
 .t.t["depth guard: qc.toodeep"; "qc.toodeep"~@[.qc.draw;deep;{x}]]
 .qc.new[]
-.t.t["choice budget: qc.toolarge"; "qc.toolarge"~@[{.qc.cf[`choices]:100; r:@[.qc.draw;.qc.lst[500 500] .qc.int 0 9;{x}]; .qc.cf[`choices]:8192; r};::;{x}]]
-.qc.new[]
+.t.t["choice budget: qc.toolarge is a counted discard under a small cfg`choices"; 0<(.qc.chk[q,enlist[`choices]!enlist 100;.qc.lst[500 500] .qc.int 0 9;{1b}])[`disc]`toolarge]
 / check: outcomes
 r:.qc.chk[q;(.qc.int -9 9;.qc.int -9 9);{(x+y)=y+x}]
 .t.t["check: true property passes"; (r`ok) and (`ok=r`why) and 100=r`n]
@@ -103,15 +102,15 @@ e:@[.qc.draw;.qc.small {[d] '"boom"};{x}]
 .t.t["C10 minimal of a pair is the pair of origins"; (0;0b)~.qc.minimal (.qc.int -9 9;.qc.bool)]
 .t.t["C10 entry points leave the run flag clear"; not .qc.run]
 / C7 dual: every library generator records at least one choice, even at size 0
-.qc.reset[`long$();0;0b;0b]
+.t.sz 0
 gs:(.qc.int 0 9;.qc.bool;.qc.bit 0.5;.qc.elem `a`b;.qc.one (1;2);.qc.freq[1 1;(1;2)];.qc.such[{1b}] .qc.int 0 9;
   .qc.list .qc.int 0 9;.qc.lst[0 0] .qc.int 0 9;.qc.rec[2 2;0;{1+sum x}];.qc.recb[2 2;0;{1+sum x}];.qc.small .qc.int 0 9;.qc.sized {.qc.int 0 9})
 .t.t["C7 every library generator records a choice at size 0"; all {.qc.minimal x; 0<count .qc.C} each gs]
-.qc.new[]
+.t.sz 100
 / C11: replay invariance — a value drawn at size 5 replays identically at size 100 from its recorded choices
 system"S 3"
-.t.t["C11 every library generator replays across sizes"; all {[g] .qc.reset[`long$();5;0b;0b]; v:.qc.draw g; c:.qc.C`v; .qc.new[]; v~.qc.replay[c] g} each gs]
-.t.t["C11 a range that narrows with size does not (the rule is on users)"; not {[g] .qc.reset[`long$();5;0b;0b]; v:.qc.draw g; c:.qc.C`v; .qc.new[]; v~.qc.replay[c] g} .qc.int {(x div 2;x)}]
+.t.t["C11 every library generator replays across sizes"; all {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} each gs]
+.t.t["C11 a range that narrows with size does not (the rule is on users)"; not {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.int {(x div 2;x)}]
 .qc.cfg[`v]:1
 / conventions (DESIGN.md 1.10)
 .t.t["C1 canary: .qc.list[3 5] g signals and names .qc.lst"; (e like "qc: too many arguments*") and (e:@[{.qc.list[3 5] x};.qc.int 0 9;{x}]) like "*qc.lst*"]
@@ -138,9 +137,9 @@ r:.qc.chk[q;.qc.int 0 9;{1b}]
 system"S 2"
 .t.t["C17 int 0 1000: zeros are common but not dominant (<20%)"; 0.2>avg 0=.qc.draw 1000#enlist .qc.int 0 1000]
 .t.t["C17 int -1000 1000: both signs and both bounds appear"; (any v<0) and (any v>0) and (any v=1000) and any -1000=v:.qc.draw 1000#enlist .qc.int -1000 1000]
-.qc.reset[`long$();30;0b;0b]
+.t.sz 30
 nn:{.qc.draw x} each 300#enlist .qc.rec[2 2;0;{1+sum x}]
 .t.t["C17 rec at size 30: under 20% leaves, median node count >= 8"; (0.2>avg 0=nn) and 8<=med nn]
-.qc.new[]
+.t.sz 100
 .t.t["C17 flt 0 1 hits both bounds"; (any v=0) and any 1=v:.qc.draw 1000#enlist .qc.flt 0 1]
 .qc.cfg[`v]:1

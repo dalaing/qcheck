@@ -107,7 +107,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | Name | Meaning |
 |---|---|
 | `.qc.draw x` | interpret a spec: function → call; dict / general list → draw elementwise; else constant |
-| `.qc.minimal x`, `.qc.replay[choices;x]` | the other interactive entry points: the simplest value of a spec; the value a recorded choice vector produces (C10) |
+| `.qc.minimal x`, `.qc.replay[choices;x]`, `.qc.strict[choices;x]` | the other interactive entry points: the simplest value of a spec; the value a recorded choice vector produces; the same with the prefix strict, so a draw past it is `qc.overrun` — what every shrink candidate sees (C10) |
 | `.qc.ch[r;w]` | **the primitive**: a long in range `r` = `lo hi o`; `w` is a fresh-draw distribution hint |
 | `.qc.int r` | long in range; no nulls or infinities |
 | `.qc.bool`, `.qc.bit p` | boolean; `bit p` draws `1b` with probability `p` on fresh draws; origin `0b` |
@@ -578,9 +578,10 @@ reset with the halved value.
 
 **C10 — the four sources of a choice are four entry points.** `ch` takes a value from a prefix, from the
 origin, from a fresh draw, or refuses. Each has an owner of its example boundary: `.qc.replay`, `.qc.minimal`,
-`.qc.draw`, and the shrinker. All three public ones are one four-line function (`top`) with a flag. Origin:
-after C6, replaying a prefix or drawing the minimal example interactively required setting `.qc.run` by hand —
-which is what the tests were doing.
+`.qc.draw`, and — for the refusal, shared with the shrinker — `.qc.strict`. All four are one function (`top`)
+with two flags. Origin: after C6, replaying a prefix or drawing the minimal example interactively required
+setting `.qc.run` by hand — which is what the tests were doing; the audit found them still doing it for the
+strict case, hence `strict`.
 
 **C11 — ranges widen with size.** Because every replay happens at the full configured size, a range function
 of size must have a non-increasing lower bound, a non-decreasing upper bound and a fixed origin. Then a
