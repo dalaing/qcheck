@@ -26,7 +26,7 @@ hasinf:{[c] v:.qc.draw 1000#enlist .qc.t c; (any v=inf c) and any v=neg inf c}
 .t.t["flt: x<100 shrinks to 100"; 100f~(.qc.chk[q;.qc.flt 0 1000;{x<100}])[`x]`x]
 .t.t["flt: x<0.5 shrinks to 1 (an integer before a half)"; 1f~(.qc.chk[q;.qc.flt 0 1;{x<0.5}])[`x]`x]
 .t.t["flt: within 0.25 0.75 shrinks to 0.5"; 0.5~(.qc.chk[q;.qc.flt 0 1;{not x within 0.25 0.75}])[`x]`x]
-.t.t["flt: simple fractions are common (a quarter of values are dyadic with <=2 bits)"; 0.15<avg {x=x*4 div 4} .qc.draw 400#enlist .qc.flt 0 1]
+.t.t["flt: simple fractions are common (k<=2 alone puts 3/53 of values on quarters; observed ~9%, uniform floats ~0)"; 0.05<avg {0=(x*4) mod 1} .qc.draw 400#enlist .qc.flt 0 1]   / exact test: a multiple of 1/4 times 4 is whole (pitfall 23)
 .t.t["dbl: any finite double, large magnitudes reachable"; (all not null v) and 1e100<max abs v:.qc.draw 400#enlist .qc.dbl]
 .t.t["t f: x<1e308 shrinks to 0w (no finite double that large), {not null x} to 0n"; (0w~(.qc.chk[q;.qc.t"f";{x<1e308}])[`x]`x) and null (.qc.chk[q;.qc.t"f";{not null x}])[`x]`x]
 / chars, strings, symbols

@@ -154,7 +154,7 @@ Clean (`t/dist.q`, `t/core.q:136-144`). The one distribution assertion that is v
   to the tests as if they were covered.
 - [ ] **gap** `DESIGN.md`'s non-transcript ```` ```q ```` blocks (lines 47, 56, 63, 69, 91, 141, 232) are neither
   loaded nor doctested; `t/docs.q` checks only that the `.qc.` names they mention exist.
-- [ ] **bug** `t/types.q:29` — the predicate `{x=x*4 div 4}` parses as `x=x*(4 div 4)`, i.e. `x=x`; the assertion
+- [x] **bug** `t/types.q:29` — the predicate `{x=x*4 div 4}` parses as `x=x*(4 div 4)`, i.e. `x=x`; the assertion
   "a quarter of values are dyadic" is `0.15<1` and cannot fail (reproduced: mean 1 on `0.1 0.3 0.7 0.123`). The
   harness rejects non-boolean results but cannot see a vacuous one.
 - [x] **bug** `qc.q:396` — the rerun line for an empty choice vector prints `.qc.recheck[spec;prop;]`, a projection
@@ -281,7 +281,7 @@ test `null` first. `t/types.q:19` and `t/review.q:28` write `null x`, as the pit
 
 **23. `=` on floats is tolerant.** *Relies*: `t/self.q:31` (Catalan recurrence on floats near 1e22) benefits
 from the tolerance.
-- [ ] *Exposed*: `t/types.q:29` compares floats with `=` — and is vacuous (C18).
+- [x] *Exposed*: `t/types.q:29` compares floats with `=` — and is vacuous (C18).
 - [ ] *Exposed*: `qc.q:287` `less` compares zig distances with `~` and `<`; two distances that differ by less than
   2^-43 relative compare equal, which can only happen for values above 2^43 — the same family as the C21 residue.
 
