@@ -27,12 +27,12 @@ shapes:.qc.one (vals;`a`b!(.qc.t"j";.qc.tab `c`d!(.qc.t"j";.qc.t"s"));(.qc.t"j";
 / the coverage bound
 .t.t["wil: a probability, at least the observed rate, monotone in the count"; ok[(.qc.int 0 100;.qc.int 1 100);{[n;N] n:n&N; u:.qc.wil[n;N]; (u within 0 1) and (u>=n%N) and u>=.qc.wil[0|n-1;N]}]]
 / the counting tables satisfy the Catalan recurrence
-T:.qc.ctab[2 2;40]`T
-.t.t["ctab: T[n+1] = sum T[i]*T[n-i]"; ok[.qc.int 0 39;{T[x+1]=sum T[til 1+x]*T[x-til 1+x]}]]
+ct:.qc.ctab[2 2;40]`T
+.t.t["ctab: T[n+1] = sum T[i]*T[n-i]"; ok[.qc.int 0 39;{ct[x+1]=sum ct[til 1+x]*ct[x-til 1+x]}]]
 .t.t["conv is commutative"; ok[(.qc.lst[3 3] .qc.flt 0 9;.qc.lst[3 3] .qc.flt 0 9);{[a;b] .qc.conv[a;b]~.qc.conv[b;a]}]]
 / the shrinker never accepts a longer candidate, and its result replays
-sh:{[sp;pr] r:.qc.chk[q;sp;pr]; h:r`hist; (all 0>=1_deltas h`len) and (r[`x]~(.qc.recheck[sp;pr;r`choices])`x)}
-.t.t["shrink history is non-increasing in length and the result rechecks"; all (sh[.qc.list .qc.int 0 99;{x~asc x}];sh[.qc.rec[2 2;.qc.int 0 9;{(x 0;x 1)}];{3>count raze x}];sh[(.qc.int 0 9;.qc.int 0 9);{x>=y}])]
+shk:{[sp;pr] r:.qc.chk[q;sp;pr]; h:r`hist; (all 0>=1_deltas h`len) and (r[`x]~(.qc.recheck[sp;pr;r`choices])`x)}
+.t.t["shrink history is non-increasing in length and the result rechecks"; all (shk[.qc.list .qc.int 0 99;{x~asc x}];shk[.qc.rec[2 2;.qc.int 0 9;{(x 0;x 1)}];{3>count raze x}];shk[(.qc.int 0 9;.qc.int 0 9);{x>=y}])]
 / the engine is not reentrant, and says so
 .t.t["a nested check signals"; "qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.check[.qc.int 0 9;{1b}]}])`err]
 / C3 mechanised: every dispatcher in the runner is total over one fixed shape zoo (this is where byname failed)

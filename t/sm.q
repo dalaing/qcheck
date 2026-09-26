@@ -4,16 +4,16 @@
 q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 7"
 / a real system: a counter in a global, with a planted bug (wraps after 3)
-N:0; NI:0
-inc:{N::N+1; if[N>3; N::0]; N}
-rd:{N}
+cnt:0; ni:0                                                   / (not N: .qc.N is the notes)
+inc:{cnt::cnt+1; if[cnt>3; cnt::0]; cnt}
+rd:{cnt}
 cm:([cmd:`inc`get] run:(inc;{rd[]}); post:({[m;i;o] o=m+1};{[m;i;o] o=m}); upd:({[m;i;o] m+1};{[m;i;o] m}))
-h:`m0`init!(0;{N::0; NI+:1})
+h:`m0`init!(0;{cnt::0; ni+:1})
 / shape
 tr:.qc.draw .qc.sm[h,enlist[`steps]!enlist 2 2] cm
 .t.t["sm: the value is a trace table with step cmd arg res model ok"; (98h=type tr) and (`step`cmd`arg`res`model`ok~cols tr) and 2=count tr]
 .t.t["sm: defaults fill missing columns (pre, gen)"; all (tr`arg)~\:(::)]
-.t.t["sm: init runs once per draw"; (NI=k+1) and 1=NI-k:NI-1]
+.t.t["sm: init runs once per draw"; (ni=k+1) and 1=ni-k:ni-1]
 tr:.qc.minimal .qc.sm[h] cm
 .t.t["sm: the minimal trace is empty (a stop bit is still recorded)"; (0=count tr) and 0<count .qc.C]
 / the bug is found, reported as a falsification with the trace noted, and shrunk to the minimal sequence

@@ -34,7 +34,7 @@ nb:D[.qc.rec[2 2;0;{1+sum x}];1000]
 qs:asc[nb] 250 500 750                                                     / (not q: every other test file's config dict)
 .t.t["rec at size 30: quartiles spread across the budget (A15: 7 15 22)"; (qs[0] within 3 12) and (qs[1] within 10 20) and qs[2] within 17 28]
 cm:([cmd:enlist `a] run:enlist {[a] ::})
-st:count each D[.qc.sm[`m0`steps!(0;0 10)] cm;1000]
-.t.t["sm steps 0..10 at size 30: every count appears and none is rare"; (11=count distinct st) and all 0.04<(count each group st)%1000]
+sc:count each D[.qc.sm[`m0`steps!(0;0 10)] cm;1000]
+.t.t["sm steps 0..10 at size 30: every count appears and none is rare"; (11=count distinct sc) and all 0.04<(count each group sc)%1000]
 .t.sz 100
 .qc.cfg[`v]:1

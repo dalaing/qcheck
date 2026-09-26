@@ -6,6 +6,10 @@ then mechanical checks in q for the things a reader gets wrong (reserved words a
 `like` patterns, `each` after a generator, keyed tables at every dict test, overflow at the bounds, and each
 suspected behaviour reproduced before it was written down). Line numbers are `file:line` in the current tree.*
 
+**Status (2026-09-27, after the cleanup pass): every box is ticked.** One item was withdrawn on review (C7), one
+accepted as the price of C21 (pitfall 23's `less`); everything else was fixed in the commits following `e37f7d0`,
+one per item or per fix covering several. The suite grew from 1019 to 1034 tests.
+
 Tags. **bug** — observable wrong behaviour. **break** — the convention's letter is not followed. **spirit** —
 the letter is met but the intent is not, or only by accident. For pitfalls: **relies** — the code knows about
 the hazard and works around it (kept here so a cleanup does not undo it); **exposed** — the hazard is live.
@@ -59,7 +63,7 @@ The result dict, history, cover and trace tables all comply (`t/core.q:133`, `t/
 The library is enforced by `t/names.q` (green). A scan of every `t/`, `examples/`, `spikes/`, `tools/` file
 found no reserved word used as a name or parameter. (The scan script itself first named a function `scan`,
 which is reserved — the pitfall is alive.)
-- [ ] **spirit** — root globals in test files reuse engine-global names: `N` (`t/sm.q:6`), `K` (`t/outcomes.q:17`),
+- [x] **spirit** — root globals in test files reuse engine-global names *(renamed)*: `N` (`t/sm.q:6`), `K` (`t/outcomes.q:17`),
   `T` (`t/bench.q:5`, `t/self.q:30`), `L` (`t/docs.q:3`, `t/doctest.q:5`, `t/readme.q:5`), `t` (`t/report.q:66`),
   `run1` (`t/readme.q:11`), `st` (`t/dist.q:37`), `sh` (`t/self.q:34`). Different namespace, so not shadowing,
   but the same edit-distance hazard C5 describes.
@@ -96,7 +100,7 @@ deterministic today only through `t/run.q:7` loading files alphabetically:
   example's size. Reproduced: after `.qc.chk[`sz!enlist 3; .qc.list .qc.int 0 9; {1b}]`, `.qc.bs` is 2 and
   every later top-level `.qc.draw` produces lists of at most two elements until `.qc.new[]`. `recheck1`
   (`qc.q:277`) resets with `cfg`sz`, so it does not leak; the error path of `chk` leaves `bs` at the run's size.
-- [ ] **spirit** `qc.q:354` `wide` restores the console by hand under a trap — the "restore what you changed"
+- [x] **spirit (accepted)** `qc.q:354` `wide` restores the console by hand under a trap — the console is not engine state and has no run-level value to restore it from, so this is the right shape there; — the "restore what you changed"
   pattern C9 replaced, kept here because the console is not engine state. `small` (`qc.q:85`) is documented.
 - [x] **break** in tests — direct edits of engine state with hand-written restores: *(now `.t.sz` via `cfg\`sz`+`new[]`, the harness restores the defaults per file, and the budget test uses `cfg\`choices`)*
   `t/core.q:57` sets `.qc.cf[`choices]:100` (the *effective* config, outside a run) and restores it to a
@@ -349,5 +353,5 @@ failing when the value is not a table.
    README's.
 7. [x] **Bounds arithmetic (C21).** `skey`/`bkey` in floats before `0W^`; `pdup`, `pred`, `mix` and `lin` in floats
    or guarded; `lst`/`sm` cap in floats; say in `unif`'s comment what the full range misses.
-8. [ ] **Docs.** Pitfall 28's text; C12's state-machine exception; the `qc.q:47` comment; the `dd` message for
+8. [x] **Docs.** Pitfall 28's text; C12's state-machine exception; the `qc.q:47` comment; the `dd` message for
    non-configurable generators; `TX`'s seed.

@@ -63,7 +63,7 @@ c:r`cover
 .t.t["cover: report prints the table"; any (.qc.report r) like "label*"]
 .t.t["collect: labels by value"; 10>=count (.qc.chk[q;.qc.int 0 9;{.qc.collect x; 1b}])`cover]
 / suites
-t:.qc.chks[q;`comm`sorted!((( .qc.int 0 9;.qc.int 0 9);{(x+y)=y+x});(.qc.list .qc.int 0 9;{x~asc x}))]
-.t.t["checks: one row per property with outcome"; (98h=type t) and (`comm`sorted~t`name) and 10b~t`ok]
-.t.t["checks: why column"; `ok`falsified~t`why]
+tb:.qc.chks[q;`comm`sorted!((( .qc.int 0 9;.qc.int 0 9);{(x+y)=y+x});(.qc.list .qc.int 0 9;{x~asc x}))]
+.t.t["checks: one row per property with outcome"; (98h=type tb) and (`comm`sorted~tb`name) and 10b~tb`ok]
+.t.t["checks: why column"; `ok`falsified~tb`why]
 .qc.cfg[`v]:1

@@ -2,7 +2,7 @@
 / expected output. a child q evaluates the inputs REPL-style and the captured output must match exactly
 / (trailing blanks trimmed). loaded by t/run.q
 dir:`$":",getenv[`TMPDIR],"qcdoc_",string .z.i; system"mkdir -p ",1_string dir
-blocks:{[f] L:read0 f; o:where L like "```q"; c:where L like "```"; b:{[L;c;o] e:first c where c>o; L (o+1)+til (e-o)-1}[L;c] each o;   / (e-o-1 is e-(o-1) in q)
+blocks:{[f] ln:read0 f; o:where ln like "```q"; c:where ln like "```"; b:{[ln;c;o] e:first c where c>o; ln (o+1)+til (e-o)-1}[ln;c] each o;   / (e-o-1 is e-(o-1) in q)
   b where any each b like\:"q)*"}   / pair each ```q opener with the next closer; other fences are not q
 rt:{$[0=count x; x; (neg first where not reverse[x]=" ")_x]}   / (rtrim is a keyword)
 mm:{[w;g] "    ",(40$w)," | ",g}

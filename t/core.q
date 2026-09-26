@@ -4,7 +4,7 @@
 q:.qc.cfg,`v`n`seed`db!(0;100;7;`)                          / quiet, pinned seed (C8), no failure db
 system"S 7"                                                 / and the fresh draws below (C8)
 / draw is a homomorphism over data
-.t.t["draw: atoms, vectors, tables, :: are constants"; (1~.qc.draw 1) and (1 2 3~.qc.draw 1 2 3) and (t~.qc.draw t:([]a:1 2)) and (::)~.qc.draw (::)]
+.t.t["draw: atoms, vectors, tables, :: are constants"; (1~.qc.draw 1) and (1 2 3~.qc.draw 1 2 3) and (tt~.qc.draw tt:([]a:1 2)) and (::)~.qc.draw (::)]
 .t.t["draw: keyed table is a constant"; kt~.qc.draw kt:([a:1 2]b:3 4)]
 .t.t["draw: general list of constants is identity"; (1;"a";`b)~.qc.draw (1;"a";`b)]
 d:.qc.draw `a`b!(.qc.int 0 9;(.qc.int 0 9;`k))

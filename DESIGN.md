@@ -855,6 +855,7 @@ whole codebase rather than to the instance that had surfaced it, and the mechani
 | 6 | C17 audit: measured distributions | the tests' first bounds were wrong, the distributions right (full-domain longs are ~9% specials because the normal branch's boundary picks include `±0W`) | `t/dist.q` |
 | 7 | convergence: every scan and audit rerun, the library read once more | one input guard (negative weights) | — |
 | 8 | convergence, repeated | nothing | — |
+| 9 | the audit (`AUDIT.md`): every convention and pitfall against every file, each finding reproduced | a run's size leaking into later draws (C9); an elided rerun line for an empty vector and a test that was `x=x` (C18); bare q errors for keyed tables and non-symbol labels (C14, pitfall 28); unpinned seeds in five files (C8); long arithmetic wrapping at six more sites (C21); the examples and the design's snippets not run (C18); a raising assertion skipping its file (C2) | `t/examples.q`, `t/review.q`, the per-statement harness in `t/run.q` |
 
 Two of the round-4/5 fixes were themselves wrong on first writing (`md5` takes chars, not bytes; a list-valued
 dict key indexes several keys), which is the same lesson as C2/C3 at M6: the conventions exist because the
@@ -882,4 +883,4 @@ the run flag poisoning a session, `cf` leaking, `dp` left dirty — outcomes' st
 truncated rerun lines and db keys — reportx and review; the composition label growth — contract 8; C16 atoms
 — review and the registry's single-item rows; every README line that did not parse — doctest and readme.
 Building the suite found one more inconsistency (an engine signal raised in the property phase was a
-falsification, not a discard) and nothing else: 1013 tests, all green; 1019 with the choice tree's cases in `t/stop.q`.
+falsification, not a discard) and nothing else: 1013 tests, all green; 1019 with the choice tree's cases in `t/stop.q`; 1034 after the audit's cleanup pass.
