@@ -5,8 +5,8 @@ the style of Hedgehog, and state-machine testing. One file, no dependencies, kdb
 
 ```q
 q)\l qc.q
-q).qc.check[.qc.list .qc.int 0 100; {x~asc x}]
-FAIL falsified after 4 tests, 7 shrinks (31 attempts, seed 7)
+q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
+FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
@@ -62,8 +62,8 @@ signal fails it. Inside a property:
 fails the run only when it is confident the rate is under the requirement.
 
 ```q
-q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}]
-FAIL falsified after 4 tests, 7 shrinks (31 attempts, seed 7)
+q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
+FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -95,6 +95,11 @@ cmds:([cmd:`push`pop]
 `.qc.sm[h] cmds` draws and executes a command sequence and yields the trace; a failed postcondition prints the
 trace with the failing step marked and the sequence shrinks like any other input. `init` resets the real
 system before every example and every replay, so the system can live in another process (`examples/sm_ipc.q`).
+
+Every transcript in this file and in `EXAMPLES.md` is executed by the test suite (in a session with
+`.qc.cfg[`seed]:7i`) and must print exactly what is shown.
+
+See `EXAMPLES.md` for a tour in verified transcripts.
 
 ## Files
 

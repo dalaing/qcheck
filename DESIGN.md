@@ -408,11 +408,12 @@ comparable cases (`[1, 0]`, `[0, 1]`, `[0, 0]`, five zeros, `51`, `-1`, a three-
   data; the one line meant to be copied back, the rerun line, renders the choice vector exactly with `string`
   and `sv`. (Found by an 81-choice failure whose rerun line ended in `..`.)
 
-`.qc.report r` returns the lines and `.qc.rep r` prints them, so the report is testable; this is
-`t/report.q`'s assertion of the mock below, now real output of `.qc.check[.qc.list .qc.int 0 100;{.qc.eq[x;asc x]}]`:
+`.qc.report r` returns the lines and `.qc.rep r` prints them, so the report is testable. The transcript below
+is executed by `t/doctest.q` (seed 7) and must print exactly this:
 
-```
-FAIL falsified after 4 tests, 7 shrinks (31 attempts, seed 7)
+```q
+q).qc.check[.qc.list .qc.int 0 100;{.qc.eq[x;asc x]}];
+FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -432,20 +433,12 @@ trace, so it composes with `.qc.check` like any other generator, and the propert
 machine; the postconditions are the property":
 
 ```q
-S:([]v:`long$())                                            / the real system: a stack kept in a table
-push:{`S insert enlist x;}
-pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}   / bug once three are stacked
-cmds:([cmd:`push`pop]
-  pre: ({1b};             {0<count x});                     / model -> can this command run?
-  gen: ({.qc.int 0 9};    {::});                            / model -> input spec (:: for none)
-  run: (push;             pop);                             / input -> output, acting on the real system
-  post:({[m;i;o] 1b};     {[m;i;o] o=last m});              / model before, input, output -> ok?
-  upd: ({[m;i;o] m,i};    {[m;i;o] -1_m}))                  / model before, input, output -> model after
-.qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::]
-```
-
-```
-FAIL falsified after 7 tests, 4 shrinks (46 attempts, seed 2007092841)
+q)S:([]v:`long$())
+q)push:{`S insert enlist x;}
+q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
+q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
+q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
+FAIL falsified after 1 tests, 9 shrinks (49 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -455,6 +448,10 @@ step cmd  arg res model ok
 3    pop  ::  0   0 0   0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
 ```
+
+The columns of `cmds`: `pre` (model → can this command run?), `gen` (model → input spec, `::` for none), `run`
+(input → output, acting on the real system), `post` (model before, input, output → ok?), `upd` (model before,
+input, output → model after). `pop` has a planted bug: it returns the first item once three are stacked.
 
 `h` holds `m0` (the model), `init` and `fini` (run before and after every example *and every replay*, so the
 real system must be resettable), and `steps` (a range, default `0 0W`, capped by size). `cmds` is a keyed
@@ -500,7 +497,13 @@ qc.q            the library
 README.md       usage, built from the examples in §1.2–1.7
 DESIGN.md       this document
 spikes/         one script per validated assumption; sh spikes/run.sh runs them all
-t/              qc's own tests            (q t/run.q)
+t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
+                over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
+                state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
+                doctest (every q) transcript in README, EXAMPLES and this file), docs (names in docs exist),
+                names (reserved words, shadowing), readme (README code blocks load), and the per-milestone files
+EXAMPLES.md     a tour in verified transcripts
+tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 examples/       reverse.q tree.q sm_table.q sm_ipc.q   (sm_ipc.q starts a child q process)
 ```
 
@@ -647,8 +650,10 @@ on the first error, and `t/self.q` runs every dispatcher of the runner over one 
 strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
 mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
 tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
-promised and never written). And the harness fails a test whose result is not a boolean instead of letting
-`all` coerce it — a dozen test bugs across the milestones had passed that way. Origin: README snippets verified
+promised and never written). The harness fails a test whose result is not a boolean instead of letting
+`all` coerce it — a dozen test bugs across the milestones had passed that way. And every `q)` transcript in
+README.md, EXAMPLES.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
+(seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
 by hand once, and a dispatcher the dogfooding had not reached.
 
 **C17 — measure the distribution you ship, on the ranges people use.** A5 measured the integer mixture on a
@@ -830,3 +835,27 @@ whole codebase rather than to the instance that had surfaced it, and the mechani
 Two of the round-4/5 fixes were themselves wrong on first writing (`md5` takes chars, not bytes; a list-valued
 dict key indexes several keys), which is the same lesson as C2/C3 at M6: the conventions exist because the
 fixes are subject to them too. Converged: the last round found nothing.
+
+### The suite that would have caught them
+
+After the review rounds the tests were reorganised by contract and driven by data, so that a bug class is
+covered wherever it can occur rather than where it happened to surface. Every generator is a row of a
+registry (`t/0gens.q`) and every contract runs over every row (`t/contracts.q`, one test per generator per
+contract): draws at every size, minimal is the origin, a choice is recorded, replay across sizes, exact
+self-replay under shrinking, type stability, bounds, label stability, clean state, the canary, and joining a
+running example. The range grid (`t/ranges.q`) puts `int`, `lst` and `flt` through fourteen range shapes in
+five modes. The outcome matrix (`t/outcomes.q`) pins the pass rule, every signal in both phases, the result
+schema per outcome, and the engine's state after every exit including error exits. The A8 minima are asserted
+with attempt caps (`t/bench.q`); the rerun line round-trips as a property (`t/reportx.q`); distributions are
+measured (`t/dist.q`); and every transcript in the documentation is executed (`t/doctest.q`).
+
+Mapping the recorded bugs to their covering family: `rand 0`, `1+0W`, `unif`'s overflow, the mixture's
+one-sided skew, `wid` on full ranges and `flt`'s huge-range error — ranges and dist; size-0 lists, forced
+stop bits, span units and replay at full size — contracts 3, 4 and 5; typed-empty lists, `"f"$0W`, char atoms
+— contract 6 and the type rows; `::` as 101h, keyed tables as 99h, `byname` — the shape zoo in self.q and
+contract 1 over the type rows; `qc.eq` swallowed by a prefix, engine signals in the property phase — outcomes;
+the run flag poisoning a session, `cf` leaking, `dp` left dirty — outcomes' state-after-exit and contract 9;
+truncated rerun lines and db keys — reportx and review; the composition label growth — contract 8; C16 atoms
+— review and the registry's single-item rows; every README line that did not parse — doctest and readme.
+Building the suite found one more inconsistency (an engine signal raised in the property phase was a
+falsification, not a discard) and nothing else: 1013 tests, all green.

@@ -1,6 +1,6 @@
 / shared shrink benchmark: .b.cases[L] builds the case table for a list constructor L (.qc.list or an alternative);
 / .b.run[cfg;cases] runs them and reports what was found, whether it is the analytic minimum, and the cost
-\l qc.q
+if[not `qc in key `; system"l qc.q"]
 .qc.cfg[`v]:0
 .b.q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 .b.tree:.qc.rec[2 2;.qc.int 0 9;{(x 0;x 1)}]

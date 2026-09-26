@@ -195,7 +195,7 @@ run1:{[spec;prop]
   if[not g`ok; :$[g[`e] in ENG; `st`why!(`disc;`$3_g`e); fsg g`e; `st`x`err`bt`ph`notes`choices!(`fail;::;g`e;g`bt;`prop;N;C`v);
     `st`err`bt`ph`notes`choices!(`fail;g`e;g`bt;`gen;N;C`v)]];
   x:g`r; r:trap[{[p;s;x] pass app[p;s;x]}[prop;spec];x];
-  $[not r`ok; $[r[`e]~"qc.discard"; `st`why!(`disc;`discard); `st`x`err`bt`ph`notes`choices!(`fail;x;r`e;r`bt;`prop;N;C`v)];
+  $[not r`ok; $[r[`e] in ENG; `st`why!(`disc;`$3_r`e); `st`x`err`bt`ph`notes`choices!(`fail;x;r`e;r`bt;`prop;N;C`v)];   / an engine signal is a discard in either phase
     r`r; `st`x!(`pass;x); `st`x`err`bt`ph`notes`choices!(`fail;x;"false";"";`prop;N;C`v)]}
 named:{[spec;prop;x] $[99h=type spec; x; 0h=type spec; pnames[prop;count x]!x; enlist[`x]!enlist x]}
 pnames:{[p;n] $[100h=type p; $[n=count a:(value p)[1]; a; `$"x",/:string til n]; `$"x",/:string til n]}
@@ -216,7 +216,8 @@ wid:{[lo;hi] $[null d:hi-lo; 0w; d<0; 0w; 1+"f"$d]}      / a range's width as a 
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
 / minimal input; if the space it reveals fits the budget the run enumerates it in shortlex order instead of
 / sampling (every input once), abandoning enumeration if a replay's structure differs from example 0's.
-chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{run::0b; cf::cfg; 'x}]; cf::cfg; r}   / whatever happens, the run flag and config are restored (C9)
+tidy:{run::0b; cf::cfg; dp::0; st::();}                  / the example boundary on the way out: flag, config, depth, spans (C9)
+chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
   LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; nmax:$[null c`nmax; 10*n; c`nmax]; dc:(`symbol$())!`long$();
@@ -247,7 +248,7 @@ chks:{[c;d] if[99h<>type d; '"qc: checks takes a dict of name -> (spec;prop)"]; 
   tb:flip `name`ok`why`stop`n`shrinks`seed!flip r; if[0<conf[c]`v; show tb]; tb}
 checks:chks[::]
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded
-recheck:{[spec;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; @[recheck1[spec;prop];p;{run::0b; 'x}]}
+recheck:{[spec;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[spec;prop];p;{tidy[]; 'x}]; tidy[]; r}
 recheck1:{[spec;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;prop]; run::0b;
   why:$[`pass=o`st; `ok; `disc=o`st; `gaveup; `gen=o`ph; `error; `falsified];
   res:result[why;1;system"S";spec;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];
