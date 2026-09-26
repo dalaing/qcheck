@@ -62,7 +62,7 @@ which is reserved — the pitfall is alive.)
   `T` (`t/bench.q:5`, `t/self.q:30`), `L` (`t/docs.q:3`, `t/doctest.q:5`, `t/readme.q:5`), `t` (`t/report.q:66`),
   `run1` (`t/readme.q:11`), `st` (`t/dist.q:37`), `sh` (`t/self.q:34`). Different namespace, so not shadowing,
   but the same edit-distance hazard C5 describes.
-- [ ] **spirit** `t/dist.q:34` — `q:asc[nb] 250 500 750` overwrites the `q` that every other test file uses as its
+- [x] **spirit** `t/dist.q:34` — `q:asc[nb] 250 500 750` overwrites the `q` that every other test file uses as its
   config dict. Harmless only because `t/outcomes.q:4` redefines it before the next use; the suite is one
   session and the files share a namespace.
 
