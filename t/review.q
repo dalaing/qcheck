@@ -32,4 +32,16 @@ r:.qc.chk[q;.qc.t"j";{$[null x; 1b; x<1000000]}]
 .qc.new[]
 / round 7
 .t.t["freq: negative weights are refused"; (@[.qc.draw;.qc.freq[1 -1] (1;2);{x}]) like "qc: freq*"]
+/ the audit (AUDIT.md, C14 and pitfall 28): malformed input is a usage error, never a bare q error
+.t.t["C14 keyed tables are refused where a dict is wanted: cfg, tab, checks, sm hooks";
+  all ((@[.qc.chk[;.qc.int 0 9;{1b}];([k:enlist `n]v:enlist 5);{x}]) like "qc: cfg*"; (@[.qc.draw;.qc.tab ([k:1 2]v:3 4);{x}]) like "qc: tab*";
+       (@[.qc.chks[q];([a:enlist `p]b:enlist 1);{x}]) like "qc: checks*"; (@[.qc.draw;.qc.sm[([k:enlist `m0]v:enlist 0)] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: sm*")]   / (a keyed-table literal needs vector columns; with atoms the literal itself is a rank error)
+.t.t["C14 unknown config keys and unknown sm hooks are named"; ((@[.qc.chk[;.qc.int 0 9;{1b}];q,enlist[`seeed]!enlist 5;{x}]) like "qc: cfg: unknown key seeed") and (@[.qc.draw;.qc.sm[`m0`fnii!(0;{})] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: sm: unknown hook fnii"]
+.t.t["C14 labels must be symbols, in classify, cover and collect's path"; ((.qc.chk[q;.qc.int 0 9;{.qc.classify["big";x>5]; 1b}])[`err] like "qc: a label*") and (.qc.chk[q;.qc.int 0 9;{.qc.cover[`a`b;90;1b]; 1b}])[`err] like "qc: a label*"]
+.t.t["C14 cover needs a numeric percentage"; (.qc.chk[q;.qc.int 0 9;{.qc.cover[`a;"90";1b]; 1b}])[`err] like "qc: cover*"]
+.t.t["C14 freq: all-zero or non-numeric weights are refused"; ((@[.qc.draw;.qc.freq[0 0] (1;2);{x}]) like "qc: freq*") and (@[.qc.draw;.qc.freq[`a`b] (1;2);{x}]) like "qc: freq*"]
+.t.t["C14 one, elem and freq of a dict say so"; all ((@[.qc.draw;.qc.one `a`b!(1;2);{x}]) like "qc: one*"; (@[.qc.draw;.qc.elem `a`b!1 2;{x}]) like "qc: elem*"; (@[.qc.draw;.qc.freq[1 1] `a`b!(1;2);{x}]) like "qc: freq*")]
+.t.t["C20 checks entries must be (spec;prop) pairs"; ((@[.qc.chks[q];enlist[`p]!enlist {x};{x}]) like "qc: checks*") and (@[.qc.chks[q];enlist[`p]!enlist .qc.int 0 9;{x}]) like "qc: checks*"]
+.t.t["C20 :: is not a function: sized, such and sm hooks refuse it"; ((@[.qc.draw;.qc.sized (::);{x}]) like "qc: sized*") and ((@[.qc.draw;.qc.such[::] .qc.int 0 9;{x}]) like "qc: such*") and (@[.qc.draw;.qc.sm[`m0`init!(0;::)] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: init*"]
+.t.t["C20 the :: property is still the 'generation must not fail' property"; (.qc.chk[q;.qc.int 0 9;::])`ok]
 .qc.cfg[`v]:1

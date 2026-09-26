@@ -35,8 +35,9 @@ reset:{[p;s;m;h] P::"j"$(),p; i::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn
 new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
 / the implicit d is never supplied by users, so a non-null d means one argument too many (C1)
 dd:{[d;n] if[not (::)~d; '"qc: too many arguments; the configurable form is ",n]}
-fn:{type[x] within 100 112}                           / callable? the library never applies what is not (C20)
+fn:{$[(::)~x; 0b; type[x] within 100 112]}              / callable? the library never applies what is not (C20); :: is 101h but is not a function (pitfall 10)
 need:{[f;what] if[not fn f; '"qc: ",what," must be a function"]}
+dct:{$[99h<>type x; 0b; not 98h=type key x]}              / a dict, and not a keyed table, which is 99h too (pitfall 28)
 
 / ---- the primitive ----------------------------------------------------------------------------------
 / a range is  lo hi  or  lo hi origin  or a function of size returning one; origin defaults to 0 clamped
@@ -83,9 +84,10 @@ bool:bit[0.5]
 const:{[x;d] dd[d;".qc.const x"]; x}
 sized:{[f;d] dd[d;".qc.sized f"]; need[f;"sized's f"]; draw f sz}
 small:{[g;d] dd[d;".qc.small g"]; s:sz; sz::s div 2; r:draw g; sz::s; r}
-elem:{[xs;d] dd[d;".qc.elem xs"]; xs:(),xs; if[0=count xs; '"qc: elem of nothing"]; xs ch[(0;-1+count xs;0);`u]}
-one:{[gs;d] dd[d;".qc.one gs"]; gs:(),gs; if[0=count gs; '"qc: one of nothing"]; draw gs ch[(0;-1+count gs;0);`u]}
-freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; gs:(),gs; w:"f"$(),w; if[(0=count gs) or (count[w]<>count gs) or any w<0; '"qc: freq needs one non-negative weight per alternative"]; draw gs ch[(0;-1+count gs;0);w]}
+elem:{[xs;d] dd[d;".qc.elem xs"]; if[99h=type xs; '"qc: elem takes a list"]; xs:(),xs; if[0=count xs; '"qc: elem of nothing"]; xs ch[(0;-1+count xs;0);`u]}
+one:{[gs;d] dd[d;".qc.one gs"]; if[99h=type gs; '"qc: one takes a list of alternatives"]; gs:(),gs; if[0=count gs; '"qc: one of nothing"]; draw gs ch[(0;-1+count gs;0);`u]}
+freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; if[99h=type gs; '"qc: freq takes a list of alternatives"]; gs:(),gs; if[not type[w] in -5 -6 -7 -8 -9 5 6 7 8 9h; '"qc: freq needs numeric weights"]; w:"f"$(),w;
+  if[$[0=count gs; 1b; count[w]<>count gs; 1b; any w<0; 1b; 0=sum w]; '"qc: freq needs one non-negative weight per alternative, not all zero"]; draw gs ch[(0;-1+count gs;0);w]}
 such:{[p;g;d] dd[d;".qc.such[p] g"]; need[p;"such's predicate"]; k:0; while[k<cf`tries; beg`try; x:draw g; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}
 discard:{'"qc.discard"}
 / list: continue bit before each element (forced while under lo); size caps the length; the bit's
@@ -146,7 +148,7 @@ t:"bgxhijefcspmdznuvt"!(bool;gid;cast["x";int 0 255];
   spc[(0Nv;0Wv;-0Wv);cast["v";int 0 86399]];spc[(0Nt;0Wt;-0Wt);cast["t";int 0 86399999]])
 vec:{[r;c;d] dd[d;".qc.vec[r] c"]; c$draw lst[r] t c}            / typed even when empty
 / tables are drawn as rows (each row one span, so deleting a row is one deletion), then flipped
-tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[99h<>type cg; '"qc: tab needs a dict of column generators"]; rs:draw lst[r] cg; $[count rs; flip key[cg]!flip value each rs; flip key[cg]!count[cg]#enlist ()]}
+tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; rs:draw lst[r] cg; $[count rs; flip key[cg]!flip value each rs; flip key[cg]!count[cg]#enlist ()]}
 tab:tabr[0 0W]
 ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; k xkey tabr[r;cg;::]}
 
@@ -161,7 +163,7 @@ smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
 smh:`m0`init`fini`steps!(::;{};{};0 0W)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
-sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
+sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"];
   r:rng h`steps; lo:r 0; mx:r[1]&lo+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;
@@ -177,17 +179,18 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>ty
 
 / ---- inside a property ------------------------------------------------------------------------------
 note:{N,:enlist x;}
-label:{[s] LX::distinct LX,s;}
+lbs:{[s] if[-11h<>type s; '"qc: a label must be a symbol"]}
+label:{[s] lbs s; LX::distinct LX,s;}
 classify:{[s;b] if[b; label s];}
 collect:{label `$wide[.Q.s1;x]}                        / label by value (bounded by the distinct values; not truncated to the console)
 RQ:(`symbol$())!`float$()                              / coverage requirements of the run: label -> percent
-cover:{[s;pct;b] RQ[s]:"f"$pct; if[not s in key LB; LB[s]:0]; if[b; label s];}
+cover:{[s;pct;b] lbs s; if[not type[pct] in -5 -6 -7 -8 -9h; '"qc: cover needs a percentage"]; RQ[s]:"f"$pct; if[not s in key LB; LB[s]:0]; if[b; label s];}
 / eq: q's match, explained. on failure the diff table is noted and the property fails with qc.eq
 eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:flip `path`why`a`b!(enlist ();enlist `order;enlist shape a;enlist shape b)]; note d; '"qc.eq"}
 shape:{$[99h=type x; key x; 98h=type x; cols x; x]}
 
 / ---- the runner -------------------------------------------------------------------------------------
-conf:{$[(::)~x; cfg; 99h=type x; cfg,x; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; '"qc: cfg"]}
+conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg"; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; cfg,x]}
 byname:{[p;x] $[100h<>type p; 0b; 99h<>type x; 0b; 98h=type key x; 0b; all (value p)[1] in key x]}   / a keyed table is 99h too (C3); a cond chain, not and (C2)
 app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x (value p)[1]; p @ x]}
 pass:{$[(::)~x; 1b; type[x] in -1 1h; all x; ()~x; 1b; '"qc: property returned ",-3!x]}   / () is vacuously true, as all () is
@@ -223,7 +226,7 @@ tnew:{TR::0#TR; TR,:(0N;0N;0N;0N;0N;0n;0;0;0b;`); TX::(enlist 0N 0N)!enlist 0N;}
 xch:{[m;v] $[null c:TX (m;v); 0b; TR[c;`x]]}            / is the child of node m at value v exhausted?
 / the value nearest the origin whose child is absent or open: an open node has fewer than w exhausted children,
 / so the nearest nx+1 values in range include one
-pick:{[m] r:TR m; o:r`o; d:0; while[d<=1+r`nx; if[(v:o+d) within r`lo`hi; if[not xch[m;v]; :v]]; if[(v:o-d) within r`lo`hi; if[not xch[m;v]; :v]]; d+:1]; '"qc: tree"}
+pick:{[m] r:TR m; o:r`o; d:0; while[d<=1+r`nx; if[(v:o+d) within r`lo`hi; if[not xch[m;v]; :v]]; if[(v:o-d) within r`lo`hi; if[not xch[m;v]; :v]]; d+:1]; '"qc: internal error in the choice tree, please report"}
 / the next input to try: descend from the root by pick until a child is absent. The prefix ends there; the rest
 / of the example is origins (minimal mode), so for a fixed structure the order is shortlex, simplest first
 nxt:{m:0; p:`long$(); go:1b; while[go; p,:v:pick m; $[null c:TX (m;v); go:0b; m:c]]; p}
@@ -269,7 +272,7 @@ check:chk[::]
 lf:`spec`prop`choices!(::;::;`long$())               / the last failure; again[] rechecks it
 again:{recheck[lf`spec;lf`prop;lf`choices]}
 / a suite: dict of name -> (spec;prop); one report per failure, one row per property
-chks:{[c;d] if[99h<>type d; '"qc: checks takes a dict of name -> (spec;prop)"]; r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed)}[c]'[key d;value d];
+chks:{[c;d] if[$[not dct d; 1b; not all 2=count each value d]; '"qc: checks takes a dict of name -> (spec;prop)"]; r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed)}[c]'[key d;value d];
   tb:flip `name`ok`why`stop`n`shrinks`seed!flip r; if[0<conf[c]`v; show tb]; tb}
 checks:chks[::]
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded

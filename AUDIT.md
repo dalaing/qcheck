@@ -127,15 +127,16 @@ Clean. `lst`, `sm`, `sub`/`subb` and `such`'s `try` spans all open and close on 
 `flt` and `gid` draw inside the enclosing `call` span.
 
 ### C14 — the error vocabulary is closed and classified
-- [ ] **break** — bare q errors reach the user for malformed input, where a `qc: …` usage error belongs
+- [x] **break** — bare q errors reach the user for malformed input, where a `qc: …` usage error belongs
   (each reproduced): a non-symbol label in `classify`/`label`/`cover` (`qc.q:180-184`) raises `type` from
   `covt` at report time; `tab`/`tabr` given a keyed table (`qc.q:149`) raises `nyi`; `checks` given a keyed
-  table (`qc.q:272`) raises `rank`; `sm` given a keyed table as `h` (`qc.q:164`) raises `rank`; a keyed table as
-  the config (`qc.q:190`) raises `rank`; `one` of a dict and `freq` with non-numeric weights (`qc.q:87-88`)
-  raise `type`.
-- [ ] **break** `qc.q:190` `conf` silently accepts unknown keys: `.qc.chk[enlist[`seeed]!enlist 5; …]` runs with
+  table (`qc.q:272`), `sm` given a keyed table as `h` (`qc.q:164`) and a keyed table as the config (`qc.q:190`)
+  raise `type` (the audit first said `rank`: that came from a malformed test literal, `([k:`n]v:5)` with atom
+  columns is itself a rank error); `one` of a dict and `freq` with non-numeric weights (`qc.q:87-88`) raise
+  `type`.
+- [x] **break** `qc.q:190` `conf` silently accepts unknown keys: `.qc.chk[enlist[`seeed]!enlist 5; …]` runs with
   the default seed and says nothing.
-- [ ] **spirit** `qc.q:226` `'"qc: tree"` uses the usage-error spelling for an internal invariant that a user can
+- [x] **spirit** `qc.q:226` `'"qc: tree"` *(now reads "internal error in the choice tree, please report")* uses the usage-error spelling for an internal invariant that a user can
   never cause. (Choice-tree code, this change.)
 - `t/names.q` enforces the literals; `t/outcomes.q:11-15` exercises every class in both phases. Clean there.
 
@@ -167,10 +168,10 @@ Clean after this change; `t/stop.q` covers exhaustion, the tree, the budget swit
 fallback. Two loose ends are filed under C4 (the `TX` sentinel) and C14 (`qc: tree`).
 
 ### C20 — the library never applies a value it has not checked is callable
-- [ ] **spirit** `qc.q:272` `chks` does not check that each entry is a `(spec;prop)` pair. A bare lambda is caught
+- [x] **spirit** `qc.q:272` `chks` does not check that each entry is a `(spec;prop)` pair. A bare lambda is caught
   downstream by `need` ("the property must be a function"); a bare generator by the canary ("too many
   arguments; the configurable form is .qc.int r") — both reproduced, both misleading.
-- [ ] **spirit** `qc.q:38` `fn` admits `::` (it is `101h`, pitfall 10), so `need` passes it everywhere: `sized (::)`
+- [x] **spirit** `qc.q:38` `fn` admits `::` (it is `101h`, pitfall 10), so `need` passes it everywhere: `sized (::)`
   draws the size itself as a constant (reproduced: 100), `such[::] g` is accepted and then raises a bare `type`
   on list values (reproduced). The `::` *property* is special-cased (`qc.q:248`); generator slots are not.
 
@@ -217,12 +218,12 @@ beside column `n`; `spikes/a15_rec.q:46` comments on it. Nothing exposed.
 
 **6. `xs,:y` does not promote a typed vector.** *Relies*: `qc.q:97` `xs:xs,enlist x`, `:111,116` `cs:cs,enlist c`,
 `:51` choices cast to long before `C,:`; `:229` `p,:v` is long onto long.
-- [ ] *Exposed*: `qc.q:180` `LX::distinct LX,s` — a non-symbol label promotes `LX` to a general list, which is
+- [x] *Exposed*: `qc.q:180` `LX::distinct LX,s` — a non-symbol label promotes `LX` to a general list, which is
   what breaks `covt` later (C14).
 
 **7. `rand 0`, `rand -k`, `1+0W`.** *Relies*: `qc.q:54` `unif` guards the width with `0<n`; `qc.q:58-59` `mix`
 only calls `rand` on `8`, `5`, `2`, `2 xexp …` and `1+bits …` (never below 2).
-- [ ] *Exposed*: `qc.q:52` `fresh` with all-zero weights calls `rand 0f`, gets 0, and `binr` picks alternative 0 —
+- [x] *Exposed*: `qc.q:52` `fresh` with all-zero weights calls `rand 0f`, gets 0, and `binr` picks alternative 0 —
   `freq[0 0] (a;b)` always yields `a` with no error (reproduced); `freq` validates negatives but not "all zero".
 - [ ] The comment at `qc.q:47` says `fresh` is the only call site of `rand`; `unif` and `mix` also call it (they
   are `fresh`'s helpers).
@@ -233,7 +234,7 @@ only calls `rand` on `8`, `5`, `2`, `2 xexp …` and `1+bits …` (never below 2
 
 **10. `::` is `101h`.** *Relies*: `qc.q:70` `dr`, `:351` `kind`, `:369` `df` test `(::)~x` first or route `101h`
 harmlessly.
-- [ ] *Exposed*: `qc.q:38` `fn:{type[x] within 100 112}` therefore accepts `::` — see C20.
+- [x] *Exposed*: `qc.q:38` `fn:{type[x] within 100 112}` therefore accepts `::` — see C20.
 
 **11. Symbols intern forever.** *Relies*: `qc.q:137-138` bounded default alphabet; `qc.q:64` `lbl` interns one
 symbol per distinct projection *structure*; `qc.q:348` `dbf` one per `(spec;prop)`; `qc.q:106` `tabs` one per
@@ -301,9 +302,10 @@ q-sql sites (`:302,304,307,314`) touch only columns and locals.
 **28. `f[::]`; a keyed table is `99h`.** Keyed-table checks present: `qc.q:70` `dr`, `:164` `sm`'s `cmds`,
 `:187` `shape`, `:191` `byname`, `:352` `kind`, `:375` `df`. *Relies*: `qc.q:172` `c[j;`post][m;a;]` elides
 properly; `examples/sm_ipc.q:14` uses `::` as a trap handler; `qc.q:151` `ktab` passes `::` as `d` explicitly.
-- [ ] *Exposed* — keyed-table check missing at: `qc.q:149` `tabr` (`99h<>type cg`, raises `nyi`), `:272` `chks`
-  (`99h<>type d`, raises `rank`), `:190` `conf` (`99h=type x`, raises `rank`), `:164` `sm`'s `h` (`smh,h`, raises
-  `rank`), `:206` `named` (harmless: a keyed-table spec is a constant). Each reproduced.
+- [x] *Exposed* — keyed-table check missing at: `qc.q:149` `tabr` (`99h<>type cg`, raises `nyi`), `:272` `chks`
+  (`99h<>type d`, raises `type`), `:190` `conf` (`99h=type x`, raises `type`), `:164` `sm`'s `h` (`smh,h`, raises
+  `type`), `:206` `named` (harmless: a keyed-table spec is a constant). Each reproduced. *(Fixed: one `dct`
+  predicate used at all four sites.)*
 - [ ] The other half of the pitfall does not reproduce on this build: `{x}[::]` applies and returns `::` (type
   `101h`, not a projection), and `{[a;b] (a;b)}[::;1]` is `(::;1)`. The pitfall text should say what is meant or
   be dropped.
@@ -333,7 +335,7 @@ failing when the value is not a table.
 2. [x] **The harness (C2).** Make `.t.t` fail, not raise, on a raising assertion — take the condition as a lambda or
    have the harness trap each test — so one broken property no longer hides the rest of its file. Then the
    dependent `and` chains in `t/` can stay as they are or become conds at leisure.
-3. [ ] **Usage errors (C14, pitfall 28, C20).** `qc: …` for: keyed tables at `conf`, `tabr`, `chks`, `sm`'s `h`;
+3. [x] **Usage errors (C14, pitfall 28, C20).** `qc: …` for: keyed tables at `conf`, `tabr`, `chks`, `sm`'s `h`;
    non-symbol labels in `label`/`classify`/`cover`; unknown config keys; all-zero `freq` weights; non-pair
    `checks` entries; `one`/`freq` given a dict. Spell `qc: tree` as an internal error or drop it.
 4. [ ] **Seeds (C8).** One `system"S n"` at the top of `t/contracts.q`, `t/core.q`, `t/ranges.q`, `t/review.q`,
