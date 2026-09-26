@@ -528,9 +528,12 @@ that assumed a `rec` value is a node.
 kept for "no value" scalars and for the `::` spec and property. The result dict, the shrink history (M2), the
 coverage and trace tables (M3, M5) all follow this. Origin: joining a failure dict onto a `::` sentinel.
 
-**C5 — a name is free iff `not x in .Q.res,key .q`.** `key .q` holds the keywords defined in q.k; `.Q.res` the
-primitives (`bin`, `cov`, `like` …); both are reserved. Library names are chosen by that test and `t/names.q`
-asserts it at load; the advice to users is the same one-liner. Origin: `bin`, `tables`, `cov`.
+**C5 — a name is free iff `not x in .Q.res,key .q`, and a local never shadows an engine global.** `key .q` holds
+the keywords defined in q.k; `.Q.res` the primitives (`bin`, `cov`, `like` …); both are reserved. `t/names.q`
+scans the source (strings and comments blanked) for every parameter, local and column name, and fails on a
+reserved word or on a lambda local that shares a name with an engine global — the review rounds found
+twenty-two of those (`C`, `t`, `i`, `N`, `ns`), none yet a bug, each one edit away from being one. Origin:
+`bin`, `tables`, `cov`; then `ss`, `sv`, `cols`, `keys`, `in`.
 
 **C6 — a top-level draw is an example.** `draw` entered at depth 0 outside a run resets the example state
 first (keeping the size), so each interactive draw stands alone, `.qc.C` and `.qc.E` afterwards show exactly
@@ -556,7 +559,10 @@ never by retrying.
 **C9 — engine state is restored at the example boundary, from run-level values.** Nothing restores what it
 changed; `reset` sets every piece of per-example state from values the run owns. The size has a *base* `bs`
 (set per example by `chk`, by `new` interactively); `reset` sets `sz` from it and the entry points' error
-handlers restore it. `small` and `sized` still restore on success, but correctness does not depend on that.
+handlers restore it. `small` and `sized` still restore on success, but correctness does not depend on that. The audit in the review
+rounds extended this to every exit: `chk` and `recheck` restore the run flag *and* the effective config on
+error; a state machine's `fini` runs on every way out of a step, including a discard inside `gen`; and the
+label dict is keyed by structure so a composition built per draw cannot grow it.
 Origin: an error inside `.qc.small` at the REPL left the size halved for good, because the next top-level draw
 reset with the halved value.
 
@@ -623,18 +629,36 @@ full-range choices overflow and a null compares *low*, so `prd` must see `0w` no
 escapes `chk` must clear the run flag on its way out (C9), or every later run in the session refuses as
 nested. Origin: the two items deferred from C7 and C15, which turned out to be the same question.
 
+**C20 — the library never applies a value it has not checked is callable.** In q, applying a non-function
+indexes it, and a small integer is an IPC handle: `5 @ x` writes to handle 5. Every site where the library
+applies something a user handed it — the property, `sized`'s function, `such`'s predicate, `rec`'s node, a
+state machine's hooks and columns, `checks`' pairs — goes through `need` first and fails with `qc: … must be a
+function`; a lambda property's arity is checked against a list spec up front. Origin: pitfall 1 seen from the
+library's side, during the review rounds.
+
+**C21 — arithmetic on choice bounds is done in floats, or guarded.** A difference, product or midpoint of two
+longs from a full range overflows, the result is `0N` or wraps, and a null compares *low* — so an overflow does
+not fail, it quietly makes the wrong branch look smaller. `wid`, the shortlex key (`zig`), the binary search's
+midpoint and the space size (`prd`) all compute in floats; `rec` refuses sizes whose counting tables would
+overflow. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null.
+
 **C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` as a script and fails
 on the first error, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
 strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
 mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
-tested over. Origin: README snippets verified by hand once, and a dispatcher the dogfooding had not reached.
+tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
+promised and never written). And the harness fails a test whose result is not a boolean instead of letting
+`all` coerce it — a dozen test bugs across the milestones had passed that way. Origin: README snippets verified
+by hand once, and a dispatcher the dogfooding had not reached.
 
 **C17 — measure the distribution you ship, on the ranges people use.** A5 measured the integer mixture on a
 symmetric range and it looked right; on `int 0 1000`, the commonest shape, a random sign on the magnitude
 clamped half the draws to the bound and 56% of values were 0 — and the same draw set `rec`'s node count, so
 most engine trees were leaves while A15's spike, with its own uniform draw, showed the intended spread. Every
 fresh-draw law now has a distribution test in `t/core.q` on a one-sided and a symmetric range, and `rec`
-draws its node count uniformly, as designed.
+draws its node count uniformly, as designed. `t/dist.q` now measures every hint and every generator on the
+ranges people use: list lengths, alternatives, weights, bits, the full-domain wrapper, signs, float means, tree
+and step counts — with pinned seeds and multi-sigma bounds, never exact rates.
 
 ---
 
@@ -781,3 +805,28 @@ For the implementer:
     so `.qc.const (::)` still draws to `::`. A keyed table is `99h`: every dict test needs `not 98h=type key x`.
 29. `in` is reserved and cannot be a column name; the trace uses `arg` and `res`. A list literal
     `(f[]; g[])` evaluates right to left, so `(.qc.minimal g; count .qc.C)` counts before it draws.
+
+---
+
+## 5. Review rounds
+
+After M6 the user asked for an intensive review and then for repeated rounds guided by principles that
+generalise the *classes* of bug met across the milestones, stopping only when a round finds nothing. Each row
+names the principle, the class it generalises, what the round found when the principle was applied to the
+whole codebase rather than to the instance that had surfaced it, and the mechanical check that now enforces it.
+
+| round | principle | what applying it found | check |
+|---|---|---|---|
+| 0 | the intensive review itself | `flt` on a huge range errored; `sm` took a plain dict for a keyed table and skipped `fini` on errors; `eq`'s order row leaned on an accident; `elem`/`one`/`freq` failed obscurely on empty input; two locals shadowed engine globals; the ok-line suffix indexed a possibly missing key | `t/review.q` |
+| 1 | C5 extended: names and shadowing | no reserved identifier anywhere; twenty-two locals shadowing `C t i N ns` | `t/names.q` scan |
+| 2 | C20: callability; C2 audit | nine application sites unguarded (`sized 5` would have written to IPC handle 5); one `and` that ran the shrinker's passes after the budget | `need`; `t/review.q` |
+| 3 | C21: bounds arithmetic in floats | `zig 0W` overflowed the shrink key; binary search stopped on full ranges; counting tables went infinite silently | `t/review.q` |
+| 4 | C9 audit: restored on every exit | `recheck` unprotected; a run's config leaked into the REPL; `fini` skipped on a discard; composition labels could grow per draw | `t/review.q` |
+| 5 | G1 audit: exact identity; C18 extended | the failure-db key hashed a width-truncated string; `collect` labels truncated; `.qc.lin` missing; the harness had been coercing non-booleans | `t/docs.q`; strict `.t.t` |
+| 6 | C17 audit: measured distributions | the tests' first bounds were wrong, the distributions right (full-domain longs are ~9% specials because the normal branch's boundary picks include `±0W`) | `t/dist.q` |
+| 7 | convergence: every scan and audit rerun, the library read once more | one input guard (negative weights) | — |
+| 8 | convergence, repeated | nothing | — |
+
+Two of the round-4/5 fixes were themselves wrong on first writing (`md5` takes chars, not bytes; a list-valued
+dict key indexes several keys), which is the same lesson as C2/C3 at M6: the conventions exist because the
+fixes are subject to them too. Converged: the last round found nothing.
