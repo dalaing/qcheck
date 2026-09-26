@@ -1,6 +1,6 @@
 # qcheck — property-based testing for q
 
-*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19.*
+*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
@@ -265,13 +265,20 @@ Run loop for one property — **`n` is a budget; the run stops when it has learn
 one file per property keyed by `cfg`name` or an md5 of the spec and property source; a saved example that no
 longer fails is deleted, a shrunk one is saved) — if the replay overruns or clamps any choice the generator has
 changed since it was saved, and `recheck` says so rather than silently testing a different input; (1) example 0 in *minimal mode* — every fresh draw returns its origin, so the
-simplest input is always tried first, for free — and it reveals the input space's ranges: if their product
-fits the budget, (2a) the run **enumerates** the space in shortlex order instead of sampling (example `t` is the
-mixed-radix digits `w vs t` mapped onto each range's values nearest the origin first), every input once, and
-stops `exhausted` when it has tried them all — `ok 4 tests, exhausted` is a proof, not a sample; a constant
-spec is the one-input case. If a replay's structure differs from example 0's (the structure depended on a
-value), enumeration is abandoned and no exhaustion is claimed. Otherwise (2b) `n` examples with size ramping
-0→100, and if a coverage requirement is still open at the budget (the requirement lies between the Wilson
+simplest input is always tried first, for free; (2a) every example's choices are recorded as a path in the
+run's **choice tree** (`.qc.TR`: one node per prefix, holding the range drawn there or the conclusion an
+example reached there; a node is exhausted when it concludes or all of its children are — Hypothesis's
+DataTree), and while every recorded path has a product of widths within the budget the run **enumerates**:
+the next example is the tree's simplest open branch — descend from the root taking at each node the value
+nearest the origin whose child is absent or open, then origins for the rest — so every input is tried once,
+in shortlex order for a fixed structure, and the run stops `exhausted` when the root is: `ok 4 tests,
+exhausted` is a proof, not a sample, and a constant spec is the one-input case. This covers structure that
+depends on earlier choices (`one`, short lists, `rec` at a small size, small state machines) because the tree
+is the structure. A path whose product exceeds the budget switches the run to sampling for good (a tree whose
+every path fits has at most `n` leaves, so the switch is only ever taken when the space may not fit); so does
+a contradiction — a range or an ending at a prefix that differs from what an earlier example found there,
+meaning the structure depended on something other than the choices — and then no exhaustion is claimed.
+Otherwise (2b) `n` examples with size ramping 0→100, and if a coverage requirement is still open at the budget (the requirement lies between the Wilson
 lower and upper bounds) the run continues until it is settled or `cfg`nmax` (default `10*n`) is reached; (3) on failure,
 shrink (§1.5); (4) report (§1.6). Discards are counted by cause (`filter`, `toodeep`, `toolarge`, explicit);
 more than `disc`×`n` of them ends the run as "gave up", and the report names the dominant cause.
@@ -413,7 +420,7 @@ is executed by `t/doctest.q` (seed 7) and must print exactly this:
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100;{.qc.eq[x;asc x]}];
-FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
+FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -438,7 +445,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 1 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 6 tests, 3 shrinks (44 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -625,9 +632,12 @@ run enumerates the space in shortlex order — `w vs t` for the digits, each ran
 first — and abandons the claim if a replay's structure differs from example 0's), at the budget `n` with no
 coverage question open, `cover` when an open question was settled by extending the run, `nmax` when it stayed
 open to the cap, or `fail`/`gaveup` (a space whose every input was discarded is a give-up, not a pass).
-Exhaustion is exact for value-independent structure (booleans, enums, small ranges, tuples and records of
-them, the `spc` layout) and silent otherwise; Hypothesis's DataTree, which enumerates value-dependent
-structure too, is the next step if it is ever wanted. Two things it taught while being built: the widths of
+Exhaustion was first exact only for value-independent structure (booleans, enums, small ranges, tuples and
+records of them, the `spc` layout): example 0 revealed the ranges and the run replayed their mixed-radix digits,
+abandoning the claim if a later example's structure differed. The choice tree replaced that: the tree *is* the
+structure, so `one`, short lists and small state machines are exhausted too, the fixed-structure order is
+unchanged, and the switch to sampling is taken on the first path whose product of widths exceeds the budget
+(every path fitting bounds the leaves by `n`) or on a contradiction. Two things it taught while being built: the widths of
 full-range choices overflow and a null compares *low*, so `prd` must see `0w` not `0N`; and an error that
 escapes `chk` must clear the run flag on its way out (C9), or every later run in the session refuses as
 nested. Origin: the two items deferred from C7 and C15, which turned out to be the same question.
@@ -858,4 +868,4 @@ the run flag poisoning a session, `cf` leaking, `dp` left dirty — outcomes' st
 truncated rerun lines and db keys — reportx and review; the composition label growth — contract 8; C16 atoms
 — review and the registry's single-item rows; every README line that did not parse — doctest and readme.
 Building the suite found one more inconsistency (an engine signal raised in the property phase was a
-falsification, not a discard) and nothing else: 1013 tests, all green.
+falsification, not a discard) and nothing else: 1013 tests, all green; 1019 with the choice tree's cases in `t/stop.q`.

@@ -24,6 +24,12 @@ LB:(`symbol$())!`long$()    / label counts over the run
 LX:`symbol$()               / labels of the current example
 TB:(`symbol$())!()          / counting tables for rec, per arity range
 run:0b                      / inside chk/recheck (or a top-level draw): draws share one example
+/ the choice tree of the current run (C19): one node per prefix of choices. A node holds the range drawn at it
+/ (lo hi o, width w) or the conclusion c an example reached there (pass fail disc); nc children exist, nx of
+/ them exhausted. A node is exhausted (x) when it concludes or all w of its children are; root exhausted = every
+/ input tried. TX: (parent; value) -> node.
+TR:([]p:`long$();v:`long$();lo:`long$();hi:`long$();o:`long$();w:`float$();nc:`long$();nx:`long$();x:`boolean$();c:`symbol$())
+TX:(enlist 0N 0N)!enlist 0N
 
 reset:{[p;s;m;h] P::"j"$(),p; i::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
 new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
@@ -212,24 +218,43 @@ result:{[why;tests;seed;spec;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`
 / a coverage requirement is open while the run is not yet confident either way (C15, C19)
 opn:{[tests] tb:covt tests; any (tb[`lo]<tb`req)&tb[`req]<=tb`hi}
 wid:{[lo;hi] $[null d:hi-lo; 0w; d<0; 0w; 1+"f"$d]}      / a range's width as a float; a full long range is infinite, not null
+/ ---- the choice tree: the run enumerates a small space by walking it, and knows when it has tried every input (C19)
+tnew:{TR::0#TR; TR,:(0N;0N;0N;0N;0N;0n;0;0;0b;`); TX::(enlist 0N 0N)!enlist 0N;}
+xch:{[m;v] $[null c:TX (m;v); 0b; TR[c;`x]]}            / is the child of node m at value v exhausted?
+/ the value nearest the origin whose child is absent or open: an open node has fewer than w exhausted children,
+/ so the nearest nx+1 values in range include one
+pick:{[m] r:TR m; o:r`o; d:0; while[d<=1+r`nx; if[(v:o+d) within r`lo`hi; if[not xch[m;v]; :v]]; if[(v:o-d) within r`lo`hi; if[not xch[m;v]; :v]]; d+:1]; '"qc: tree"}
+/ the next input to try: descend from the root by pick until a child is absent. The prefix ends there; the rest
+/ of the example is origins (minimal mode), so for a fixed structure the order is shortlex, simplest first
+nxt:{m:0; p:`long$(); go:1b; while[go; p,:v:pick m; $[null c:TX (m;v); go:0b; m:c]]; p}
+/ record the example's choices as a path ending in conclusion s, and say whether enumeration goes on. It stops
+/ when the tree contradicts the path — a range or an ending differs from what an earlier example found at the
+/ same prefix, so the structure depended on something other than the choices and no claim is safe — or when the
+/ product of the widths along the path exceeds the budget n: a tree whose every path has product <= n has at
+/ most n leaves (the leaves' reciprocal products sum to at most 1), so while it holds the run will finish
+tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
+  while[ok and k<count V; r:TR m;
+    $[not `=r`c; ok:0b; null r`lo; [TR[m;`lo]:LO k; TR[m;`hi]:HI k; TR[m;`o]:O k; TR[m;`w]:wid[LO k;HI k]]; not (r[`lo]=LO k) and r[`hi]=HI k; ok:0b];
+    if[ok; pz*:TR[m;`w]; if[null c:TX (m;V k); c:count TR; TR,:(m;V k;0N;0N;0N;0n;0;0;0b;`); TX[(m;V k)]:c; TR[m;`nc]+:1]; m:c]; k+:1];
+  if[ok; r:TR m; $[not null r`lo; ok:0b; not `=r`c; ::; [TR[m;`c]:s; TR[m;`x]:1b; TR[m;`w]:1f; p:r`p; go:1b;   / (a repeated input concludes nothing new)
+    while[go and not null p; TR[p;`nx]+:1; $[TR[p;`nx]>=TR[p;`w]; [TR[p;`x]:1b; p:TR[p;`p]]; go:0b]]]]];
+  ok and pz<=n}
 / the run stops when it has learned what it can (C19): a failure, a give-up, an exhausted space, the budget n
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
-/ minimal input; if the space it reveals fits the budget the run enumerates it in shortlex order instead of
-/ sampling (every input once), abandoning enumeration if a replay's structure differs from example 0's.
+/ minimal input; while every path through the choice tree fits the budget the run enumerates the space
+/ (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
 tidy:{run::0b; cf::cfg; dp::0; st::();}                  / the example boundary on the way out: flag, config, depth, spans (C9)
 chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
   LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; nmax:$[null c`nmax; 10*n; c`nmax]; dc:(`symbol$())!`long$();
-  tests:0; nd:0; o:(`symbol$())!(); k:0; en:0b; ti:0; spz:1f; VS:(); LO:(); HI:(); W:(); ext:0b; run::1b;
+  tests:0; nd:0; o:(`symbol$())!(); k:0; en:1b; ext:0b; tnew[]; run::1b;
   f:dbf[spec;prop]; if[not null f; if[count key f; reset[get f;c`sz;0b;0b]; r:run1[spec;prop]; $[`fail=r`st; o:r; hdel f]]];
-  while[$[count o; 0b; nd>n*c`disc; 0b; en; ti<spz; tests<n; 1b; not opn tests; 0b; tests<nmax];
+  while[$[count o; 0b; nd>n*c`disc; 0b; en; not TR[0;`x]; tests<n; 1b; not opn tests; 0b; tests<nmax];
     if[tests>=n; ext:1b];
-    $[0=k; reset[`long$();c`sz;1b;0b]; en; reset[VS@'W vs ti;c`sz;0b;0b]; reset[`long$();c[`sz]&(c[`sz]*tests) div n;0b;0b]];   / example 0: origins, at full size so the ranges are the real ones
+    $[en; reset[$[0=k; `long$(); nxt[]];c`sz;1b;0b]; reset[`long$();c[`sz]&(c[`sz]*tests) div n;0b;0b]];   / enumerating: the tree's next prefix, the rest origins, at full size so the ranges are the real ones; sampling: fresh, size ramping
     r:run1[spec;prop];
-    if[0=k; LO:C`lo; HI:C`hi; W:$[count LO; wid'[LO;HI]; 1#1f]; spz:prd W; en:spz<=n; W:"j"$W; ti:1;
-      if[en and count LO; VS:{[lo;hi;o] r:lo+til 1+hi-lo; r iasc zig r-o}'[LO;HI;C`o]]];   / each range's values, nearest the origin first
-    if[en and k>0; if[not (i=count P) and (C[`lo]~LO) and C[`hi]~HI; en:0b]; ti+:1];
+    if[en; en:tput[n;r`st]];
     $[`pass=r`st; [tests+:1; {LB[x]:1+0^LB x} each LX]; `disc=r`st; [nd+:1; dc[r`why]:1+0^dc r`why]; o:r];
     k+:1];
   gu:(nd>n*c`disc) or (0=tests) and nd>0;                          / gave up: too many discards, or nothing but discards

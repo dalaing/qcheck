@@ -49,7 +49,7 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
+FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
@@ -58,7 +58,7 @@ rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
-FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
+FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -109,6 +109,10 @@ rerun: .qc.again[]  or  .qc.recheck[spec;prop;7]
 
 ## Small spaces are enumerated, not sampled
 
+The run walks a tree of the choices it has made, simplest first, and stops when every branch has been tried.
+That covers structure that depends on earlier choices — alternatives, short lists, small state machines — so
+`exhausted` is a proof over every input the spec can produce, not a sample.
+
 ```q
 q).qc.check[.qc.bool; {1b}];
 ok 2 tests, exhausted (seed 7)
@@ -117,6 +121,12 @@ FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
 a: 3
 b: 0b
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;3 0]
+q).qc.check[.qc.one (.qc.bool; .qc.int 0 9); {1b}];
+ok 12 tests, exhausted (seed 7)
+q).qc.check[.qc.lst[0 3] .qc.bool; {x~asc x}];
+FAIL falsified after 6 tests, 1 shrinks (20 attempts, seed 7)
+x: 10b
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
 
 ## Coverage
@@ -141,13 +151,13 @@ q).qc.checks `comm`sorted!(((.qc.int 0 9;.qc.int 0 9);{(x+y)=y+x}); (.qc.list .q
 --- comm
 ok 100 tests, exhausted (seed 7)
 --- sorted
-FAIL falsified after 1 tests, 11 shrinks (37 attempts, seed 7)
+FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 name   ok why       stop      n   shrinks seed
 ----------------------------------------------
 comm   1  ok        exhausted 100 0       7
-sorted 0  falsified fail      1   11      7
+sorted 0  falsified fail      5   1       7
 ```
 
 ## A state machine against a table
@@ -158,7 +168,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 1 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 6 tests, 3 shrinks (44 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------

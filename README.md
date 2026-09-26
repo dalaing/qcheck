@@ -6,7 +6,7 @@ the style of Hedgehog, and state-machine testing. One file, no dependencies, kdb
 ```q
 q)\l qc.q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
+FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
@@ -54,8 +54,9 @@ spec:.qc.int 0 9; prop:{x<10}
 ```
 
 A run stops when it has learned what it can: `ok 2 tests, exhausted` means every input the spec can produce
-was tried (small spaces are enumerated, simplest first); otherwise it samples `n` inputs, and keeps going only
-to settle an open coverage question. A property passes if it returns `::` or all of a boolean result; any
+was tried (a small space is enumerated by walking the tree of choices made so far, simplest first, so
+alternatives, short lists and small state machines count too); otherwise it samples `n` inputs, and keeps going
+only to settle an open coverage question. A property passes if it returns `::` or all of a boolean result; any
 signal fails it. Inside a property:
 `.qc.eq[a;b]` explains a mismatch as a diff table, `.qc.note x` attaches a value to the report,
 `.qc.classify[`big;x>5]`, `.qc.collect x` and `.qc.cover[`big;90;x>5]` build the coverage table, and `cover`
@@ -63,7 +64,7 @@ fails the run only when it is confident the rate is under the requirement.
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
-FAIL falsified after 1 tests, 10 shrinks (27 attempts, seed 7)
+FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
