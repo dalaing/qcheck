@@ -59,7 +59,8 @@ alternatives, short lists and small state machines count too); otherwise it samp
 only to settle an open coverage question. A property passes if it returns `::` or all of a boolean result; any
 signal fails it. Inside a property:
 `.qc.eq[a;b]` explains a mismatch as a diff table, `.qc.note x` attaches a value to the report,
-`.qc.classify[`big;x>5]`, `.qc.collect x` and `.qc.cover[`big;90;x>5]` build the coverage table, and `cover`
+`.qc.classify[`big;x>5]`, `.qc.collect x` (by value: one symbol per distinct value, so keep the space small) and
+`.qc.cover[`big;90;x>5]` build the coverage table, and `cover`
 fails the run only when it is confident the rate is under the requirement.
 
 ```q

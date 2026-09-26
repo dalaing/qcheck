@@ -115,7 +115,7 @@ Clean in the library (`lst` and `sm` caps, `rec`, `small`); `t/core.q:113` delib
 rule. `lin` overflows for a huge `hi` — filed under C21.
 
 ### C12 — layout is order
-- [ ] **spirit** `qc.q:168-170` — a state-machine step's length depends on the command's `gen`: a `{::}` gen draws
+- [x] **spirit** `qc.q:168-170` — a state-machine step's length depends on the command's `gen`: a `{::}` gen draws
   nothing, so a pop step is two choices and a push step three. Under shortlex the shrinker therefore prefers
   input-less commands regardless of meaning. Inherent in §1.7's design and probably right, but it is an
   exception to "every alternative draws the same number of choices" that the design does not state.
@@ -239,8 +239,9 @@ harmlessly.
 **11. Symbols intern forever.** *Relies*: `qc.q:137-138` bounded default alphabet; `qc.q:64` `lbl` interns one
 symbol per distinct projection *structure*; `qc.q:348` `dbf` one per `(spec;prop)`; `qc.q:106` `tabs` one per
 arity range.
-- [ ] *Exposed*: `qc.q:182` `collect` interns one symbol per distinct rendered *value*, unbounded over a wide
-  generator (the comment says "bounded by the distinct values", which is the problem, not the bound).
+- [x] *Exposed*: `qc.q:182` `collect` interns one symbol per distinct rendered *value*, unbounded over a wide
+  generator (the comment says "bounded by the distinct values", which is the problem, not the bound). *(Documented
+  in §1.4 and the README as "for small value spaces"; labels stay symbols because the cover table is keyed by them.)*
 
 **12. `.Q.s` truncates to `\c` and flips nested tables.** *Relies*: `qc.q:354` `wide` around `fmt` and `collect`;
 `qc.q:348` `dbf` hashes `-8!` bytes; `qc.q:396` the rerun line uses `string`; `tools/doc_child.q:4,6` sets
@@ -306,7 +307,7 @@ properly; `examples/sm_ipc.q:14` uses `::` as a trap handler; `qc.q:151` `ktab` 
   (`99h<>type d`, raises `type`), `:190` `conf` (`99h=type x`, raises `type`), `:164` `sm`'s `h` (`smh,h`, raises
   `type`), `:206` `named` (harmless: a keyed-table spec is a constant). Each reproduced. *(Fixed: one `dct`
   predicate used at all four sites.)*
-- [ ] The other half of the pitfall does not reproduce on this build: `{x}[::]` applies and returns `::` (type
+- [x] The other half of the pitfall does not reproduce on this build: `{x}[::]` applies and returns `::` (type
   `101h`, not a projection), and `{[a;b] (a;b)}[::;1]` is `(::;1)`. The pitfall text should say what is meant or
   be dropped.
 
@@ -322,8 +323,8 @@ failing when the value is not a table.
 
 - [x] `qc.q:34` `reset` casts the prefix with `"j"$`, so `.qc.recheck[…; enlist 3.7]` silently replays choice 4.
 - [x] `qc.q:47` comment: "The only call site of rand is fresh" — `unif` and `mix` call it too (pitfall 7).
-- [ ] `DESIGN.md` §4 pitfall 28's `f[::]` claim is inaccurate on kdb+ 5.0 (pitfall 28 above).
-- [ ] `DESIGN.md` §1.7/C12: the state-machine step-length exception is undocumented (C12 above).
+- [x] `DESIGN.md` §4 pitfall 28's `f[::]` claim is inaccurate on kdb+ 5.0 (pitfall 28 above).
+- [x] `DESIGN.md` §1.7/C12: the state-machine step-length exception is undocumented (C12 above).
 
 ---
 

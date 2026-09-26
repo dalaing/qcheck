@@ -254,7 +254,8 @@ the same choice stream and shrink with everything else — this is what makes st
 
 Inside a property: `.qc.eq[a;b]` (q's `~`, explained: on failure the diff table is noted and the property
 fails with `"qc.eq"`; a reordered dict or table is reported as `order`), `.qc.note x` (Hedgehog's `annotate`),
-`.qc.label s`, `.qc.classify[s;b]`, `.qc.collect x` (label by value), `.qc.cover[s;pct;b]` (the run fails with
+`.qc.label s`, `.qc.classify[s;b]`, `.qc.collect x` (label by value: one symbol is interned per distinct value, for
+good — use it on small value spaces, pitfall 11), `.qc.cover[s;pct;b]` (the run fails with
 `why` `` `cover `` only when it is confident the label's rate is under `pct`: the Wilson 95% upper bound of the
 observed rate is below it, C15),
 `.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its spec, property and choices.
@@ -474,7 +475,8 @@ shrink candidates, `minimal`, `replay`, a saved failure, `again[]`, and after a 
 is part of `h` and not something the property does.
 
 A step's span holds its decision bit, command index and input draw and nothing else (C13), so deleting a step
-is one span deletion and misaligned command indices clamp to available commands; when no command is
+is one span deletion and misaligned command indices clamp to available commands (steps therefore differ in
+length by command, the one exception to C12's rule, stated there); when no command is
 available a forced stop is still recorded (C7). A false postcondition notes the trace, with the failing row's
 `ok` 0b, and raises `qc.post`; an error inside `run` or `post` notes the trace so far and raises `qc.run <e>`
 or `qc.post <e>`. These are **failure signals** (C14): although they arise while the spec is being drawn, they
@@ -596,7 +598,10 @@ with size" sentence in §1.5, which was stated as a fact and is a requirement.
 second, so an encoding's layout *is* its simplicity order. Two obligations follow: every alternative of a
 `one`, `freq` or `.qc.t` draws the same number of choices, or the shorter one is silently simpler; and fields
 are ordered so that the single-field moves the passes make are the moves you want (exponent before mantissa,
-node count before shape). Origin: A13, where `0w` outranked `100f` and `-0.5` could not reach `-1`.
+node count before shape). One deliberate exception: a state-machine step is as long as its command's input, so
+a command without an input (two choices) ranks simpler than one with (three) and the shrinker prefers it —
+acceptable, because a shorter trace with fewer inputs is what one wants to read. Origin: A13, where `0w`
+outranked `100f` and `-0.5` could not reach `-1`.
 
 **C13 — spans are units.** Whatever decides a thing's structure lives inside the thing's span — a list
 element's decision bit, a subtree's share, a state-machine step's command index and input — and every
@@ -824,8 +829,9 @@ For the implementer:
     is unaffected.
 27. Indexing a table with a list of column names returns the columns, not a row: `t[`a`b]` is two vectors,
     `t[0;`a]` is a cell — and two-index table access is **row first**: `t[`a;0]` is a type error.
-28. `f[::]` is a projection with the argument *elided*, not applied — but `g[]` fills elided arguments with `::`,
-    so `.qc.const (::)` still draws to `::`. A keyed table is `99h`: every dict test needs `not 98h=type key x`.
+28. `f[]` and `f[::]` are the same call: an elided argument arrives as `::`, so `.qc.const (::)` draws to `::` and a
+    generator cannot tell "called with nothing" from "called with `::`" (which is why the canary `d` works). A keyed
+    table is `99h`: every dict test needs `not 98h=type key x` — `dct` is that test, used at every dict boundary.
 29. `in` is reserved and cannot be a column name; the trace uses `arg` and `res`. A list literal
     `(f[]; g[])` evaluates right to left, so `(.qc.minimal g; count .qc.C)` counts before it draws.
 
