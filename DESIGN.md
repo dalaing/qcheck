@@ -653,9 +653,12 @@ library's side, during the review rounds.
 
 **C21 — arithmetic on choice bounds is done in floats, or guarded.** A difference, product or midpoint of two
 longs from a full range overflows, the result is `0N` or wraps, and a null compares *low* — so an overflow does
-not fail, it quietly makes the wrong branch look smaller. `wid`, the shortlex key (`zig`), the binary search's
-midpoint and the space size (`prd`) all compute in floats; `rec` refuses sizes whose counting tables would
-overflow. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null.
+not fail, it quietly makes the wrong branch look smaller. `wid`, the shortlex keys (`skey`, `bkey`, whose
+differences from the origin are taken in floats — a long difference *wraps* on a full range, which `0W^` did not
+catch), the binary search's midpoint, `pdup`'s and `pred`'s distances, `mix`'s magnitude, `lin`, the list and
+step caps and the choice tree's path product all compute in floats and saturate on the way back to longs; `rec`
+refuses sizes whose counting tables would overflow. The price is that two distances above 2^53 can compare
+equal. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null; the audit found the rest.
 
 **C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` and of this document
 as a script and fails on the first error (which is how a stale `.qc.str 0 5` in §1.3 was found), `t/examples.q`

@@ -52,12 +52,14 @@ ch:{[r;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:1;
   C,:(v;lo;hi;o); v}
 fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; 9h=type w; lo+sums[w] binr rand sum w;
   w~`u; unif[lo;hi]; mix[lo;hi;o]]}
-unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}   / width may overflow
+unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}   / a width that overflows (null or negative) draws from [lo;lo+0W) or (hi-0W;hi]: on the full long range that misses 0 (mix reaches it as the origin); `u is only used on small ranges
 bits:{$[null x; 63; x<0; 63; x<1; 1; count 2 vs x]}
 / boundary values one time in eight, else a random magnitude; the sign only goes where the origin leaves room
 / (a random sign on a one-sided range clamps half the draws to the bound: 56% zeros on 0..1000, C17)
-mix:{[lo;hi;o] $[0=rand 8; lo|hi&(o;lo;hi;o+1;o-1) rand 5;
-  lo|hi&o+$[o=lo; 1; o=hi; -1; 1 -1 rand 2]*"j"$rand 2 xexp rand 1+bits hi-lo]}
+/ the neighbours of the origin are guarded and the magnitude is added in floats, then saturated and clamped: o+1 at
+/ 0W and o+2^63 both wrap in longs (C21)
+mix:{[lo;hi;o] $[0=rand 8; (o;lo;hi;$[o<hi; o+1; o];$[o>lo; o-1; o]) rand 5;
+  lo|hi&"j"$("f"$o)+$[o=lo; 1; o=hi; -1; 1 -1 rand 2]*rand 2 xexp rand 1+bits hi-lo]}
 
 / ---- the interpreter --------------------------------------------------------------------------------
 / label = the generator's structure, with projections reduced to their lambdas: a composition built per draw
@@ -79,7 +81,7 @@ strict:{[p;s] top[p;0b;1b;s]}                         / the same with the prefix
 
 / ---- generators: config first, generator last, the implicit d is never supplied by users -------------
 int:{[r;d] dd[d;".qc.int r"]; ch[r;::]}
-lin:{[lo;hi] {[lo;hi;s] lo,lo+((hi-lo)*s) div 100}[lo;hi]}   / a range that widens linearly with size (C11)
+lin:{[lo;hi] {[lo;hi;s] lo,"j"$("f"$lo)+floor ((("f"$hi)-"f"$lo)*s)%100}[lo;hi]}   / a range that widens linearly with size (C11); in floats so lin[0;0W] does not wrap (C21)
 bit:{[p;d] dd[d;".qc.bit p"]; 1=ch[0 1 0;"f"$p]}
 bool:bit[0.5]
 const:{[x;d] dd[d;".qc.const x"]; x}
@@ -95,7 +97,7 @@ discard:{'"qc.discard"}
 / probability makes the length uniform on lo..m
 / every iteration records its decision bit, forced 1 under lo and forced 0 at the cap, so the structure is the
 / same at every size and a replay at a larger size still finds its stop (C7). span = decision bit + element.
-lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:r[1]&lo+sz; xs:(); n:0; go:1b;
+lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:"j"$("f"$r 1)&("f"$lo)+sz; xs:(); n:0; go:1b;   / the cap in floats: lo+sz wraps near 0W (C21)
   while[go; beg`el; go:1=$[n<lo; ch[1 1 1;::]; n<m; ch[0 1 0;(m-n)%1+m-n]; ch[0 0 0;::]];
     $[go; [x:draw g; end[]; xs:xs,enlist x; n+:1]; end[]]]; xs}
 list:lst[0 0W]
@@ -167,7 +169,7 @@ smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
 sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"];
-  r:rng h`steps; lo:r 0; mx:r[1]&lo+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;
+  r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;   / (cap in floats, C21)
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
     $[go; [j:av ch[(0;-1+count av;0);`u]; a:@[draw;c[j;`gen] m;{[h;e] h[`fini][]; 'e}[h]]; end[];   / fini on every exit; (a, not i: i is the cursor)
@@ -287,7 +289,7 @@ recheck1:{[spec;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;pro
 
 / ---- shrinking: edit the recorded choice vector, replay, keep what still fails and is smaller ------------
 zig:{(2*"f"$abs x)-x>0}                               / distance from origin: 0 1 -1 2 -2 ... (float: 2*0W overflows)
-skey:{[v;o] (count v; zig 0W^v-o)}                    / shortlex key; 0W^ guards the one overflowing range
+skey:{[v;o] (count v; zig ("f"$v)-"f"$o)}              / shortlex key; the distance in floats: a long difference wraps on full ranges (C21)
 less:{[a;b] $[a[0]<>b 0; a[0]<b 0; a[1]~b 1; 0b; (a[1]<b 1) first where a[1]<>b 1]}
 dl:{[v;s;e] (s#v),e _ v}
 pt:{[v;s;e;w] (s#v),w,e _ v}
@@ -318,7 +320,7 @@ pdesc:{cp::`desc; p:0b; j:0; while[j<count tb:spans[]; s0:tb[j;`s]; e0:tb[j;`e];
   ds:select from tb where l=l0,s>=s0,e<=e0,not (s=s0)&e=e0; ii:0; ok:0b;
   while[(ii<count ds) and not ok; ok:try pt[cv;s0;e0;cv ds[ii;`s]+til ds[ii;`w]]; ii+:1];
   $[ok; p:1b; j+:1]]; p}
-bkey:{[s;e] (e-s;zig 0W^cv[ix]-cC[`o] ix:s+til e-s)}    / shortlex key of one block
+bkey:{[s;e] (e-s;zig ("f"$cv ix)-"f"$cC[`o] ix:s+til e-s)}    / shortlex key of one block (floats, C21)
 ordr:{[ks] n:count ks; ix:til n; ii:0; while[ii<n-1; j:ii+1; while[j<n; if[less[ks ix j;ks ix ii]; ix[ii,j]:ix[j,ii]]; j+:1]; ii+:1]; ix}
 blk:{[c;ix] raze {[s;e] cv s+til e-s}'[c[ix;`s];c[ix;`e]]}
 psort:{cp::`sort; p:0b; j:0;
@@ -330,7 +332,7 @@ psort:{cp::`sort; p:0b; j:0;
        $[ok; p:1b; j+:1]]]]; p}
 pdup:{cp::`dup; p:0b; ix:where cv<>cC`o; g:ix each value group (flip (cv;cC`lo;cC`hi)) ix; g:g where 1<count each g; j:0;   / same value and range
   while[j<count g; ps:g j; ok:try @[cv;ps;:;cC[`o] ps];
-    if[not ok; d:cv[ps]-cC[`o] ps; go:1b; while[go and all 1<abs d; d:d div 2; go:try @[cv;ps;:;cC[`o][ps]+d]; ok:ok or go]];
+    if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[go and all 1<abs d; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];   / distances in floats (C21)
     if[ok; p:1b]; j+:1]; p}
 bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs ("f"$b)-"f"$a; m:"j"$(("f"$a)+"f"$b)%2; $[m in (a;b); a:b; try @[cv;j;:;m]; [b:m; p:1b]; a:m]]; p}   / float midpoint: b-a overflows on full ranges
 pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; j+:1]]]; p}
@@ -339,7 +341,7 @@ pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;
 pred:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1; vi:cv ii; oi:cC[`o] ii;
   $[vi=oi; ii+:1;
     [js:(ii+1+til 3) inter where (cC[`lo]=cC[`lo] ii)&cC[`hi]=cC[`hi] ii; ok:0b; n:0;
-     while[(n<count js) and not ok; j:js n; vj:cv j; k:(vi-oi)&cC[`hi][j]-vj;
+     while[(n<count js) and not ok; j:js n; vj:cv j; k:"j"$(("f"$vi)-"f"$oi)&("f"$cC[`hi] j)-"f"$vj;   / room to move, in floats (C21); a rounded candidate is clamped on replay
        ok:$[k>0; try @[cv;ii,j;:;(vi-k;vj+k)]; 0b];
        if[(not ok) and vj>cC[`o] j; ok:try @[cv;ii,j;-;1]]; n+:1];
      $[ok; p:1b; ii+:1]]]]; p}

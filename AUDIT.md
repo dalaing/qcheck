@@ -178,21 +178,21 @@ fallback. Two loose ends are filed under C4 (the `TX` sentinel) and C14 (`qc: tr
 ### C21 — arithmetic on choice bounds is done in floats, or guarded
 Handled: `wid` (`qc.q:220`), `zig` (`:285`), `bsr` (`:331`), `tput`'s product (`:238`), `pick` (`:226`, a wrap
 becomes `0N` and `within` rejects it).
-- [ ] **exposed** `qc.q:286` `skey` and `:317` `bkey` — `v-o` can *wrap*, not only null, and `0W^` catches only
+- [x] **exposed** `qc.q:286` `skey` and `:317` `bkey` — `v-o` can *wrap*, not only null, and `0W^` catches only
   nulls. Reproduced: `skey[enlist 0W; enlist -5]` gives distance 1.84e19 from the wrapped difference. Both
   values are huge so the order is only wrong between two huge values, but the claim "in floats or guarded" is
   not met.
-- [ ] **exposed** `qc.q:329` `pdup` (`d:cv[ps]-cC[`o] ps`) and `:338` `pred` (`k:(vi-oi)&cC[`hi][j]-vj`) subtract
+- [x] **exposed** `qc.q:329` `pdup` (`d:cv[ps]-cC[`o] ps`) and `:338` `pred` (`k:(vi-oi)&cC[`hi][j]-vj`) subtract
   longs from full-range choices; a wrapped candidate is clamped by `ch` on replay, so it is wasted rather than
   wrong.
-- [ ] **exposed** `qc.q:58-59` `mix` — `o+1`, `o-1` and `o+sign*magnitude` are long adds; at `hi=0W` they wrap to
+- [x] **exposed** `qc.q:58-59` `mix` — `o+1`, `o-1` and `o+sign*magnitude` are long adds; at `hi=0W` they wrap to
   `0N`, which `lo|hi&` turns into `lo`, so a boundary pick silently lands on the wrong end. Rare (only when `o`
   is within the magnitude of `0W`); `bits hi-lo` is guarded.
-- [ ] **exposed** `qc.q:80` `lin` — `(hi-lo)*s` overflows: `.qc.lin[0;0W] 100` is `0 -1`, which fails later as
+- [x] **exposed** `qc.q:80` `lin` — `(hi-lo)*s` overflows: `.qc.lin[0;0W] 100` is `0 -1`, which fails later as
   `qc: range` with no hint of why (reproduced).
-- [ ] **exposed** `qc.q:95`, `qc.q:167` — `lo+sz` overflows for `lo` near `0W`: `lst[0W 0W]` spins on forced bits
+- [x] **exposed** `qc.q:95`, `qc.q:167` — `lo+sz` overflows for `lo` near `0W`: `lst[0W 0W]` spins on forced bits
   until `qc.toolarge` (reproduced).
-- [ ] **exposed, documented** `qc.q:54` `unif` — on the full range the halves are `[lo, lo+0W)` and `(hi-0W, hi]`,
+- [x] **exposed, documented** `qc.q:54` `unif` — on the full range the halves are `[lo, lo+0W)` and `(hi-0W, hi]`,
   so 0 is unreachable through the `u hint (reproduced over 20 000 draws). Only small ranges use `u`, but the
   comment says "width may overflow", not "a value is missing".
 
@@ -284,7 +284,7 @@ test `null` first. `t/types.q:19` and `t/review.q:28` write `null x`, as the pit
 **23. `=` on floats is tolerant.** *Relies*: `t/self.q:31` (Catalan recurrence on floats near 1e22) benefits
 from the tolerance.
 - [x] *Exposed*: `t/types.q:29` compares floats with `=` — and is vacuous (C18).
-- [ ] *Exposed*: `qc.q:287` `less` compares zig distances with `~` and `<`; two distances that differ by less than
+- [x] *Exposed (accepted)*: `qc.q:287` `less` compares zig distances with `~` and `<`; distances are floats by C21, so two values above 2^53 that differ by less than the float spacing compare equal — the price of not wrapping, taken knowingly; two distances that differ by less than
   2^-43 relative compare equal, which can only happen for values above 2^43 — the same family as the C21 residue.
 
 **23a. `"f"$0W` is finite.** *Relies*: `qc.q:220` `wid` casts only after the null check; `qc.q:285` `zig`;
@@ -346,7 +346,7 @@ failing when the value is not a table.
 6. [x] **Coverage (C18).** A `t/examples.q` that loads each example under a trap with a pinned seed (sm_ipc.q
    optional or skipped without a spare port); load `DESIGN.md`'s snippet blocks the way `t/readme.q` loads the
    README's.
-7. [ ] **Bounds arithmetic (C21).** `skey`/`bkey` in floats before `0W^`; `pdup`, `pred`, `mix` and `lin` in floats
+7. [x] **Bounds arithmetic (C21).** `skey`/`bkey` in floats before `0W^`; `pdup`, `pred`, `mix` and `lin` in floats
    or guarded; `lst`/`sm` cap in floats; say in `unif`'s comment what the full range misses.
 8. [ ] **Docs.** Pitfall 28's text; C12's state-machine exception; the `qc.q:47` comment; the `dd` message for
    non-configurable generators; `TX`'s seed.
