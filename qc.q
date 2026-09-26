@@ -29,12 +29,12 @@ run:0b                      / inside chk/recheck (or a top-level draw): draws sh
 / them exhausted. A node is exhausted (x) when it concludes or all w of its children are; root exhausted = every
 / input tried. TX: (parent; value) -> node.
 TR:([]p:`long$();v:`long$();lo:`long$();hi:`long$();o:`long$();w:`float$();nc:`long$();nx:`long$();x:`boolean$();c:`symbol$())
-TX:(enlist 0N 0N)!enlist 0N
+TX:(enlist 0#0)!enlist 0N                             / seeded with an empty vector key (pitfall 19)
 
-reset:{[p;s;m;h] P::"j"$(),p; i::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
+reset:{[p;s;m;h] if[not abs[type p:(),p] in 1 4 5 6 7h; '"qc: choices must be integers"]; P::"j"$p; i::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
 new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
 / the implicit d is never supplied by users, so a non-null d means one argument too many (C1)
-dd:{[d;n] if[not (::)~d; '"qc: too many arguments; the configurable form is ",n]}
+dd:{[d;n] if[not (::)~d; '"qc: too many arguments; ",$[n like "* *"; "the configurable form is ",n; n," takes none"]]}   / a form with a space is configurable
 fn:{$[(::)~x; 0b; type[x] within 100 112]}              / callable? the library never applies what is not (C20); :: is 101h but is not a function (pitfall 10)
 need:{[f;what] if[not fn f; '"qc: ",what," must be a function"]}
 dct:{$[99h<>type x; 0b; not 98h=type key x]}              / a dict, and not a keyed table, which is 99h too (pitfall 28)
@@ -45,7 +45,7 @@ rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '
   if[r[0]>r 1; '"qc: range"]; $[2=count r; r,r[0]|r[1]&0; @[r;2;{y|z&x}[;r 0;r 1]]]}
 / ch[r;w]: draw a long in range r.  w hints the fresh-draw law: :: mixture, `u uniform, float p Bernoulli
 / (0/1 ranges), float vector = weights over lo..hi.  Replay clamps into range; past the prefix while
-/ shrinking is invalid; minimal mode returns the origin.  The only call site of rand is fresh.
+/ shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix.
 ch:{[r;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:1;
   v:$[j<count P; $[cf`clamp; lo|hi&P j; (P j) within (lo;hi); P j; '"qc.misaligned"]; sh; '"qc.overrun"; mn; o; fresh[lo;hi;o;w]];
   if[cf[`choices]<count C; '"qc.toolarge"];
@@ -130,7 +130,7 @@ spc:{[sp;g;d] dd[d;".qc.spc[specials] g"]; sp:(),sp; k:ch[(0;1;0);0.05]; ix:ch[(
 dbl:{[d] dd[d;".qc.dbl"]; s:ch[(0;1;0);0.3]; e:ch[(-1022;970;0);::]; m:ch[(0;9007199254740991;0);::]; (1 -1 s)*m*2 xexp e}
 / flt r: a float in [lo;hi], [sign; k; m] = sign*m/2^k with m ranged so the value never leaves [lo;hi]:
 / 0 (or the nearest bound) is simplest, integers before halves before quarters, uniform within each k
-flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[(2<>count r) or r[0]>r 1; '"qc: range"]; lo:r 0; hi:r 1;
+flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[$[2<>count r; 1b; r[0]>r 1]; '"qc: range"]; lo:r 0; hi:r 1;
   s:ch[(hi<0;lo<0;0);0.3]; a:$[s; neg 0&hi; 0|lo]; b:$[s; neg lo; hi];
   k:ch[(0;0|52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}   / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
 gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:draw 16#enlist int 0 255; $[k; 0Ng; 0x0 sv "x"$b]}
@@ -225,7 +225,7 @@ result:{[why;tests;seed;spec;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`
 opn:{[tests] tb:covt tests; any (tb[`lo]<tb`req)&tb[`req]<=tb`hi}
 wid:{[lo;hi] $[null d:hi-lo; 0w; d<0; 0w; 1+"f"$d]}      / a range's width as a float; a full long range is infinite, not null
 / ---- the choice tree: the run enumerates a small space by walking it, and knows when it has tried every input (C19)
-tnew:{TR::0#TR; TR,:(0N;0N;0N;0N;0N;0n;0;0;0b;`); TX::(enlist 0N 0N)!enlist 0N;}
+tnew:{TR::0#TR; TR,:(0N;0N;0N;0N;0N;0n;0;0;0b;`); TX::(enlist 0#0)!enlist 0N;}
 xch:{[m;v] $[null c:TX (m;v); 0b; TR[c;`x]]}            / is the child of node m at value v exhausted?
 / the value nearest the origin whose child is absent or open: an open node has fewer than w exhausted children,
 / so the nearest nx+1 values in range include one
@@ -308,7 +308,7 @@ try:{[cand] cand:"j"$cand;
 spans:{`w xdesc update w:e-s from cE}                 / largest first
 / consecutive siblings from span s0: same label and depth, each starting where the previous ended
 chain:{[s0;l0;d0] c:`s xasc select s,e from cE where l=l0,d=d0,s>=s0; if[not s0~c[0;`s]; :0#c];
-  k:1; while[(k<count c) and c[k;`s]=c[k-1;`e]; k+:1]; k#c}
+  k:1; while[$[k<count c; c[k;`s]=c[k-1;`e]; 0b]; k+:1]; k#c}   / cond, not and: the row k does not exist at the end (C2)
 / passes: each loops over the current structure, re-deriving it after every accepted attempt, and returns progress
 pdisc:{cp::`disc; p:0b; j:0; while[j<count tb:select from spans[] where x; $[try dl[cv;tb[j;`s];tb[j;`e]]; p:1b; j+:1]]; p}
 pdel:{cp::`del; p:0b; j:0; while[j<count tb:spans[]; s:tb[j;`s];

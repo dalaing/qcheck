@@ -116,6 +116,7 @@ system"S 3"
 .t.t["C1 canary: .qc.list[3 5] g signals and names .qc.lst"; (e like "qc: too many arguments*") and (e:@[{.qc.list[3 5] x};.qc.int 0 9;{x}]) like "*qc.lst*"]
 .t.t["C1 canary: .qc.bool[0.9] signals and names .qc.bit"; (e like "qc: too many arguments*") and (e:@[.qc.bool;0.9;{x}]) like "*qc.bit*"]
 .t.t["C1 canary: .qc.rec with four arguments signals"; (@[.qc.rec[2 2;0;{1+sum x}];1;{x}]) like "qc: too many*"]
+.t.t["C1 canary: a generator with no configurable form says it takes none"; (@[.qc.dbl;1;{x}]) like "qc: too many arguments; .qc.dbl takes none"]
 .qc.draw .qc.int 0 9; .qc.draw .qc.int 0 9;
 .t.t["C6 top-level draw is an example: one choice recorded after two draws"; 1=count .qc.C]
 .qc.draw (.qc.int 0 9;.qc.int 0 9);
@@ -132,6 +133,7 @@ r:.qc.chk[q;::;{0<.qc.draw .qc.int 1 9}]
 r:.qc.chk[q;.qc.int 0 9;{1b}]
 .t.t["C4 result shape: absent composites are empty, x is ::"; ((::)~r`x) and (0=count r`disc) and (0=count r`cover) and 98h=type r`cover]
 / C16: the remaining list-configuration entry points accept an atom
+.t.t["replay and recheck refuse a non-integer prefix instead of rounding it"; ((@[.qc.replay[enlist 3.7];.qc.int 0 9;{x}]) like "qc: choices*") and (@[.qc.recheck[.qc.int 0 9;{1b}];enlist 3.7;{x}]) like "qc: choices*"]
 .t.t["C16 replay with an atom prefix, rec with an atom arity, spc with an atom special"; (7~.qc.replay[7] .qc.int 0 9) and (2=count .qc.replay[1] .qc.rec[2;0;{x}]) and 0N~.qc.replay[1 0] .qc.spc[0N;.qc.int 0 9]]
 / C17: the distribution you ship, measured on the ranges people use
 system"S 2"

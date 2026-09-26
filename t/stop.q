@@ -27,7 +27,7 @@ stk:0; stg:{stk+:1; $[stk mod 2; .qc.draw .qc.bool; .qc.draw .qc.int 0 9]}
 r:.qc.chk[q;stg;{1b}]
 .t.t["not claimed: a structure that depends on something other than the choices contradicts the tree; the run samples"; (`n=r`stop) and (100=r`n) and not .qc.TR[0;`x]]
 r:.qc.chk[q;42;{x=42}]
-.t.t["tree: reset per run (a constant spec leaves one concluded node)"; (1=count .qc.TR) and .qc.TR[0;`x] and `pass=.qc.TR[0;`c]]
+.t.t["tree: reset per run (a constant spec leaves one concluded node and no edges)"; (1=count .qc.TR) and .qc.TR[0;`x] and (`pass=.qc.TR[0;`c]) and 1=count .qc.TX]
 r:.qc.chk[q;.qc.int 0 9;{x<3}]
 .t.t["enumeration order: the first failure is the minimal one, found after 3 passing inputs, 0 shrinks"; (3~r[`x]`x) and (0=r`shrinks) and (3=r`n) and `fail=r`stop]
 r:.qc.chk[q;(.qc.int 0 3;.qc.bool);{[a;b] .qc.collect (a;b); 1b}]

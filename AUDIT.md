@@ -28,14 +28,14 @@ Every library generator begins with `dd[d;form]`; the defaults (`bool`, `chr`, `
 inherit it by projection, and the `cast` compositions in `.qc.t` pass an extra argument through to the wrapped
 generator, so the canary fires there too. Spikes that define generators use `.qc.dd` (`spikes/a13_float.q:8`,
 `spikes/a6_lists.q:4`).
-- [ ] **spirit** `qc.q:125`, `qc.q:131` — `dbl` and `gid` have no configurable form, yet the message reads "the
+- [x] **spirit** `qc.q:125`, `qc.q:131` — `dbl` and `gid` have no configurable form, yet the message reads "the
   configurable form is .qc.dbl". True but unhelpful; the message should say the generator takes no arguments.
 - Note: `lin` (`qc.q:80`) and `cast` (`qc.q:121`) take no `d`. Correct — they are not generators.
 
 ### C2 — guards are conds, not conjunctions
-- [ ] **spirit** `qc.q:305` `chain`: `(k<count c) and c[k;`s]=c[k-1;`e]` indexes past the end when `k=count c`.
+- [x] **spirit** `qc.q:305` `chain`: `(k<count c) and c[k;`s]=c[k-1;`e]` indexes past the end when `k=count c`.
   Harmless (a null row) but the second term is meaningful only when the first holds.
-- [ ] **spirit** `qc.q:128` `flt`: `(2<>count r) or r[0]>r 1` evaluates the comparison on a malformed range. Same
+- [x] **spirit** `qc.q:128` `flt`: `(2<>count r) or r[0]>r 1` evaluates the comparison on a malformed range. Same
   outcome either way, same shape as the origin of C2.
 - [x] **break, with a consequence** — the tests. *(Fixed in the harness: `t/run.q` evaluates per statement; the chains stay.)* Chained `and` whose later terms assume the earlier ones raise
   instead of failing when the property under test misbehaves. Reproduced with a passing run (`x` is `::`,
@@ -46,12 +46,12 @@ generator, so the canary fires there too. Spikes that define generators use `.qc
 
 ### C3 — type dispatch is total
 Every `$[type …]` in `qc.q` has an else; the shape zoo in `t/self.q:39-42` mechanises it.
-- [ ] **spirit** `t/ranges.q:6` `nmr:{$[.qc.fn x; .Q.s1 x; .Q.s1 x]}` — both branches identical; dead dispatch.
+- [x] **spirit** `t/ranges.q:6` `nmr:{$[.qc.fn x; .Q.s1 x; .Q.s1 x]}` — both branches identical; dead dispatch.
 - `fn` (`qc.q:38`) counts `::` as callable — see pitfall 10 and C20.
 
 ### C4 — absence is empty, not `::`
 The result dict, history, cover and trace tables all comply (`t/core.q:133`, `t/outcomes.q:19-24`).
-- [ ] **spirit** `qc.q:32`, `qc.q:222` — `TX` is seeded with a sentinel key `0N 0N` that is a real-looking value and
+- [x] **spirit** `qc.q:32`, `qc.q:222` — `TX` is seeded with a sentinel key `0N 0N` that is a real-looking value and
   stays in the dict (`count .qc.TX` is one more than the tree's edges). Pitfall 19 says to seed with an empty
   vector key. (Choice-tree code, this change.)
 
@@ -225,7 +225,7 @@ beside column `n`; `spikes/a15_rec.q:46` comments on it. Nothing exposed.
 only calls `rand` on `8`, `5`, `2`, `2 xexp …` and `1+bits …` (never below 2).
 - [x] *Exposed*: `qc.q:52` `fresh` with all-zero weights calls `rand 0f`, gets 0, and `binr` picks alternative 0 —
   `freq[0 0] (a;b)` always yields `a` with no error (reproduced); `freq` validates negatives but not "all zero".
-- [ ] The comment at `qc.q:47` says `fresh` is the only call site of `rand`; `unif` and `mix` also call it (they
+- [x] The comment at `qc.q:47` says `fresh` is the only call site of `rand`; `unif` and `mix` also call it (they
   are `fresh`'s helpers).
 
 **8. `system"S n"` returns nothing.** *Relies*: `qc.q:249` sets, `qc.q:279` reads back with `system"S"`.
@@ -268,7 +268,7 @@ table, `chks`' table, `.t.R`, `.b.cases`): none reserved.
 
 **19. Dict seeding.** *Relies*: `qc.q:292` `K` is seeded with an empty vector key; `qc.q:21` `L` is seeded with a
 `::` key on purpose and only ever indexed with atoms (the comment at `:64` says why).
-- [ ] *Exposed (cosmetic)*: `qc.q:32,222` `TX` is seeded with `0N 0N` — see C4.
+- [x] *Exposed (cosmetic)*: `qc.q:32,222` `TX` is seeded with `0N 0N` — see C4.
 
 **20. `flip (a;b;c) ix` indexes the three-list.** *Relies*: `qc.q:327` `pdup` parenthesises.
 
@@ -276,7 +276,7 @@ table, `chks`' table, `.t.R`, `.b.cases`): none reserved.
 null width), `qc.q:226` `pick` (a wrapped bound is `0N`, so `within` rejects it), `qc.q:219` `opn` (a null
 requirement is never open), `qc.q:213` `covt` says `or null req` explicitly, `qc.q:220` `wid` and `:55` `bits`
 test `null` first. `t/types.q:19` and `t/review.q:28` write `null x`, as the pitfall asks.
-- [ ] *Spirit*: `qc.q:305` `chain` compares a past-the-end null (C2).
+- [x] *Spirit*: `qc.q:305` `chain` compares a past-the-end null (C2).
 
 **22. `sum ()` is `()`.** *Relies*: `qc.q:193` `pass` treats `()` as vacuously true; `t/shrink.q:15` and the
 `sum100`/`squares` cases in `spikes/bench.q:14` depend on it for the empty list.
@@ -320,8 +320,8 @@ failing when the value is not a table.
 
 ## Part 3 — Outside both lists
 
-- [ ] `qc.q:34` `reset` casts the prefix with `"j"$`, so `.qc.recheck[…; enlist 3.7]` silently replays choice 4.
-- [ ] `qc.q:47` comment: "The only call site of rand is fresh" — `unif` and `mix` call it too (pitfall 7).
+- [x] `qc.q:34` `reset` casts the prefix with `"j"$`, so `.qc.recheck[…; enlist 3.7]` silently replays choice 4.
+- [x] `qc.q:47` comment: "The only call site of rand is fresh" — `unif` and `mix` call it too (pitfall 7).
 - [ ] `DESIGN.md` §4 pitfall 28's `f[::]` claim is inaccurate on kdb+ 5.0 (pitfall 28 above).
 - [ ] `DESIGN.md` §1.7/C12: the state-machine step-length exception is undocumented (C12 above).
 
