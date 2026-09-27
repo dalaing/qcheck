@@ -256,3 +256,54 @@ ok 100 tests (seed 7)
 Piece 2 tally: one library limitation (untyped empty tables, fixed in the library), one bug in my test code
 (a lambda's locals), and three in the piece — the tie, the column order, the column clash — each found by the
 smallest possible stream, each a thing a kdb programmer has met before and will meet again.
+
+## Piece 3 — bars
+
+### Entry 9: per-minute bars, and an order that was never promised
+
+Per symbol and minute: open, high, low, close, volume, count. `onbar` folds each trade into a keyed bar table;
+`barsb` is the batch form, one `select … by sym, minute` over the day. The generator is a day of trades, `mono`
+times up to thirty seconds apart so that minutes fill and boundaries get crossed. Property: fold equals batch.
+
+```q
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/07_gen.q"
+q).qc.check[.mdp.g.trades; {.mdp.bar::0#.mdp.bar; .mdp.onbar x; .qc.eq[.mdp.bar; .mdp.barsb x]}];
+FAIL falsified after 4 tests, 25 shrinks (176 attempts, seed 7)
+x:
+  time                          sym px qty
+  ----------------------------------------
+  2024.01.02D09:30:00.000000000 B   1  1  
+  2024.01.02D09:30:00.000000000 A   1  1  
+qc.eq
+path   why   a b
+----------------
+`sym 0 value B A
+`sym 1 value A B
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 1 0 1 0 1 0 0 1 0 0]
+q).qc.check[.mdp.g.trades; {.mdp.bar::0#.mdp.bar; .mdp.onbar x; b:0!.mdp.bar; all (b[`h]>=b`o) and (b[`h]>=b`c) and (b[`l]<=b`o) and (b[`l]<=b`c) and b[`n]>0}];
+ok 100 tests (seed 7)
+```
+
+Two trades, B then A, in the same minute: the fold's table has B's bar first because B arrived first, the batch
+has A's first because `by` sorts its keys. Same bars, different row order. `.qc.eq` compares keyed tables row by
+row, on purpose (a keyed table is still a table), so the property as written asserts an order the piece never
+promised. This one is the property's to fix, not the piece's: a bar table's meaning is its keys, so the property
+compares both sides sorted by key. The OHLC sanity property passed alongside.
+
+### Entry 10: piece 3 passes, with one property more
+
+```q
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/07_gen.q"
+q)same:{[a;b] .qc.eq[`sym`minute xasc 0!a; `sym`minute xasc 0!b]}
+q).qc.check[.mdp.g.trades; {.mdp.bar::0#.mdp.bar; .mdp.onbar x; same[.mdp.bar; .mdp.barsb x]}];
+ok 100 tests (seed 7)
+q).qc.check[(.mdp.g.trades; .qc.int 0 40); {[t;k] k:k&count t; .mdp.bar::0#.mdp.bar; .mdp.onbar k#t; .mdp.onbar k _ t; a:.mdp.bar; .mdp.bar::0#.mdp.bar; .mdp.onbar t; same[a;.mdp.bar]}];
+ok 100 tests (seed 7)
+```
+
+The second property is the one the pipeline will lean on: feeding the day in two batches, split anywhere, gives
+the bars that feeding it in one does. That is what an incremental bar table is *for*, and it is what a late trade
+will test later, when the split is not at the end of the stream but inside a minute already closed. Piece 3 tally:
+no bugs in the piece; one over-strict property.
