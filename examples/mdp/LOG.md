@@ -124,16 +124,18 @@ bid  type 9 0
 ask  type 9 0
 ```
 
+(Reading a `qc.eq` table, here and below: one row per difference; `path` is where in the two values it lies —
+a column name, a row index, a dict key — `why` is the kind of difference — `type`, `value`, `count`, `order` — and
+`a`, `b` are the two sides. The `rerun:` line under a failure gives the exact choices that reproduce it; the
+transcripts here never use it because every step file is kept.)
+
 The minimal example is a stream with no events. Enriching no trades from the cache gives float `bid` and `ask`
 columns; `aj` over a quote table with no rows gives general ones — because the generated empty table had general
 columns. That was qcheck's doing: `tab`'s empty table was untyped (its design said so, as a limitation), and the
 minimal example is *always* the empty table, so every property over a generated table met it first. I fixed the
-library rather than the property: `tab` now probes one minimal row of its column generators, outside the example,
-and types its empty columns from what they would have drawn (commit `a9ea097`; the report above is quoted, not
-executed, because the library that produced it is gone). A dependent column sees the columns before it in the
-probe, which is what let `ask` come out typed. Found on the way, in the fix itself: a parameter named `vs` — a
-keyword — made an `each` apply to the operator instead of the list; `t/names.q` now refuses reserved words as
-parameters, which it had never checked.
+library rather than the property: `tab` now types its empty columns from a probe of one minimal row (the report
+above is quoted, not executed, because the library that produced it is gone; the change and what it found on the
+way are in DESIGN.md, M7 and pitfall 26's neighbours).
 
 ### Entry 5: a bug in my replay, not in the piece
 
