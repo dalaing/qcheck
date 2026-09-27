@@ -6,7 +6,7 @@ system"S 7"
 .t.t["flt: a huge range does not error and stays finite"; all {(not null x) and abs[x]<1e19} .qc.draw 50#enlist .qc.flt -1e300 1e300]
 .t.t["elem/one of nothing say so"; ("qc: elem of nothing"~@[.qc.draw;.qc.elem ();{x}]) and "qc: one of nothing"~@[.qc.draw;.qc.one ();{x}]]
 .t.t["freq: one weight per alternative"; (@[.qc.draw;.qc.freq[1 2] (1;2;3);{x}]) like "qc: freq*"]
-.t.t["sm: a plain dict is rejected as cmds, not a type error"; "qc: cmds"~@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] `pre`run!(1;2);{x}]]
+.t.t["sm: a plain dict is rejected as cmds, not a type error"; (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] `pre`run!(1;2);{x}]) like "qc: cmds must be a table*not a dict"]
 F:0
 cm:([cmd:enlist `boom] run:enlist {[i] '"kaboom"})
 r:.qc.chk[q;.qc.sm[`m0`fini!(0;{F+:1})] cm;::]

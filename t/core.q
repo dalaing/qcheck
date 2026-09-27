@@ -14,7 +14,7 @@ d:.qc.draw `a`b!(.qc.int 0 9;(.qc.int 0 9;`k))
 / ranges and the primitive
 .t.t["int: within range"; all within[;-5 5] .qc.draw 500#enlist .qc.int -5 5]
 .t.t["int: range as a function of size"; all within[;0 100] .qc.draw 100#enlist .qc.int {0,x}]
-.t.t["int: bad range signals"; "qc: range"~@[.qc.draw;.qc.int 5 1;{x}]]
+.t.t["int: bad range signals"; (@[.qc.draw;.qc.int 5 1;{x}]) like "qc: range: lo exceeds hi*"]
 .t.t["int: full long range does not error"; -7h=type .qc.draw .qc.int -0W 0W]
 system"S 1"; a:rand 0W; system"S 1"; .qc.draw .qc.int 5 5; b:rand 0W
 .t.t["int 5 5 consumes no randomness"; a=b]

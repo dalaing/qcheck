@@ -55,7 +55,7 @@ tr:.qc.draw .qc.sm[`m0`steps!(0;200 200)] cm6
 .t.t["sm: w weights the choice among available commands (3:1 over 200 steps, within 3 sigma)"; (avg `a=tr`cmd) within 0.65 0.85]
 .t.t["sm: weights must be positive numbers"; ((@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] update w:0 1f from cm6;{x}]) like "qc: cmds: w*") and (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] update w:`x`y from cm6;{x}]) like "qc: cmds: w*"]
 / validation and the canary
-.t.t["sm: cmds must be a table with a cmd column"; ("qc: cmds"~@[.qc.draw;.qc.sm[h] 5;{x}]) and "qc: cmds"~@[.qc.draw;.qc.sm[h] ([]a:1 2);{x}]]
+.t.t["sm: cmds must be a table with a cmd column"; ((@[.qc.draw;.qc.sm[h] 5;{x}]) like "qc: cmds must be a table*got type -7") and (@[.qc.draw;.qc.sm[h] ([]a:1 2);{x}]) like "qc: cmds needs a cmd column; columns are a"]
 .t.t["sm: canary"; (@[.qc.sm[h;cm];1;{x}]) like "qc: too many*"]
 / C7, C11
 .t.sz 0

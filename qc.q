@@ -43,8 +43,8 @@ dct:{$[99h<>type x; 0b; not 98h=type key x]}              / a dict, and not a ke
 
 / ---- the primitive ----------------------------------------------------------------------------------
 / a range is  lo hi  or  lo hi origin  or a function of size returning one; origin defaults to 0 clamped
-rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '"qc: range"];
-  if[r[0]>r 1; '"qc: range"]; $[2=count r; r,r[0]|r[1]&0; @[r;2;{y|z&x}[;r 0;r 1]]]}
+rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '"qc: range: lo hi or lo hi origin expected, got ",.Q.s1 r];
+  if[r[0]>r 1; '"qc: range: lo exceeds hi in ",.Q.s1 r]; $[2=count r; r,r[0]|r[1]&0; @[r;2;{y|z&x}[;r 0;r 1]]]}
 / ch[r;w]: draw a long in range r.  w hints the fresh-draw law: :: mixture, `u uniform, float p Bernoulli
 / (0/1 ranges), float vector = weights over lo..hi.  Replay clamps into range; past the prefix while
 / shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix.
@@ -154,7 +154,7 @@ spc:{[sp;g;d] dd[d;".qc.spc[specials] g"]; sp:(),sp; k:ch[(0;1;0);0.05]; ix:ch[(
 dbl:{[d] dd[d;".qc.dbl"]; s:ch[(0;1;0);0.3]; e:ch[(-1022;970;0);::]; m:ch[(0;9007199254740991;0);::]; (1 -1 s)*m*2 xexp e}
 / flt r: a float in [lo;hi], [sign; k; m] = sign*m/2^k with m ranged so the value never leaves [lo;hi]:
 / 0 (or the nearest bound) is simplest, integers before halves before quarters, uniform within each k
-flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[$[2<>count r; 1b; r[0]>r 1]; '"qc: range"]; lo:r 0; hi:r 1;
+flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[$[2<>count r; 1b; r[0]>r 1]; '"qc: range: flt takes lo hi with lo<=hi, got ",.Q.s1 r]; lo:r 0; hi:r 1;
   s:ch[(hi<0;lo<0;0);0.3]; a:$[s; neg 0&hi; 0|lo]; b:$[s; neg lo; hi];
   k:ch[(0;0|52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}   / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
 gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:draw 16#enlist int 0 255; $[k; 0Ng; 0x0 sv "x"$b]}
@@ -266,8 +266,8 @@ smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of th
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
 smnote:{[R] tr:smtab R; $[any blocky each tr`model; delete model from tr; tr]}   / the trace as noted on a failure: a model that holds tables or dicts is left out of the print, where it would bury the steps
-sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
-  if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
+sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds must be a table (or keyed table) of commands, got type ",string type cmds; 98h=type key cmds; 0!cmds; '"qc: cmds must be a table of commands, not a dict"];
+  if[not `cmd in cols c; '"qc: cmds needs a cmd column; columns are "," " sv string cols c]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
   if[not `w in cols c; c:update w:1f from c]; if[$[not type[c`w] in 5 6 7 8 9h; 1b; any c[`w]<=0]; '"qc: cmds: w must be positive weights"]; c:update w:"f"$w from c;
   r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz;   / (cap in floats, C21)
@@ -301,7 +301,7 @@ eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:flip `path`why`a`b!(enlist 
 shape:{$[99h=type x; key x; 98h=type x; cols x; x]}
 
 / ---- the runner -------------------------------------------------------------------------------------
-conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg"; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; cfg,x]}
+conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg must be a dict of settings or a test count, got type ",string type x; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; cfg,x]}
 byname:{[p;x] $[100h<>type p; 0b; 99h<>type x; 0b; 98h=type key x; 0b; all (value p)[1] in key x]}   / a keyed table is 99h too (C3); a cond chain, not and (C2)
 app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x (value p)[1]; p @ x]}
 pass:{$[(::)~x; 1b; type[x] in -1 1h; all x; ()~x; 1b; '"qc: property returned ",-3!x]}   / () is vacuously true, as all () is
@@ -357,7 +357,7 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!(); K::(enlist 0#0)!enlist 0N;}   / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run)
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}   / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
 chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
