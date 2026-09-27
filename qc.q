@@ -88,7 +88,7 @@ dr:{$[(::)~x; x; type[x] within 100 112; call x; 99h=type x; $[98h=type key x; x
   0h=type x; .z.s each x; x]}
 / the interactive entry points own the example boundary: reset, run flag, protected dr, restore (C6, C9, C10)
 / outside a run the effective config is the defaults: a cfg edit must reach the next interactive draw
-top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; 'x}]; run::0b; r}
+top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; mn::0b; sh::0b; i::0; P::`long$(); 'x}]; run::0b; r}   / on error: flag, depth, spans, size, and the minimal/strict modes and cursor (C6: nothing inconsistent)
 draw:{$[run or dp>0; dr x; top[`long$();0b;0b;x]]}   / fresh draws; inside a run or a draw, just interpret
 minimal:top[`long$();1b;0b]                           / the simplest value of a spec: every draw is its origin
 replay:{[p;s] top[p;0b;0b;s]}                         / the value a recorded choice vector produces
@@ -106,7 +106,7 @@ elem:{[xs;d] dd[d;".qc.elem xs"]; if[99h=type xs; '"qc: elem takes a list"]; xs:
 one:{[gs;d] dd[d;".qc.one gs"]; if[99h=type gs; '"qc: one takes a list of alternatives"]; gs:(),gs; if[0=count gs; '"qc: one of nothing"]; draw gs ch[(0;-1+count gs;0);`u]}
 freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; if[99h=type gs; '"qc: freq takes a list of alternatives"]; gs:(),gs; if[not type[w] in -5 -6 -7 -8 -9 5 6 7 8 9h; '"qc: freq needs numeric weights"]; w:"f"$(),w;
   if[$[0=count gs; 1b; count[w]<>count gs; 1b; any w<0; 1b; 0=sum w]; '"qc: freq needs one non-negative weight per alternative, not all zero"]; draw gs ch[(0;-1+count gs;0);w]}
-such:{[p;g;d] dd[d;".qc.such[p] g"]; need[p;"such's predicate"]; k:0; while[k<cf`tries; beg`try; x:draw g; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}
+such:{[p;g;d] dd[d;".qc.such[p] g"]; need[p;"such's predicate"]; k:0; while[k<cf`tries; beg`try; x:@[draw;g;{end[]; 'x}]; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}   / (a raising g closes the try span before the error leaves)
 discard:{'"qc.discard"}
 / list: continue bit before each element (forced while under lo); size caps the length; the bit's
 / probability makes the length uniform on lo..m
@@ -222,8 +222,8 @@ rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
 / probe g: its minimal value, drawn outside the example (choices, spans, cursor and mode saved and restored), so a
 / table with no rows can still type its columns from what they would have drawn. A generator that cannot give a
 / minimal value (a dep over an empty row, a filter) leaves its column untyped.
-probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
-unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11;}   / what probe saved
+probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US;sz;bs;N;LX); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
+unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11; sz::s 12; bs::s 13; N::s 14; LX::s 15;}   / what probe saved (the size too: a small that raises inside the probe would leave it halved; and the notes and labels, which a probe must not add to)
 empties:{[xs] {[v] $[(::)~v; (); 0>type v; 0#enlist v; ()]} each xs}      / each probed value: an atom's typed empty (0# of a symbol atom is nyi; of a 1-vector it is fine), else general. (xs, not vs: vs is a keyword)
 emtab:{[cg;p] key[cg]!$[(::)~p; count[cg]#enlist (); empties value p]}     / typed empties from a probed row, or untyped when the probe failed
 / the table core: rows through lst; em gives typed empty columns (a schema knows them; a column dict probes them, so
@@ -357,7 +357,7 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz;}   / the example boundary on the way out: flag, config, depth, spans, base size (C9)
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!(); K::(enlist 0#0)!enlist 0N;}   / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run)
 chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
