@@ -41,9 +41,15 @@
   (`tab;.qc.tab `a`b!(.qc.int 0 9;.qc.sym);flip `a`b!(();());{98h=type x};1b;1b);
   (`tabr;.qc.tabr[2 2] `a`b!(.qc.int 0 9;.qc.bool);([]a:0 0;b:00b);{(98h=type x) and 2=count x};1b;1b);
   (`ktab;.qc.ktab[`a;1 1] `a`b!(.qc.int 0 9;.qc.bool);([a:enlist 0]b:enlist 0b);{99h=type x};1b;1b);
-  (`sm;.qc.sm[enlist[`m0]!enlist 0] .g.cm;.qc.smt;{98h=type x};1b;1b))
+  (`sm;.qc.sm[enlist[`m0]!enlist 0] .g.cm;.qc.smt;{98h=type x};1b;1b);
+  (`mono;.qc.mono[.qc.int 0 9;.qc.int 1 9];0;{x within 0 9};1b;1b);
+  (`uniq;.qc.uniq .qc.int 0 9;0;{x within 0 9};1b;1b);
+  (`dep;.qc.dep {[r] .qc.int 0 9};0;{x within 0 9};1b;1b);
+  (`atr;.qc.atr[`s] .qc.list .qc.int 0 9;();{(x~()) or 7h=type x};0b;1b);
+  (`tabc;.qc.tab `t`k`a!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.uniq .qc.elem `a`b`c;.qc.dep {[r] .qc.int (0;r`t)});flip `t`k`a!(();();());{98h=type x};1b;1b);
+  (`schema;.qc.schema ([]a:1 2;b:`x`y);([]a:`long$();b:`symbol$());{98h=type x};1b;1b))
 .g.rows,:{[c] (`$"t",c;.qc.t c;.g.org c;{[c;x] (neg .Q.t?c)=type x}[c];1b;1b)} each "bgxhijefcspmdznuvt"
 .g.T:flip `name`gen`origin`ok`typed`canary!flip .g.rows
 .g.NOCH:enlist `const
-.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t) in key `.qc]
+.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t`mono`uniq`dep`atr`schema) in key `.qc]
 .t.t["registry: has a row per type char and no duplicate names"; (18=count .g.T where (string .g.T`name) like "t?") and (count .g.T)=count distinct .g.T`name]

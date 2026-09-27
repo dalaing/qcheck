@@ -23,6 +23,7 @@ N:()                        / notes of the current example
 LB:(`symbol$())!`long$()    / label counts over the run
 LX:`symbol$()               / labels of the current example
 TB:(`symbol$())!()          / counting tables for rec, per arity range
+/ (CS UR US, the per-table state of constrained columns, are defined with the tables: saved and restored around each table)
 run:0b                      / inside chk/recheck (or a top-level draw): draws share one example
 / the choice tree of the current run (C19): one node per prefix of choices. A node holds the range drawn at it
 / (lo hi o, width w) or the conclusion c an example reached there (pass fail disc); nc children exist, nx of
@@ -153,10 +154,53 @@ t:"bgxhijefcspmdznuvt"!(bool;gid;cast["x";int 0 255];
   spc[(0Nn;0Wn;-0Wn);cast["n";int -1000000000000000000 1000000000000000000]];spc[(0Nu;0Wu;-0Wu);cast["u";int 0 1439]];
   spc[(0Nv;0Wv;-0Wv);cast["v";int 0 86399]];spc[(0Nt;0Wt;-0Wt);cast["t";int 0 86399999]])
 vec:{[r;c;d] dd[d;".qc.vec[r] c"]; c$draw lst[r] t c}            / typed even when empty
-/ tables are drawn as rows (each row one span, so deleting a row is one deletion), then flipped
-tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; rs:draw lst[r] cg; $[count rs; flip key[cg]!flip value each rs; flip key[cg]!count[cg]#enlist ()]}
+/ ---- tables: rows are spans (deleting a row is one deletion); a constrained column is drawn with the row so far ----
+/ A constrained column is a projection of mono, uniq or dep, which tabr recognises (mark) and draws itself; drawn on
+/ its own each is just its plain part. mono[b;g]: the first row draws b, each later row adds a delta drawn from g
+/ (sortedness is in the choices, so it survives every shrink, A18). uniq g: distinct values — over a finite set
+/ (an elem, or an int with a small constant range) by indexing the values not yet used, one choice and no retries,
+/ with the row count capped by the set (A19); otherwise by retrying g and discarding when tries run out.
+/ dep f: f receives the row so far (a dict of the columns before it, in column order) and returns a spec.
+mono:{[b;g;d] dd[d;".qc.mono[base;delta]"]; draw b}
+uniq:{[g;d] dd[d;".qc.uniq g"]; draw g}
+dep:{[f;d] dd[d;".qc.dep f"]; need[f;"dep's f"]; draw f (0#`)!()}
+atr:{[a;g;d] dd[d;".qc.atr[a] g"]; if[not a in `s`u`p`g; '"qc: atr takes one of `s`u`p`g"]; v:draw g; a#$[a in `s`p; asc v; v]}   / s and p need sorted input (A23)
+mark:{[g] $[104h<>type g; `; (f:first value g)~mono; `mono; f~uniq; `uniq; f~dep; `dep; `]}
+/ the finite candidate set of a generator, or :: — an elem's list, an int's constant range of at most 1024 values
+cands:{[g] $[104h<>type g; ::; (f:first value g)~elem; (),value[g] 1; not f~int; ::; type[value[g] 1] within 100 112; ::; 1024<w:wid . 2#r:rng value[g] 1; ::; r[0]+til "j"$w]}
+CS:(0#`)!(); UR:(0#`)!(); US:(0#`)!()                   / per-table state: mono's last value, uniq's remaining candidates, uniq's used values
+udraw:{[k;g] $[k in key UR; [rem:UR k; v:rem ch[(0;-1+count rem;0);`u]; UR[k]:rem except v; v];
+  [n:0; while[n<cf`tries; v:draw g; if[not v in US k; US[k]:US[k],enlist v; :v]; n+:1]; '"qc.discard"]]}
+/ one row: the columns in order, a constrained column with the state and the row so far. The row grows behind a ::
+/ seed (a dict amended with one symbol has a typed value list and refuses the next long: pitfall 6). d: via draw
+rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
+  while[j<count c; k:c j; g:cg k; a:$[`=ks k; ::; value g];
+    v:$[`mono=ks k; $[k in key CS; CS[k]+draw a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; draw g];
+    if[`mono=ks k; CS[k]:v]; r[k]:v; j+:1]; 1_r}
+/ the table core: rows through lst; em gives typed empty columns (a schema knows them, a column dict cannot, so
+/ tab's empty table is untyped); at (col -> attribute) is applied after the rows, sorting by the s and p columns
+tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
+  $[all `=value ks; rs:draw lst[r] cg;
+    [s0:(CS;UR;US); CS::(0#`)!(); UR::(0#`)!(); US::(0#`)!(); uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist ();   / the generator inside each uniq
+     if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
+     rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] CS::s0 0; UR::s0 1; US::s0 2; 'e}[s0]]; CS::s0 0; UR::s0 1; US::s0 2]];
+  tb:$[count rs; flip key[cg]!flip value each rs; (::)~em; flip key[cg]!count[cg]#enlist (); flip em];
+  if[count[at] and count rs; tb:((where at=`p),where at=`s) xasc tb; tb:{[at;tb;c] @[tb;c;(at c)#]}[at]/[tb;key at]]; tb}   / parted columns sort first; an empty table carries none, as 0# of a table drops them
+tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; tabx[r;cg;::;(0#`)!`symbol$()]}
 tab:tabr[0 0W]
-ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; k xkey tabr[r;cg;::]}
+ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; if[not dct cg; '"qc: ktab needs a dict of column generators"]; k:(),k;
+  if[count k except key cg; '"qc: ktab: key columns must be columns"]; k xkey tabx[r;@[cg;k;{$[`=mark x; uniq x; x]}];::;(0#`)!`symbol$()]}   / keys are distinct (A19)
+/ schema t: a generator of tables shaped like t — the column types from the values (an enumeration's domain from
+/ key, nested columns from the first element, a general column as a mix), attributes and keys as t has them,
+/ typed empties from 0# (an empty table carries no attributes, as 0# of a table does not, A21)
+colg:{[c] tc:type c; $[tc>=20h; {[f;d] f$draw elem value f}[key c]; 10h=tc; str; tc within 1 19h; t .Q.t tc;
+  $[0h<>tc; 0b; 0=count c; 0b; all (type each c) within 1 19h]; vec[0 3] .Q.t abs type first c; one (int 0 9;sym;str)]}
+/ schema t is a constructor (as lin is): it reads t once and returns the generator schx[k;cg;em;at]
+schema:{[x] if[not type[x] in 98 99h; '"qc: schema takes a table"]; k:keys x; u:0!x; cs:cols u; vals:value flip u;
+  cg:cs!colg each vals; cg:@[cg;k,cs where `u=attr each vals;{$[`=mark x; uniq x; x]}]; at:cs!attr each vals; at:where[not null at]#at;
+  if[(`p in at) and `s in at; '"qc: schema: a table with both a p# and an s# column cannot be reproduced row by row (sort by one or the other)"];
+  schx[k;cg;cs!`#'0#'vals;at]}
+schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k xkey tb; tb]}
 
 
 / ---- state machines ---------------------------------------------------------------------------------
