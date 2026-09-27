@@ -999,10 +999,11 @@ For the implementer:
 43. A functional delete with an empty name list — `![`.;();0b;`symbol$()]` — deletes *every* global in the
     namespace, silently. The list is empty whenever an `inter` finds nothing, so guard it with `if[count k; …]`
     (found resetting the market data example's HDB: `examples/mdp/LOG.md` entry 19).
-44. `\l dir` makes `dir` the working directory as well as loading it, and maps its tables in the root; a test that
-    empties the directory afterwards leaves the process with a working directory that is gone and tables that
-    point at partitions that are gone. Empty the contents, not the directory, and delete the mapped tables
-    (entry 19 again).
+44. `\l dir` makes `dir` the working directory as well as loading it, and maps its tables in the root — and the
+    mapped tables read their files relative to that directory, so it must *stay* the working directory (restoring
+    the old one breaks the next query with `./2024.01.02/trade/seq. OS reports: No such file`). Load everything else
+    by absolute path afterwards. A test that empties the directory leaves tables pointing at partitions that are
+    gone: empty the contents, not the directory, and delete the mapped tables (entry 19 again).
 45. `f each` (and `f'[xs;a]`) over an *empty* typed list returns a general empty list, `()`, not a typed one: a
     column mapped that way loses its type on the empty table, and two empty dicts then differ in key type (which
     `eq` now names). Leave an empty table alone: `$[count t; update c:f'[c] from t; t]` (`LOG.md` entry 21).

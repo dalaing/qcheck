@@ -1,12 +1,12 @@
 / examples/mdp/props.q — the pieces' properties that survived (LOG.md entries 3, 8, 10, 13, 16), as one suite for
 / .qc.checks. Loaded by run.q after mdp.q; the generators are the log's (steps/08_gen.q).
-system"l examples/mdp/steps/08_gen.q"
+system"l ",.mdp.root,"/steps/08_gen.q"
 replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
 same:{[a;b] .qc.eq[`sym`minute xasc 0!a; `sym`minute xasc 0!b]}
 byk:{k:asc key x; k!x k}
 mult:{exec sym!mult from .mdp.inst}
 cash:{[f] exec sum mult[][sym]*qty*px*-1 1 `buy`sell?side from f}
-reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; .mdp.trade::0#.mdp.trade; .mdp.bar::0#.mdp.bar; .mdp.pos::0#.mdp.pos; .mdp.ren::0#.mdp.ren}
+reset:{.mdp.seq::0; .mdp.today::.mdp.day0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; .mdp.trade::0#.mdp.trade; .mdp.bar::0#.mdp.bar; .mdp.pos::0#.mdp.pos; .mdp.ren::0#.mdp.ren}
 feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
 ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
 props:()!()

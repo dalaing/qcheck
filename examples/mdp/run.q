@@ -6,4 +6,4 @@
 \l examples/mdp/sm.q
 .qc.cfg[`n`db]:(300;`)                                     / no failure db: a CI run must not replay a developer's, nor leave one behind
 system"c 50 200"                                            / wide enough that the coverage tables are not cut in the log
-.qc.main props,machine
+r:.qc.checks props,machine; system"rm -rf ",1_string .mdp.hdb; exit "i"$sum not r`ok   / (.qc.main, with the HDB removed on the way out)

@@ -1,6 +1,6 @@
-/ examples/mdp/sm.q — the state machine over the whole pipeline (LOG.md entries 17-23; the machine is steps/24_sm.q),
+/ examples/mdp/sm.q — the state machine over the whole pipeline (LOG.md entries 17-23; the machine is steps/25_sm.q),
 / with the seam labels of run 2, as one entry for .qc.checks. Loaded by run.q after mdp.q.
-system"l examples/mdp/steps/24_sm.q"
+system"l ",.mdp.root,"/steps/25_sm.q"
 / the seam labels: what a trace exercised, so a passing run says what it reached (entries 18, 20, 23). The
 / trace's model column is the model after the step; a fill's argument is (sym;side;qty;px), the others' sym is at 1.
 argsym:{[r] r[`arg] $[`fill=r`cmd; 0; 1]}

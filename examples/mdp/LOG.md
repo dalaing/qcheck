@@ -1065,6 +1065,48 @@ Third reading of the oracle, and I believe the right one: names matter to enrich
 Every disagreement between the system and the oracle in run 2 was over what a rename means, and each one the
 machine found was a case I had not written down — which is the other thing a state machine is for.
 
+### Entry 25: after the review — what a reader found that no test had
+
+`REVIEW.md` read the finished system and found things the properties and the machine could not, because none of
+them is a *wrong answer*: a trade timed after today was enriched and returned but stored nowhere; a rename of an
+unknown name inserted an all-null instrument; a fill for an unknown instrument booked a position with a null
+multiplier; "is this day on disk" was answered by "does a table called `trade` exist", the test that the stale
+map of entry 19 had fooled; the start day and the session hours were written down in four files; the machine made
+a second HDB directory and left both behind. Step 25 is the answer to all of them, in one file, and the machine's
+postconditions were strengthened at the same time (step 25 of the machine): a fill must move the position by its
+signed quantity, a trade must carry bid *and* ask and a price at the tick, a busted id must be gone from wherever
+its day lives, a rename must be in `ren` with the new name inheriting the instrument, and the invariant checks
+yesterday on disk as well as today in memory.
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/25_final.q"
+q)system"l examples/mdp/steps/25_sm.q"
+q).mdp.init[]
+q).mdp.rename[`Q;`N0;.mdp.today]
+q).mdp.upd[`fill; ([]sym:enlist `Q; side:enlist `buy; qty:enlist 1; px:enlist 1f)]
+q).mdp.upd[`trade; ([]time:enlist .mdp.opn[.mdp.today+1]; sym:enlist `A; px:enlist 1f; qty:enlist 1)]
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+'mdp: rename: unknown name Q
+'mdp: fill for an unknown instrument: Q
+'mdp: a trade timed after today: +`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.03D09:30:00.000000000;,`A;,1f;,1;,..
+ok 300 tests (seed 7)
+```
+
+Two facts came out of writing it. Restoring the working directory after `\l hdb` — the fix pitfall 44 first
+suggested — breaks the HDB: the mapped tables read their files relative to that directory, so it has to stay, and
+everything else is loaded by absolute path instead (`mdp.q` now has a root). And a postcondition's parameter must
+not be called `i`: inside a `select`, `i` is the row index, and `where seq=i` compares the sequence number with
+the row number (pitfall 4's implicit column). The stronger machine passes at the review's budget; it found nothing
+the weaker one had missed, which is what one hopes for and cannot know without asking.
+
 ## Closing: what happened, and what qcheck did
 
 **The tally.** Twelve findings — nine in the system, one in the assembly's one line of q-SQL, two in the oracle:
@@ -1128,8 +1170,8 @@ twice); a keyed table indexed by a list of keys and a column is a `length` error
 is `nyi`; `\l dir` makes `dir` the working directory; a functional delete with no names deletes every global
 (pitfall 43); `each` over an empty typed list returns a general one (pitfall 45); and `c0*a+b` is `c0*(a+b)`.
 
-**The final system** is `examples/mdp/mdp.q` (the last step of each piece), its properties `props.q`, the machine
-`sm.q`, and `run.q`, which runs both under `.qc.main` and is run by the test suite; the steps stay, because every
+**The final system** is `examples/mdp/mdp.q` (the last step of each piece, and step 25 after the review), its
+properties `props.q`, the machine `sm.q` (step 25 of the machine), and `run.q`, which runs both under `.qc.main` and is run by the test suite; the steps stay, because every
 transcript above is executed against them by `t/doctest.q`, and a buggy step that stopped failing as logged would
 fail the suite.
 
