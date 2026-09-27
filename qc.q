@@ -265,6 +265,7 @@ smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
 smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of the model, checked after every step (M10)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
+smnote:{[R] tr:smtab R; $[any blocky each tr`model; delete model from tr; tr]}   / the trace as noted on a failure: a model that holds tables or dicts is left out of the print, where it would bury the steps
 sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
@@ -273,11 +274,11 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of ho
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
     $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:@[draw;c[j;`gen] m;{[h;e] h[`fini][]; 'e}[h]]; end[];   / weighted over the available commands; fini on every exit; (a, not i: i is the cursor)
-        o:@[c[j;`run];a;{[h;R;e] note smtab R; h[`fini][]; '"qc.run ",e}[h;R]];   / an error in the system is a failure, not a generator bug
-        ok:@[c[j;`post][m;a;];o;{[h;R;e] note smtab R; h[`fini][]; '"qc.post ",e}[h;R]]; ok:$[(::)~ok; 1b; all ok];
+        o:@[c[j;`run];a;{[h;R;e] note smnote R; h[`fini][]; '"qc.run ",e}[h;R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
+        ok:@[c[j;`post][m;a;];o;{[h;R;e] note smnote R; h[`fini][]; '"qc.post ",e}[h;R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
         m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
-        if[not ok; h[`fini][]; note smtab R; '"qc.post"];
-        iv:@[h`inv;m2;{[h;R;e] note smtab R; h[`fini][]; '"qc.inv ",e}[h;R]]; if[not $[(::)~iv; 1b; all iv]; h[`fini][]; note smtab R; '"qc.inv"];   / the invariant, on the model after the step
+        if[not ok; h[`fini][]; note smnote R; '"qc.post"];
+        iv:@[h`inv;m2;{[h;R;e] note smnote R; h[`fini][]; '"qc.inv ",e}[h;R]]; if[not $[(::)~iv; 1b; all iv]; h[`fini][]; note smnote R; '"qc.inv"];   / the invariant, on the model after the step
         m:m2; n+:1];
       end[]]];
   h[`fini][]; smtab R}

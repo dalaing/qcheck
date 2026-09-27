@@ -32,6 +32,13 @@ tr:.qc.replay[1 0 1 0 1 0 1 0 0] .qc.sm[`m0`steps!(0;4 4)] cm2
 cm3:([cmd:enlist `boom] run:enlist {[i] '"kaboom"})
 r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist 0] cm3;::]
 .t.t["sm: an error in run is a failure of the system, with its text and the trace so far"; (`falsified=r`why) and ("qc.run kaboom"~r`err) and 98h=type last r`notes]
+.t.t["sm: the noted trace ends with the step that raised, marked not ok"; (`boom=(last r`notes)[`cmd] 0) and not (last r`notes)[`ok] 0]
+cm3b:([cmd:enlist `bp] run:enlist {[i] 7}; post:enlist {[m;i;o] '"nope"})
+r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist 0] cm3b;::]
+.t.t["sm: a post that raises notes the step with its result"; ("qc.post nope"~r`err) and (7~(last r`notes)[`res] 0) and not (last r`notes)[`ok] 0]
+cm3c:([cmd:enlist `put] gen:enlist {[m] .qc.int 0 9}; run:enlist {[i] i}; post:enlist {[m;i;o] 2>count m}; upd:enlist {[m;i;o] m,enlist[`v]!enlist i})
+r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist ([]v:`long$())] cm3c;::]
+.t.t["sm: a model that holds a table is left out of the noted trace; an atom model stays (line 25)"; not `model in cols last r`notes]
 / inputs shrink with the sequence
 cm4:([cmd:enlist `put] gen:enlist {[m] .qc.int 0 99}; run:enlist {[i] i}; post:enlist {[m;i;o] 50>sum m,i}; upd:enlist {[m;i;o] m,i})
 r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist `long$()] cm4;::]
