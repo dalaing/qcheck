@@ -118,7 +118,8 @@ system"S 3"
 .t.t["C11 a range that narrows with size does not (the rule is on users)"; not {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.int {(x div 2;x)}]
 .qc.cfg[`v]:1
 / conventions (DESIGN.md 1.10)
-.t.t["C1 canary: .qc.list[3 5] g signals and names .qc.lst"; (e like "qc: too many arguments*") and (e:@[{.qc.list[3 5] x};.qc.int 0 9;{x}]) like "*qc.lst*"]
+e:@[{.qc.list[3 5] x};.qc.int 0 9;{x}]
+.t.t["C1 canary: .qc.list[3 5] g signals and names .qc.lst"; (e like "qc: too many arguments*") and e like "*qc.lst*"]
 .t.t["C1 canary: .qc.bool[0.9] signals and names .qc.bit"; (e like "qc: too many arguments*") and (e:@[.qc.bool;0.9;{x}]) like "*qc.bit*"]
 .t.t["C1 canary: .qc.rec with four arguments signals"; (@[.qc.rec[2 2;0;{1+sum x}];1;{x}]) like "qc: too many*"]
 .t.t["C1 canary: a generator with no configurable form says it takes none"; (@[.qc.dbl;1;{x}]) like "qc: too many arguments; .qc.dbl takes none"]

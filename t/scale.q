@@ -1,9 +1,11 @@
-/ M8: bulk vectors and tables (A22). loaded by t/run.q
+/ M8: bulk vectors and tables (A22). loaded by t/run.q. The timings are printed as information, not asserted:
+/ a wall-clock bound is a fact about the machine (the measurements live in spikes/a22_scale.q).
 system"S 7"
 ms:{[f;x] t0:.z.p; r:f x; (r;(.z.p-t0)%1000000)}
 / generation
 g:ms[.qc.draw;.qc.bulk[0 99;1000000 1000000]]
-.t.t["bulk: a million longs in range, in under half a second (spike: 9 ms)"; (1000000=count g 0) and (all (g 0) within 0 99) and 500>g 1]
+.t.t["bulk: a million longs in range"; (1000000=count g 0) and all (g 0) within 0 99]
+-1 "  info: a million longs drawn in ",string[g 1]," ms (spike: 9 ms)";
 .t.t["bulk: one block is one unit of the choice budget"; 2=.qc.nch]
 .t.t["bulk: the length varies with the range and never exceeds it"; all (count each .qc.draw 50#enlist .qc.bulk[0 9;0 20]) within 0 20]
 .t.t["bulk: minimal is empty"; (`long$())~.qc.minimal .qc.bulk[0 99;0 1000]]
@@ -19,7 +21,8 @@ v:.qc.draw .qc.bulk[-1000 1000;100000 100000]
 / shrinking: the minimum is not a prefix, and block deletion reaches it fast
 r:ms[{.qc.chk[q;x;{x~asc x}]};.qc.bulk[0 99;0 100000]]
 .t.t["bulk: x~asc x over up to 1e5 elements shrinks to 1 0"; 1 0~r[0][`x]`x]
-.t.t["bulk: in under 100 attempts and 5 seconds (spike: 44 attempts, 3 ms)"; (100>r[0]`attempts) and 5000>r 1]
+.t.t["bulk: in under 100 attempts (spike: 44)"; 100>r[0]`attempts]
+-1 "  info: shrunk in ",string[r 1]," ms (spike: 3 ms)";
 r:.qc.chk[q;.qc.bulk[0 99;0 100000];{100>sum x}]
 .t.t["bulk: a global bug (sum >= 100) shrinks to at most three elements within the budget"; (100<=sum r[`x]`x) and 3>=count r[`x]`x]
 / btab

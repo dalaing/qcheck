@@ -1,5 +1,7 @@
 / the shrink benchmark as tests: every classic case reaches its analytic minimum within an attempt cap;
 / the shrinker never re-runs a candidate; shrinking is idempotent through the failure db. loaded by t/run.q
+/ The caps are deliberate and tight: they are a performance guard, and a change to the shrinker's pass order
+/ is expected to trip them — then the new attempt counts are checked against spikes/bench.q and the caps moved.
 \l spikes/bench.q
 res:.b.run[.b.q;.b.cases .qc.list]
 cap:`sorted`reverse`distinct`len5`sum100`adjeq`bound`neg`twoints`nested`bound5`tree3`tree4`rose3`filtered`bigint`interactive`squares!70 70 30 80 120 30 30 10 10 160 70 80 90 30 120 130 30 50
