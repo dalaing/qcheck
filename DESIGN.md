@@ -545,7 +545,8 @@ spikes/         one script per validated assumption; sh spikes/run.sh runs them 
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
-                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, this file and examples/mdp/LOG.md), docs (names in docs exist),
+                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, this file and examples/mdp/LOG.md; QC_FAST=1
+                skips the state-machine blocks, most of the suite's time), docs (names in docs exist),
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts

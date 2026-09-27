@@ -133,7 +133,7 @@ the day boundary meet). Every transcript, including the buggy steps, is executed
 ```
 qc.q           the library                          examples/      reverse.q tree.q sm_table.q sm_ipc.q aj.q
 EXAMPLES.md    a tour in verified transcripts       examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
-COOKBOOK.md    recipes for kdb tasks                t/             q t/run.q runs the tests and prints one table (~2 min)
+COOKBOOK.md    recipes for kdb tasks                t/             q t/run.q runs the tests and prints one table (~2 min; QC_FAST=1 skips the slow doctests)
 DESIGN.md      design, conventions,                 tools/         doc_child.q, the child q the doctests run
                measurements, pitfalls               spikes/        sh spikes/run.sh re-runs the design's measurements
 AUDIT.md AUDIT2.md REVIEW.md   audits of the code   .qc/           the failure database, written by runs, gitignored

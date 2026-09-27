@@ -11,6 +11,11 @@ runb:{[f;i;b] inf:` sv dir,`$"in",string[i],".txt"; inf 0: {2_x} each b where b 
   want:rt each b where not b like "q)*"; ok:got~want;
   if[not ok; n:count[got]|count want; -1 "  ",string[f]," block ",string[i],": expected | got"; -1 mm'[n#want,n#enlist "";n#got,n#enlist ""]];
   ok}
-doc:{[f] b:blocks f; .t.t[string[f]," transcripts (",string[count b]," blocks) produce their stated output"; (0<count b) and all runb[f]'[til count b;b]]}
+/ QC_FAST=1 q t/run.q skips the blocks that run a state machine (the worked example's, mostly: three fifths of the
+/ suite's time) and says how many it skipped; the full run is the one that counts
+fast:count getenv `QC_FAST
+slow:{[b] any (b like "q)*") and b like "*.qc.sm*"}                                / (an input line that runs a state machine; a like with a * in the middle is nyi, pitfall 5)
+doc:{[f] b:blocks f; sk:$[fast; where slow each b; `long$()]; ix:(til count b) except sk;
+  .t.t[string[f]," transcripts (",string[count b]," blocks",$[count sk; ", fast: ",string[count sk]," machine blocks skipped"; ""],") produce their stated output"; (0<count ix) and all runb[f]'[ix;b ix]]}
 doc each `:README.md`:EXAMPLES.md`:DESIGN.md`:COOKBOOK.md`:examples/mdp/LOG.md
 .t.rm dir
