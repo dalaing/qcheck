@@ -6,5 +6,6 @@ missing:{[f] (names[f] except have) except `}
 .t.t["every .qc name in DESIGN.md exists"; 0=count missing `:DESIGN.md]
 .t.t["every .qc name in README.md exists"; 0=count missing `:README.md]
 .t.t["every .qc name in COOKBOOK.md exists"; 0=count missing `:COOKBOOK.md]
+.t.t["every .qc name in examples/mdp/LOG.md exists"; 0=count missing `:examples/mdp/LOG.md]
 if[count missing `:DESIGN.md; -1 "  DESIGN.md mentions: ",.Q.s1 missing `:DESIGN.md]
 if[count missing `:README.md; -1 "  README.md mentions: ",.Q.s1 missing `:README.md]
