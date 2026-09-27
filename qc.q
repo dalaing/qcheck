@@ -25,6 +25,7 @@ LX:`symbol$()               / labels of the current example
 TB:(`symbol$())!()          / counting tables for rec, per arity range
 / (CS UR US, the per-table state of constrained columns, are defined with the tables: saved and restored around each table)
 run:0b                      / inside chk/recheck (or a top-level draw): draws share one example
+nch:0                       / draw calls this example (a block counts once): what cfg`choices bounds
 / the choice tree of the current run (C19): one node per prefix of choices. A node holds the range drawn at it
 / (lo hi o, width w) or the conclusion c an example reached there (pass fail disc); nc children exist, nx of
 / them exhausted. A node is exhausted (x) when it concludes or all w of its children are; root exhausted = every
@@ -32,7 +33,7 @@ run:0b                      / inside chk/recheck (or a top-level draw): draws sh
 TR:([]p:`long$();v:`long$();lo:`long$();hi:`long$();o:`long$();w:`float$();nc:`long$();nx:`long$();x:`boolean$();c:`symbol$())
 TX:(enlist 0#0)!enlist 0N                             / seeded with an empty vector key (pitfall 19)
 
-reset:{[p;s;m;h] if[not abs[type p:(),p] in 1 4 5 6 7h; '"qc: choices must be integers"]; P::"j"$p; i::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
+reset:{[p;s;m;h] if[not abs[type p:(),p] in 1 4 5 6 7h; '"qc: choices must be integers"]; P::"j"$p; i::0; nch::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
 new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
 / the implicit d is never supplied by users, so a non-null d means one argument too many (C1)
 dd:{[d;n] if[not (::)~d; '"qc: too many arguments; ",$[n like "* *"; "the configurable form is ",n; n," takes none"]]}   / a form with a space is configurable
@@ -49,8 +50,20 @@ rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '
 / shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix.
 ch:{[r;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:1;
   v:$[j<count P; $[cf`clamp; lo|hi&P j; (P j) within (lo;hi); P j; '"qc.misaligned"]; sh; '"qc.overrun"; mn; o; fresh[lo;hi;o;w]];
-  if[cf[`choices]<count C; '"qc.toolarge"];
+  nch+:1; if[cf[`choices]<nch; '"qc.toolarge"];
   C,:(v;lo;hi;o); v}
+/ chn[r;n;w]: n choices of range r at once — one call, one append, one unit of the choice budget (M8, A22). Replay
+/ slices the prefix and clamps; past the prefix while shrinking is invalid; minimal mode gives origins; fresh
+/ values are drawn vectorised by freshn. Deleting inside a block is the shrinker's pblk (§1.5).
+chn:{[r;n;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:n; m:0|n&count[P]-j; p:m#j _ P;
+  p:$[cf`clamp; lo|hi&p; all p within (lo;hi); p; '"qc.misaligned"];
+  v:$[m=n; p; sh; '"qc.overrun"; mn; p,(n-m)#o; p,freshn[lo;hi;o;w;n-m]];
+  nch+:1; if[cf[`choices]<nch; '"qc.toolarge"];
+  C,:flip `v`lo`hi`o!(v;n#lo;n#hi;n#o); v}
+freshn:{[lo;hi;o;w;n] $[lo=hi; n#lo; -9h=type w; hi&lo+"j"$w>n?1f; 9h=type w; lo+sums[w] binr n?sum w; w~`u; unifn[lo;hi;n]; mixn[lo;hi;o;n]]}
+unifn:{[lo;hi;n] $[lo=hi; n#lo; 0<k:1+hi-lo; lo+n?k; ?[n?2; lo+n?0W; hi-n?0W]]}
+mixn:{[lo;hi;o;n] b:0=n?8; nb:(o;lo;hi;$[o<hi; o+1; o];$[o>lo; o-1; o]) n?5; sg:$[o=lo; n#1; o=hi; n#-1; (1 -1) n?2];
+  ?[b;nb;lo|hi&"j"$("f"$o)+sg*(n?1f)*2 xexp n?1+bits hi-lo]}
 fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; 9h=type w; lo+sums[w] binr rand sum w;
   w~`u; unif[lo;hi]; mix[lo;hi;o]]}
 unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}   / a width that overflows (null or negative) draws from [lo;lo+0W) or (hi-0W;hi]: on the full long range that misses 0 (mix reaches it as the origin); `u is only used on small ranges
@@ -106,6 +119,12 @@ lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:"j"$("f"$r 1)&("f"$lo)+sz;
     $[go; [x:draw g; end[]; xs:xs,enlist x; n+:1]; end[]]]; 1_xs}
 list:lst[0 0W]
 
+/ bulk[r;nr]: a long vector of a length in nr with values in r, recorded as one block (M8): 1e6 values in
+/ milliseconds, and a block shrinks by deleting chunks (pblk) as well as by its values. span = length + block.
+bulk:{[r;nr;d] dd[d;".qc.bulk[r;nr]"]; nr:rng nr; nr[1]&:nr[0]+sz*1000; beg`blk; n:ch[nr;`u]; v:chn[r;n;::]; end[]; v}   / the length is capped at lo+1000*size
+/ btab[nr] cols: a table of blocks with one drawn row count; a column is a range or (type char; range)
+btab:{[nr;cg;d] dd[d;".qc.btab[nr] cols"]; if[not dct cg; '"qc: btab needs a dict of column ranges"]; nr:rng nr; nr[1]&:nr[0]+sz*1000; beg`blk; n:ch[nr;`u];
+  cs:{[n;s] $[0h=type s; (s 0)$chn[s 1;n;::]; chn[s;n;::]]}[n] each value cg; end[]; flip key[cg]!cs}
 / ---- recursion: rec[k;leaf;node] spends the size budget exactly; shape law = fresh-draw weights ------
 conv:{[a;b] {[a;b;r] sum a[til 1+r]*b[r-til 1+r]}[a;b] each til count a}
 / counting tables: T[n] trees with n internal nodes and arity in k; C[m][r] m-tuples of trees totalling r
@@ -392,10 +411,18 @@ pred:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1; vi:cv ii; oi:cC[`o] ii;
        ok:$[k>0; try @[cv;ii,j;:;(vi-k;vj+k)]; 0b];
        if[(not ok) and vj>cC[`o] j; ok:try @[cv;ii,j;-;1]]; n+:1];
      $[ok; p:1b; ii+:1]]]]; p}
+/ blocks (M8): a blk span is a length choice followed by that many values. Delete a chunk of the values and lower the
+/ length (ddmin: g chunks; a hit keeps g, a miss doubles it), so a block reaches a minimum that is not a prefix.
+pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
+  while[j<count tb:select from cE where l=bl; s:tb[j;`s]; g:2; ok0:0b;
+    while[$[1>k:cv s; 0b; g<=k]; w:k div g; a:0; ok:0b;
+      while[(a<k) and not ok; w2:w&k-a; ok:try (s#cv),(enlist k-w2),dl[(s+1)_cv;a;a+w2]; a+:w];
+      $[ok; [ok0:1b; g:2|g div 2]; g*:2]];
+    if[ok0; p:1b]; j+:1]; p}
 / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
 shr:{[spec;prop;o] sspec::spec; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
   K::(enlist 0#0)!enlist 0N; H::0#H; bs::cf`sz;
-  while[$[na<cf`shrinks; any {x[]} each (pdisc;pdel;pzero;pdesc;psort;pdup;pmin;pred); 0b]];   / cond, not and: passes are not free
+  while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;pred); 0b]];   / cond, not and: passes are not free
   co,`shrinks`attempts`hist!(ns;na;H)}
 / failure database: one file per (spec;prop) under cfg`db, keyed by cfg`name or a hash of their source
 dbf:{[spec;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(spec;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console

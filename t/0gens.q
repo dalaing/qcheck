@@ -47,9 +47,11 @@
   (`dep;.qc.dep {[r] .qc.int 0 9};0;{x within 0 9};1b;1b);
   (`atr;.qc.atr[`s] .qc.list .qc.int 0 9;();{(x~()) or 7h=type x};0b;1b);
   (`tabc;.qc.tab `t`k`a!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.uniq .qc.elem `a`b`c;.qc.dep {[r] .qc.int (0;r`t)});flip `t`k`a!(();();());{98h=type x};1b;1b);
-  (`schema;.qc.schema ([]a:1 2;b:`x`y);([]a:`long$();b:`symbol$());{98h=type x};1b;1b))
+  (`schema;.qc.schema ([]a:1 2;b:`x`y);([]a:`long$();b:`symbol$());{98h=type x};1b;1b);
+  (`bulk;.qc.bulk[0 99;0 1000];`long$();{(7h=type x) and all x within 0 99};1b;1b);
+  (`btab;.qc.btab[0 50] `a`b!(0 9;("d";0 9));flip `a`b!(`long$();`date$());{(98h=type x) and (7h=type x`a) and 14h=type x`b};1b;1b))
 .g.rows,:{[c] (`$"t",c;.qc.t c;.g.org c;{[c;x] (neg .Q.t?c)=type x}[c];1b;1b)} each "bgxhijefcspmdznuvt"
 .g.T:flip `name`gen`origin`ok`typed`canary!flip .g.rows
 .g.NOCH:enlist `const
-.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t`mono`uniq`dep`atr`schema) in key `.qc]
+.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t`mono`uniq`dep`atr`schema`bulk`btab) in key `.qc]
 .t.t["registry: has a row per type char and no duplicate names"; (18=count .g.T where (string .g.T`name) like "t?") and (count .g.T)=count distinct .g.T`name]
