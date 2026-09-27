@@ -241,18 +241,75 @@ with shorts.
 
 **32. `chk` reseeds the process RNG.** Documented (`DESIGN.md` §4). Nothing to do.
 
+### Proposed pitfalls 33–42
+
+Each is a q fact that bit during phase 2 or this audit and is not yet in `DESIGN.md` §4 (Part 4, step 5 adds them).
+They are audited here like the others, so the cleanup that writes them down also knows where they stand.
+
+**33. `f'[a;b]` over a three-argument `f` is a projection of the each, not a list of results.** The each-both fills
+two of three arguments and returns a function; `count` of it is 1, and a `!` against thirteen keys fails with
+`length`. *Relies*: `qc.q:178` wraps `spc` in a two-argument lambda before the each-both and says why in its
+comment. `bkey'[c`s;c`e]` (`:423`) is two-argument, so it is safe. No other each-both over a named function in the
+library or the tests (grep). *Exposed*: none.
+
+**34. `0#` of a table drops its columns' attributes; `0#` of a vector keeps its attribute.** So an empty table
+generated from a schema must carry no attributes, or its `meta` differs from `meta 0#t`. *Relies*: `qc.q:224`
+applies attributes only when there are rows; `qc.q:238` strips the typed empties with `` `# `` because they are made
+from vectors (`0#'vals`), not from the table; `spikes/a21_meta.q:17-18` does both. *Exposed*: none.
+
+**35. `meta`'s `f` column names only keyed-table foreign keys.** An enumerated symbol column (`` `dom$ ``) shows `t`
+`s` and an empty `f`, indistinguishable from a plain symbol column; the domain is only in the values (`key c`).
+*Relies*: `qc.q:232` `colg` reads the enumeration from `key c`, never from `meta`; `qc.q:229-231` says so;
+`spikes/a21_meta.q:2-5` records the redesign. *Exposed*: none — and it is why `schema` takes a table, not a
+`meta`.
+
+**36. `count` is `#:` and `key` is `!:` in k, so "the first token's text ends in a colon" is not "an
+assignment".** `string first parse "count x"` is `"#:"`. *Relies*: `tools/doc_child.q:5-6` `.d.asg` recognises an
+assignment by an identifier followed by a single colon in the source text. `t/names.q:17` scans the *source* for
+`:` (where `count` is spelled out), so it is unaffected. *Exposed*: none. (Before the fix, `key .qc.cfg`'s output
+had been silenced in `EXAMPLES.md` since it was written.)
+
+**37. `system "q …"` prints the child's output instead of returning it.** A `system` command whose first token is
+`q` runs the child with the console attached; wrap it in `sh -c '…'` (or start with `/usr/bin/env q`) to capture.
+*Relies*: `t/examples.q:4` and `t/integ.q:23` use `sh -c`, `t/doctest.q:10` uses `/usr/bin/env q`.
+`examples/sm_ipc.q:4` and `spikes/a24_signal.q:12` start a background child with `system"q -p … &"` and redirect
+its output, which is the intended use. *Exposed*: none.
+
+**38. A lambda does not capture the enclosing function's locals.** An inner `{…}` sees globals and its own
+parameters only; an outer local used inside is an undefined name (`'at`). *Relies*: every inner lambda in the
+library is projected on what it needs — `qc.q:224` `{[at;tb;c] …}[at]/`, `:222` `{[r;cg;ks] …}[r;cg]`, `:366`
+`{[c;n;sp] …}[c]'`, `:127` `{[n;s] …}[n] each`; `pdup`'s and `blk`'s inner lambdas read `cv`, a global.
+`t/tables.q:44` `{[t;i] …}[t] each`, `spikes/a21_meta.q:18-19`. *Exposed*: none found by reading; a mechanical
+check (an inner lambda's free identifiers that are locals of the enclosing lambda) does not exist and would be a
+`t/names.q` addition.
+
+**39. `where` over a dict returns keys; over a list, indices.** Both are wanted in different places and they
+read alike. *Relies*: `qc.q:220` `uc:where ks=`uniq` and `:224` `where at=`p` take keys from dicts on purpose;
+`qc.q:236` `cs where `u=attr each vals` indexes a list of column names by the list result, which is what the
+first draft got wrong (a symbol list indexed by nothing). *Exposed*: none.
+
+**40. `p#` on a non-parted vector reports `u-fail`, the same error as `u#`.** *Relies*: `qc.q:224` sorts the
+parted columns first (`(where at=`p),where at=`s`) so `p#` always holds; `qc.q:237` refuses a schema with both a
+`p#` and an `s#` column, since one sort cannot serve both; `atr` (`:203`) sorts before `p#`. *Exposed*: none — the
+misleading text is q's, and the design's M7 paragraph names it.
+
+**41. `x,:y` on an undefined global defines it at top level.** No error, no warning: `calls,:(1;2)` creates
+`calls`. A later `calls:(…)` then replaces it and the appended values are gone. *Exposed*: `t/outcomes.q:32-33`
+(the C9 finding above — the size-leak calls are appended one line before the list they should join). *Relies*:
+every other `,:` in the tests and spikes has its target defined earlier (`.t.r`, `.s.nodes`, `.s.used`,
+`.g.rows`; mechanical check over `t/`, `spikes/`, `examples/`). A statement-level lint — `,:` on a name with no
+earlier definition in the file — would belong with the harness.
+
+**42. `?[c;a;b]` needs a boolean `c`.** The vector conditional on a long vector raises `type`; `n?2` gives longs,
+not booleans. *Exposed*: `qc.q:64` `unifn` (the C3 bug above). *Relies*: `qc.q:65-66` `mixn` builds its condition
+as `0=n?8`, a boolean.
+
 ---
 
 ## Part 3 — Outside both lists
 
-- [ ] **Pitfall candidates found during phase 2 and not yet in §4** (each is a q fact that bit once and is recorded
-  only in a §3 milestone paragraph or a commit message): `f'[a;b]` over a three-argument `f` is a projection of the
-  each, not a list of results; `0#` of a table drops attributes while `0#` of a vector keeps them; `meta`'s `f`
-  names only keyed-table foreign keys, never an enumeration's domain; `count` and `key` are `#:` and `!:` in k, so
-  a "last char is a colon" test for assignments misfires; `system "q …"` prints instead of returning, `sh -c`
-  captures; a lambda does not capture the enclosing function's locals; `where` over a dict returns keys, over a
-  list indices; `p#` on a non-parted vector reports `u-fail`; `x,:y` on an undefined global defines it at top level
-  (this audit, `t/outcomes.q`); `?[c;a;b]` needs a boolean `c` (this audit, `unifn`).
+- [ ] **Pitfall candidates 33–42** are audited in Part 2 above and need writing into `DESIGN.md` §4: each is a q
+  fact that bit once and is recorded only in a §3 milestone paragraph, a commit message, or this audit.
 - [ ] `qc.q:200` `mono`'s comment says "adds a delta drawn from g"; a `g` that can go negative makes the column
   unsorted with no warning (reproduced: `mono[int 0 9;int -9 9]` is unsorted). The design (§1.3) says "sorted by
   construction". Either `mono` clamps the delta at zero, or the design says the delta must be non-negative.
@@ -272,5 +329,6 @@ with shorts.
 3. [ ] **C21.** The `bulk`/`btab` cap in floats.
 4. [ ] **Tests and names.** A duplicate-definition check in `t/names.q`; `from` renamed in `spikes/a26_time.q`; the
    three root mirrors renamed; `t/scale.q:26`'s name; a `mix`/`mixn` and `unif`/`unifn` agreement test (C17).
-5. [ ] **Design.** C22–C25 from the phase-2 lessons; pitfalls 33+ from Part 3; `mono`'s non-negative-delta contract
-   stated where `mono` is defined and in §1.3.
+5. [ ] **Design.** C22–C25 from the phase-2 lessons; pitfalls 33–42 as audited in Part 2 (two of them, 41 and 42,
+   are the live ones behind the `t/outcomes.q` and `unifn` bugs); `mono`'s non-negative-delta contract stated where
+   `mono` is defined and in §1.3.
