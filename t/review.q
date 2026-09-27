@@ -13,6 +13,8 @@ r:.qc.chk[q;.qc.sm[`m0`fini!(0;{F+:1})] cm;::]
 .t.t["sm: fini runs even when the system errors"; (`falsified=r`why) and F>0]
 e:@[{.qc.eq[`a`b!1 2;`b`a!2 1]};::;{x}]
 .t.t["eq: the order row is a well-formed one-row table"; ("qc.eq"~e) and (1=count last .qc.N) and (`path`why`a`b~cols last .qc.N) and `order~first exec why from last .qc.N]
+e:.[.qc.eq;((0#`)!`long$();()!());{x}]
+.t.t["eq: two empty dicts whose keys differ in type get a keytype row, not order"; ("qc.eq"~e) and `keytype~first (last .qc.N)`why]
 .t.t["report: the ok line has no suffix for a plain budget stop"; (first .qc.report .qc.chk[q;.qc.int 0 999;{1b}]) like "ok 100 tests (seed *"]
 .t.t["report: the ok line names an exhausted space"; (first .qc.report .qc.chk[q;.qc.bool;{1b}]) like "ok 2 tests, exhausted (seed *"]
 / round 2: the library never applies a value it has not checked is callable (an integer would be an IPC handle)

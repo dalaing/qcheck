@@ -503,7 +503,7 @@ dat:{[p;a;b] $[a~b; (); enlist (p;`value;a;b)]}
 dcnt:{[p;a;b] $[count[a]=count b; (); enlist (p;`count;count a;count b)]}
 dvec:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],{[p;a;b;ii] (p,ii;`value;a ii;b ii)}[p;a;b] each where (n#a)<>n#b}
 dlist:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],raze {[p;a;b;ii] df[p,ii;a ii;b ii]}[p;a;b] each til n}
-ddict:{[p;a;b] ka:key a; kb:key b;
+ddict:{[p;a;b] ka:key a; kb:key b; if[not type[ka]=type kb; :enlist (p;`keytype;type ka;type kb)];   / (two empty dicts can differ only there; without this row the diff is empty and eq says order)
   ({[p;k] (p,k;`key;k;::)}[p] each ka except kb),({[p;k] (p,k;`key;::;k)}[p] each kb except ka),
   raze {[p;a;b;k] df[p,k;a k;b k]}[p;a;b] each ka inter kb}
 dtab:{[p;a;b] ca:cols a; cb:cols b; n:count[a]&count b;
