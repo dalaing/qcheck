@@ -28,6 +28,8 @@ r:.qc.chk[q;.qc.bulk[0 99;0 100000];{100>sum x}]
 tb:.qc.draw .qc.btab[5 5] `a`b`c!(0 9;("d";0 9);("f";0 9))
 .t.t["btab: typed columns, one row count"; (5=count tb) and (7h=type tb`a) and (14h=type tb`b) and 9h=type tb`c]
 r:.qc.chk[q;.qc.btab[0 10000] `k`v!(0 9;0 9);{not any 5<x`v}]
-.t.t["btab: a planted bug shrinks to one row"; (1=count r[`x]`x) and 6<=first r[`x][`x;`v]]
+.t.t["btab: a planted bug shrinks to one row (the chunk is deleted from every column block)"; (1=count r[`x]`x) and 6<=first r[`x][`x;`v]]
+r:.qc.chk[q;.qc.btab[0 100000] `k`v!(0 9;("d";0 9));{all x[`v]<2000.01.09}]
+.t.t["btab: over up to 1e5 rows, a date bug shrinks to one row at the boundary"; (1=count r[`x]`x) and 2000.01.09=first r[`x][`x;`v]]
 .t.t["btab refuses a non-dict"; (@[.qc.draw;.qc.btab[1 1] 5;{x}]) like "qc: btab*"]
 .qc.cfg[`v]:1

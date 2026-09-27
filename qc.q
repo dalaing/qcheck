@@ -411,12 +411,13 @@ pred:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1; vi:cv ii; oi:cC[`o] ii;
        ok:$[k>0; try @[cv;ii,j;:;(vi-k;vj+k)]; 0b];
        if[(not ok) and vj>cC[`o] j; ok:try @[cv;ii,j;-;1]]; n+:1];
      $[ok; p:1b; ii+:1]]]]; p}
-/ blocks (M8): a blk span is a length choice followed by that many values. Delete a chunk of the values and lower the
-/ length (ddmin: g chunks; a hit keeps g, a miss doubles it), so a block reaches a minimum that is not a prefix.
+/ blocks (M8): a blk span is a length choice k followed by m blocks of k values (one for bulk, one per column for
+/ btab). Delete the same chunk from every block and lower k (ddmin: g chunks; a hit keeps g, a miss doubles it),
+/ so a block reaches a minimum that is not a prefix.
 pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
   while[j<count tb:select from cE where l=bl; s:tb[j;`s]; g:2; ok0:0b;
-    while[$[1>k:cv s; 0b; g<=k]; w:k div g; a:0; ok:0b;
-      while[(a<k) and not ok; w2:w&k-a; ok:try (s#cv),(enlist k-w2),dl[(s+1)_cv;a;a+w2]; a+:w];
+    while[$[1>k:cv s; 0b; g<=k]; m:(tb[j;`e]-s+1) div k; w:k div g; a:0; ok:0b;
+      while[(a<k) and not ok; w2:w&k-a; ix:s+1+raze (a+til w2)+/:k*til m; ok:try @[cv (til count cv) except ix;s;:;k-w2]; a+:w];
       $[ok; [ok0:1b; g:2|g div 2]; g*:2]];
     if[ok0; p:1b]; j+:1]; p}
 / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
