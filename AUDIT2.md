@@ -6,7 +6,9 @@ mirrors across every file, `like` patterns, `each` after a generator, keyed tabl
 definitions inside `.qc`, each-both over three-argument functions), and every claimed behaviour reproduced before
 it was written down. Line numbers are `file:line` in the current tree. The suite is green at 1438/1438.*
 
-**Status: open.** Every actionable item carries a `[ ]` checkbox. Tags as before: **bug** — observable wrong
+**Status (2026-09-27, after the cleanup pass): closed.** Every box is ticked; two items are accepted with a note (the
+tests' dependent `and`-chains, which the harness now fails alone, and the example assertions, which are demos).
+The suite grew from 1438 to 1450 tests. Every actionable item carries a `[ ]` checkbox. Tags as before: **bug** — observable wrong
 behaviour; **break** — the convention's letter is not followed; **spirit** — the letter is met, the intent is not,
 or only by accident; for pitfalls **relies** — handled knowingly (do not undo) and **exposed** — live.
 
@@ -34,7 +36,7 @@ Every phase-2 generator begins with `dd` (`mono`, `uniq`, `dep`, `atr`, `bulk`, 
 ### C2 — guards are conds, not conjunctions
 Library: clean. The phase-2 `and`s have independent terms (`qc.q:224` `count[at] and count rs`, `:189`
 `(k=`ktab) and n>1`, `:448` `(a<k) and not ok`); the type tests in `vnode`, `cands` and `mark` are cond chains.
-- [ ] **spirit (tests)** dependent chains that raise rather than fail when the property under test misbehaves,
+- [x] **spirit (tests), accepted** dependent chains that raise rather than fail when the property under test misbehaves,
   reproduced against a passing run: `t/tables.q:12` (`rank`), `t/sm.q:43` (`type`), `t/integ.q:9` (`type`); the
   shape recurs at `t/tables.q:24,61`, `t/scale.q:31,33`, `t/types.q:30`. Since the first audit the harness fails
   each such statement alone (`t/run.q:12-13`), so the cost is a misnamed failure, not a skipped file. Same standing
@@ -76,7 +78,7 @@ Clean. Contracts c3 covers every new registry row; `bulk` records its length, `v
 ### C8 — tests pin seeds
 New files pin (`t/tables.q:5`, `t/scale.q:5`, `t/integ.q:5`); `t/stop.q`, `t/reportx.q`, `t/report.q`,
 `t/outcomes.q`, `t/self.q` draw only through `chk`, which seeds itself.
-- [ ] **spirit** `t/examples.q:13` asserts that `examples/aj.q`, run with a random seed, finds its planted bug.
+- [x] **spirit, accepted** `t/examples.q:13` asserts that `examples/aj.q`, run with a random seed, finds its planted bug.
   Near-certain in 100 tests, not pinned. Same standing as the other example assertions in the first audit.
 
 ### C9 — engine state is restored at the example boundary
@@ -128,7 +130,7 @@ Clean. `bulk`'s and `btab`'s ranges go through `rng`; `ktab`'s `k` through `(),k
 ### C18 — examples are tests
 Clean: `COOKBOOK.md`, `EXAMPLES.md`, `README.md`, `DESIGN.md` transcripts run; every example runs; every `.qc.`
 name in the four documents exists.
-- [ ] **gap (process)** the plan's fold-back step — "conventions folded back into §1.10 as C22+" at the end of each
+- [x] **gap (process)** the plan's fold-back step *(now C22–C25)* — "conventions folded back into §1.10 as C22+" at the end of each
   milestone — was not done: §1.10 still ends at C21, and the lessons live only in the M7–M11 paragraphs of §3.
   Candidates: per-table generator state saved and restored around the structure that owns it (M7); heterogeneous
   lists grow behind a `::` seed (M7, pitfall 30); a block is one draw call and one span (M8); the error a caller
@@ -308,7 +310,7 @@ as `0=n?8`, a boolean.
 
 ## Part 3 — Outside both lists
 
-- [ ] **Pitfall candidates 33–42** are audited in Part 2 above and need writing into `DESIGN.md` §4: each is a q
+- [x] **Pitfall candidates 33–42** are audited in Part 2 above and need writing into `DESIGN.md` §4: each is a q
   fact that bit once and is recorded only in a §3 milestone paragraph, a commit message, or this audit.
 - [x] `qc.q:200` `mono`'s comment says "adds a delta drawn from g"; a `g` that can go negative makes the column
   unsorted with no warning (reproduced: `mono[int 0 9;int -9 9]` is unsorted). The design (§1.3) says "sorted by
@@ -329,6 +331,6 @@ as `0=n?8`, a boolean.
 3. [ ] **C21.** The `bulk`/`btab` cap in floats.
 4. [ ] **Tests and names.** A duplicate-definition check in `t/names.q`; `from` renamed in `spikes/a26_time.q`; the
    three root mirrors renamed; `t/scale.q:26`'s name; a `mix`/`mixn` and `unif`/`unifn` agreement test (C17).
-5. [ ] **Design.** C22–C25 from the phase-2 lessons; pitfalls 33–42 as audited in Part 2 (two of them, 41 and 42,
+5. [x] **Design.** C22–C25 from the phase-2 lessons; pitfalls 33–42 as audited in Part 2 (two of them, 41 and 42,
    are the live ones behind the `t/outcomes.q` and `unifn` bugs); `mono`'s non-negative-delta contract stated where
    `mono` is defined and in §1.3.

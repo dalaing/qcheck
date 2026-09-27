@@ -120,7 +120,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.list g`, `.qc.lst[r] g` | variable-length list of `g`, length range `r` (default `0 0W`, capped by size); homogeneous atoms become a typed vector automatically |
 | `.qc.vec[r] c` | typed vector of `.qc.t c`, typed even when empty |
 | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. An empty draw has untyped columns (no row was drawn to learn them); use `tabr[1 0W]` when a typed empty table matters |
-| `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g` (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
+| `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g`, which must be non-negative — a negative delta is a usage error, never a quietly unsorted column (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
@@ -721,6 +721,31 @@ draws its node count uniformly, as designed. `t/dist.q` now measures every hint 
 ranges people use: list lengths, alternatives, weights, bits, the full-domain wrapper, signs, float means, tree
 and step counts — with pinned seeds and multi-sigma bounds, never exact rates.
 
+
+**C22 — state that belongs to a structure is saved and restored around that structure.** A constrained
+table's columns need memory across rows (the last `mono` value, `uniq`'s remaining and used values); it lives in
+three globals that `tabx` saves on entry and restores on every exit, including the error path, so tables nest and a
+failed table leaves nothing behind. Per-example state belongs to `reset` and per-run state to `chk1`; this is the
+third tier, owned by the structure. Origin: M7, where the first draft kept the state per example and two tables in
+one spec shared it.
+
+**C23 — a list that may hold anything grows behind a `::` seed.** `enlist d` is a table, a list of conforming
+dicts is a table, and a dict amended with one long has a typed value list: the next element of another shape
+cannot join (pitfalls 6 and 30). Every accumulator in the library that can receive mixed elements — `lst`, `sub`,
+`subb`, the row in `rowd`, `mono`'s state, `uniq`'s used set — starts as `enlist (::)` (or `(enlist `)!enlist (::)`)
+and drops the seed at the end, which leaves exactly what q would have built for a homogeneous list. Origin: A27
+(`rec` over dicts), then two `mono` columns of different types in the second audit.
+
+**C24 — a block is one draw call, one span and one unit of the budget.** `chn` records n choices in one call;
+`bulk` and `btab` wrap it in one span whose layout (a length, then m blocks of that length) the shrinker's `pblk`
+knows; `cfg`choices` counts calls, not rows. Anything that reads the layout — `pblk`, the choice tree's path
+product — must handle a block as a unit or it either stalls (a chunk deleted from one block of several) or
+switches regime (a path product over n rows). Origin: A22 and M8.
+
+**C25 — two implementations of one law agree by test.** Where a law has a scalar and a vectorised form (`mix`
+and `mixn`, `unif` and `unifn`), `t/dist.q` measures both on the same ranges with a pinned seed and requires them
+to agree within a few sigma; the vectorised form's first bug (a long vector given to the vector conditional) was
+invisible to every other test because no public caller reached it. Origin: the second audit.
 ---
 
 ## 2. Assumptions and validation log
@@ -927,6 +952,25 @@ For the implementer:
 31. `in` and `?` compare within one type: `.Q.t?"j"` is a long and `type x` a short, so
     `(neg .Q.t?c) in type each xs` is a type error where `=` would have coerced; cast one side.
 
+33. `f'[a;b]` over a three-argument `f` is a projection of the each, not a list of results: `count` of it is 1.
+    Wrap `f` in a two-argument lambda first (`t`'s construction over `spc`).
+34. `0#` of a table drops its columns' attributes; `0#` of a vector keeps its attribute. An empty table generated
+    from a schema therefore carries none, and its typed empties are stripped with `` `# `` when they come from vectors.
+35. `meta`'s `f` column names only keyed-table foreign keys; an enumerated symbol column shows `t` `s` and an
+    empty `f`. The enumeration's domain is in the values: `key c`.
+36. `count` is `#:` and `key` is `!:` in k, so `":"=last string first parse s` says "assignment" for `count x`. An
+    assignment is an identifier followed by a single colon in the source text (`tools/doc_child.q`).
+37. `system "q …"` runs the child with the console attached and prints its output instead of returning it; wrap
+    the command in `sh -c '…'`, or begin it with `/usr/bin/env q`.
+38. A lambda does not capture the enclosing function's locals; an outer local used inside an inner `{…}` is an
+    undefined name. Project the inner lambda on what it needs (`{[at;tb;c] …}[at]/`).
+39. `where` over a dict returns keys; over a list, indices. `cs where b` indexes a list of names by the indices;
+    `where d` on a dict of booleans is already the names.
+40. `p#` on a non-parted vector reports `u-fail`, the same text as a failed `u#`. Sort by the parted columns first;
+    a table cannot carry both `p#` and `s#` on random rows.
+41. `x,:y` on an undefined global defines it at top level, silently; a later `x:…` replaces it and the appended
+    values are gone (`t/outcomes.q`, the first version of the C9 regression test). Define before appending.
+42. `?[c;a;b]` needs a boolean `c`; `n?2` gives longs and raises `type`. `n?01b`, or a comparison.
 ---
 
 ## 5. Review rounds
@@ -947,6 +991,7 @@ whole codebase rather than to the instance that had surfaced it, and the mechani
 | 6 | C17 audit: measured distributions | the tests' first bounds were wrong, the distributions right (full-domain longs are ~9% specials because the normal branch's boundary picks include `±0W`) | `t/dist.q` |
 | 7 | convergence: every scan and audit rerun, the library read once more | one input guard (negative weights) | — |
 | 8 | convergence, repeated | nothing | — |
+| 10 | the second audit (`AUDIT2.md`), over phase 2 | two `mono` columns of different types (pitfall 6 in dict form, now C23); `colg` sending table-valued columns down the enumeration branch; `unifn`'s long condition (pitfall 42); a `uniq` used set collapsing to a table; the C9 regression test appended before its list existed (pitfall 41); bare errors at the new boundaries; no C22 after five milestones | `t/tables.q`, `t/scale.q`, `t/review.q`, `t/dist.q` (C25), `t/names.q` (duplicate definitions) |
 | 9 | the audit (`AUDIT.md`): every convention and pitfall against every file, each finding reproduced | a run's size leaking into later draws (C9); an elided rerun line for an empty vector and a test that was `x=x` (C18); bare q errors for keyed tables and non-symbol labels (C14, pitfall 28); unpinned seeds in five files (C8); long arithmetic wrapping at six more sites (C21); the examples and the design's snippets not run (C18); a raising assertion skipping its file (C2) | `t/examples.q`, `t/review.q`, the per-statement harness in `t/run.q` |
 
 Two of the round-4/5 fixes were themselves wrong on first writing (`md5` takes chars, not bytes; a list-valued
