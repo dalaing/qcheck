@@ -5,9 +5,8 @@ the fix, so the passing run is shown too. Every transcript is executed by `t/doc
 loaded and `.qc.cfg[`seed]:7i`, and must print exactly what is shown. Where a recipe needs `.qc.eq` the report carries a diff table; where it is a state
 machine, the trace.
 
-The recipes plant their bugs so the report is the point. For the other kind — a system built in pieces, with the
-bugs that actually surfaced as it was written, and a state machine that found one no piece could — see
-`examples/mdp/LOG.md`.
+For the other kind of example — a system built in pieces, with the bugs that actually surfaced as it was written,
+and a state machine that found one no piece could — see `examples/mdp/LOG.md`.
 
 ## An as-of join against a naive one
 
