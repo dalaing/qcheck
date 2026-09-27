@@ -32,6 +32,13 @@ ls:.qc.draw 200#enlist .qc.lst[3 5] .qc.int 0 9
 .t.t["list: size 0 gives empty lists"; ()~.qc.draw .qc.list .qc.int 0 9]
 .t.sz 100
 .t.t["list: general when elements are lists"; 0h=type .qc.draw .qc.lst[2 2] .qc.lst[1 1] .qc.int 0 9]
+/ pitfall 30: a list of conforming dicts is a table, and a dict that does not conform cannot be joined onto it
+two:.qc.one (.qc.const `a`b!1 2;.qc.const (enlist `c)!enlist 3)
+.t.t["list: elements that are dicts with different keys do not mismatch (found by A27)"; all {(0h=type x) or 98h=type x} each .qc.draw 50#enlist .qc.lst[2 2] two]
+.t.t["rec: children that are dicts with different keys do not mismatch"; all {`ok~@[{.qc.draw x; `ok};x;{`ERR}]} each 50#enlist .qc.rec[2 2;two;{x}]]
+.t.t["list: conforming dicts still arrive as a table, atoms as a typed vector"; (98h=type .qc.draw .qc.lst[2 2] .qc.const `a`b!1 2) and 7h=type .qc.draw .qc.lst[2 2] .qc.int 0 9]
+dg:{[d] .qc.draw dg}; d0:.qc.cfg`depth; .qc.cfg[`depth]:3; e:@[.qc.draw;dg;{x}]; .qc.cfg[`depth]:d0; .qc.new[]
+.t.t["cfg reaches the next interactive draw without a run (depth)"; "qc.toodeep"~e]
 / alternatives and filters
 .t.t["elem: from the list"; all (.qc.draw 100#enlist .qc.elem `a`b`c) in `a`b`c]
 .t.t["one: draws one alternative"; all (.qc.draw 100#enlist .qc.one (.qc.int 0 0;.qc.int 5 5)) in 0 5]

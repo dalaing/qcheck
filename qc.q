@@ -73,7 +73,8 @@ call:{[g] dp+:1; if[cf[`depth]<dp; '"qc.toodeep"]; beg g; r:g[]; end[]; dp-:1; r
 dr:{$[(::)~x; x; type[x] within 100 112; call x; 99h=type x; $[98h=type key x; x; key[x]!.z.s each value x];
   0h=type x; .z.s each x; x]}
 / the interactive entry points own the example boundary: reset, run flag, protected dr, restore (C6, C9, C10)
-top:{[p;m;h;s] if[run; '"qc: nested check"]; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; 'x}]; run::0b; r}
+/ outside a run the effective config is the defaults: a cfg edit must reach the next interactive draw
+top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; 'x}]; run::0b; r}
 draw:{$[run or dp>0; dr x; top[`long$();0b;0b;x]]}   / fresh draws; inside a run or a draw, just interpret
 minimal:top[`long$();1b;0b]                           / the simplest value of a spec: every draw is its origin
 replay:{[p;s] top[p;0b;0b;s]}                         / the value a recorded choice vector produces
@@ -97,9 +98,11 @@ discard:{'"qc.discard"}
 / probability makes the length uniform on lo..m
 / every iteration records its decision bit, forced 1 under lo and forced 0 at the cap, so the structure is the
 / same at every size and a replay at a larger size still finds its stop (C7). span = decision bit + element.
-lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:"j"$("f"$r 1)&("f"$lo)+sz; xs:(); n:0; go:1b;   / the cap in floats: lo+sz wraps near 0W (C21)
+/ elements gather behind a :: seed and the seed is dropped at the end: a list of conforming dicts is a table and the
+/ next dict that does not conform cannot be joined onto it (pitfall 30); atoms still collapse to a typed vector
+lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:"j"$("f"$r 1)&("f"$lo)+sz; xs:enlist (::); n:0; go:1b;   / the cap in floats: lo+sz wraps near 0W (C21)
   while[go; beg`el; go:1=$[n<lo; ch[1 1 1;::]; n<m; ch[0 1 0;(m-n)%1+m-n]; ch[0 0 0;::]];
-    $[go; [x:draw g; end[]; xs:xs,enlist x; n+:1]; end[]]]; xs}
+    $[go; [x:draw g; end[]; xs:xs,enlist x; n+:1]; end[]]]; 1_xs}
 list:lst[0 0W]
 
 / ---- recursion: rec[k;leaf;node] spends the size budget exactly; shape law = fresh-draw weights ------
@@ -112,13 +115,13 @@ tabs:{[k;n] if[n>300; '"qc: rec: size above 300 has too many shapes to count; lo
   if[$[s in key TB; n>=count TB[s]`T; 1b]; TB[s]:ctab[k;n|300&cf`sz]]; TB s}
 / uniform over shapes: arity weighted by C[m][r], child sizes by T[j]*C[m-1-i][r-j]; last child takes the rest
 sub:{[k;leaf;node;tb;b] $[b<1; draw leaf; [r:b-1; ms:k[0]+til 1+k[1]-k 0; m:ms ch[(0;-1+count ms;0);tb[`C][ms;r]];
-  cs:(); j:0; while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);tb[`T][til 1+r]*tb[`C][m-1-j;r-til 1+r]]]; r-:s;
-    c:.z.s[k;leaf;node;tb;s]; end[]; cs:cs,enlist c; j+:1]; node cs]]}   / span = share + subtree
+  cs:enlist (::); j:0; while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);tb[`T][til 1+r]*tb[`C][m-1-j;r-til 1+r]]]; r-:s;
+    c:.z.s[k;leaf;node;tb;s]; end[]; cs:cs,enlist c; j+:1]; node 1_cs]]}   / span = share + subtree; children behind a :: seed (pitfall 30)
 rec:{[k;leaf;node;d] dd[d;".qc.rec[k;leaf;node]"]; need[node;"rec's node"]; k:2#(),"j"$k; tb:tabs[k;sz]; beg`sub; n:ch[(0;sz;0);`u];   / rec[2;..]: exactly two
   n:last where 0<tb[`T] til 1+n; r:sub[k;leaf;node;tb;n]; end[]; r}
 / uniform cut (random binary-search-tree law): same choices, uniform weights
-subb:{[k;leaf;node;b] $[b<1; draw leaf; [r:b-1; m:ch[((k 0)|(k 1)&r>0;k 1;k 0);`u]; cs:(); j:0;
-  while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);`u]]; r-:s; c:.z.s[k;leaf;node;s]; end[]; cs:cs,enlist c; j+:1]; node cs]]}
+subb:{[k;leaf;node;b] $[b<1; draw leaf; [r:b-1; m:ch[((k 0)|(k 1)&r>0;k 1;k 0);`u]; cs:enlist (::); j:0;
+  while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);`u]]; r-:s; c:.z.s[k;leaf;node;s]; end[]; cs:cs,enlist c; j+:1]; node 1_cs]]}
 recb:{[k;leaf;node;d] dd[d;".qc.recb[k;leaf;node]"]; need[node;"recb's node"]; k:2#(),"j"$k; beg`sub; r:subb[k;leaf;node;ch[(0;sz;0);`u]]; end[]; r}
 
 

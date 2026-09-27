@@ -718,7 +718,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 | A19 | A key column without duplicates: filter per row, index the remaining keys, or dedupe after | `a19_distinct.q` 5/5 | ✅ | All three reach the minimum. Indexing the remaining keys: one choice per row, no retries, 84 attempts and 14 choices per example at full density against `such` 228 and 19; both discard once rows exceed the key space, so a library `uniq` over a finite set caps the rows, and over an open generator falls back to filtering. Dedupe never discards but the row count is not the one drawn (and 21 choices per example). Chosen for M7: remaining keys for finite sets, filter otherwise. |
 | A23 | Attributes set inside a generator survive every path | `a23_attr.q` 5/5 | ✅ | `s u g p` all survive draw, replay, strict, every shrink candidate, the counterexample and the failure db. `~` ignores attributes, so `eq` cannot report a missing one: a property about attributes says `attr x`. `` `s# `` on an unsorted vector signals `s-fail`, so `attr` composes safely with `asc`. |
 | A24 | A multi-line report survives as an error string through `@`, `.Q.trp` and IPC | `a24_signal.q` 5/5 | ✅ | Intact on all three, including over a socket to a child q; the first line is a one-line summary a framework can print. So `must` can signal the whole report (M9). |
-| A25 | The result dict is machine-readable as it is | `a25_json.q` 3/3 | ✅ | `.j.j` never errors on any of twelve outcomes (including a table in `notes` and a function as the counterexample) and `.j.k` reads every one back with the same keys. Losses: symbols become strings, `::` becomes null (`0n` back), the int seed becomes a float, a function becomes its source text. No `.qc.json` needed; M9 documents `.j.j r` and the four losses. |
+| A25 | The result dict is machine-readable as it is | `a25_json.q` 3/3 | ✅ | `.j.j` never errors on any of twelve outcomes (including a table in `notes` and a function as the counterexample) and `.j.k` reads every one back with the same keys. Losses: symbols become strings, `::` becomes null (`0n` back), the int seed becomes a float, a function becomes its source text. No json function is needed; M9 documents `.j.j r` and the four losses. |
 
 ---
 
@@ -839,6 +839,13 @@ For the implementer:
     table is `99h`: every dict test needs `not 98h=type key x` — `dct` is that test, used at every dict boundary.
 29. `in` is reserved and cannot be a column name; the trace uses `arg` and `res`. A list literal
     `(f[]; g[])` evaluates right to left, so `(.qc.minimal g; count .qc.C)` counts before it draws.
+30. `enlist d` is a table, and a list of conforming dicts *is* a table — there is no other representation — so
+    joining a dict that does not conform onto it is `mismatch`. A list that may hold anything is grown behind a
+    `::` seed and the seed dropped at the end: atoms still collapse to a typed vector, conforming dicts to a
+    table, and anything else stays general (`lst`, `sub`, `subb`; found by A27, whose node function must also
+    accept children that arrive as a table).
+31. `in` and `?` compare within one type: `.Q.t?"j"` is a long and `type x` a short, so
+    `(neg .Q.t?c) in type each xs` is a type error where `=` would have coerced; cast one side.
 
 ---
 
