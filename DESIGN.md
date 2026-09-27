@@ -8,7 +8,24 @@ qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis
 the shape a seasoned q programmer expects: a handful of primitives, data over objects, tables for anything with
 structure, composition through the verbs q already has.
 
-Contents: 1 Design · 2 Assumptions and validation log · 3 Implementation plan · 4 Pitfalls · 5 Review rounds.
+Contents (each heading is a link):
+- [1. Design](#1-design)
+  - [1.1 Why the Hypothesis model is the q model](#11-why-the-hypothesis-model-is-the-q-model)
+  - [1.2 Vocabulary and calling convention](#12-vocabulary-and-calling-convention)
+  - [1.3 Generators (namespace `.qc`)](#13-generators-namespace-qc)
+  - [1.4 Properties and the runner](#14-properties-and-the-runner)
+  - [1.5 Shrinking](#15-shrinking)
+  - [1.6 Rich output](#16-rich-output)
+  - [1.7 State machines](#17-state-machines)
+  - [1.8 Deliberately absent](#18-deliberately-absent)
+  - [1.9 Layout](#19-layout)
+  - [1.10 Conventions](#110-conventions)
+- [2. Assumptions and validation log](#2-assumptions-and-validation-log)
+- [3. Implementation plan](#3-implementation-plan)
+- [4. Pitfalls](#4-pitfalls)
+- [5. Review rounds](#5-review-rounds)
+  - [The suite that would have caught them](#the-suite-that-would-have-caught-them)
+  - conventions: C1 · C2 · C3 · C4 · C5 · C6 · C7 · C8 · C9 · C10 · C11 · C12 · C13 · C14 · C15 · C16 · C17 · C18 · C19 · C20 · C21 · C22 · C23 · C24 · C25 are in §1.10, indexed at its head; pitfalls 1–45 in §4, indexed at its head.
 
 ---
 
@@ -134,6 +151,11 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.rec[k;leaf;node]` | **recursive structures**: child-count range `k`, leaf spec, and `node`, a function of the list of already-drawn children (below) |
 | `.qc.const x` `.qc.sized f` `.qc.small g` | constant escape hatch; `f` of size returning a spec; halve the budget for a sub-spec |
 
+#### How they are built
+
+The table above is the reference (`REFERENCE.md` has every name in one line); what follows is why the
+generators are shaped as they are.
+
 **Recursion.** The naive q tree `{$[.qc.draw .qc.bool; (tree;tree); leaf]}` is a *critical* branching process:
 finite with probability 1 but with infinite expected size, so it occasionally runs into q's stack limit
 (A4, A16). Halving the size per level (`.qc.small`) makes it finite but dull: every tree at a given size has
@@ -246,6 +268,9 @@ columns from what they would have drawn; `schema` knows from `0#` of the sample.
 space is smaller than the rows discards (`sym` has 85 values; a `u#` column with 100 rows cannot be drawn).
 
 ### 1.4 Properties and the runner
+
+(The entry points — `check chk checks chks must mustc main draw minimal replay strict recheck again report` — are one
+line each in `REFERENCE.md`; this section is what they do and why.)
 
 ```
 .qc.check[spec; prop]            / .qc.cfg defaults
@@ -563,6 +588,8 @@ examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a c
 
 Each of these fell out of implementing M1 as a local fix; each is an instance of something general, so it is
 stated once here and honoured everywhere after.
+
+Index: C1 the implicit `d` is a canary · C2 guards are conds, not conjunctions · C3 type dispatch is total · C4 absence is empty, not `::` · C5 a name is free iff `not x in · C6 a top-level draw is an example · C7 zero choices means exhausted, so every structure records at least one · C8 tests pin seeds · C9 engine state is restored at the example boundary, from run-level values · C10 the four sources of a choice are four entry points · C11 ranges widen with size · C12 layout is order · C13 spans are units · C14 the error vocabulary is closed and classified · C15 verdicts from random data carry confidence · C16 at the API boundary an atom is a one-element list · C17 measure the distribution you ship, on the ranges people use · C18 examples are tests · C19 `n` is a budget; the run stops when it has learned what it can · C20 the library never applies a value it has not checked is callable · C21 arithmetic on choice bounds is done in floats, or guarded · C22 state that belongs to a structure is saved and restored around that structure · C23 a list that may hold anything grows behind a `::` seed · C24 a block is one draw call, one span and one unit of the budget · C25 two implementations of one law agree by test.
 
 **C1 — the implicit `d` is a canary.** Users never supply the trailing `d`, so a non-`::` `d` is proof of one
 argument too many (`.qc.list[3 5] g`, `.qc.bool[0.9]`). Every library generator starts with `dd[d;form]` and
@@ -911,6 +938,8 @@ properties and machine under `.qc.main` and is run by `t/examples.q`.
 ## 4. Pitfalls
 
 Pure q facts that the conventions in §1.10 do not already cover. For users:
+
+Index: 1 Never · 2  · 3 A name is free iff · 4 In q-sql a parameter with th · 5  · 6  · 7  · 8  · 9 A q lambda with no explicit  · 10  · 11 Symbols are interned forever · 12  · 13 A script that errors while b · 14  · 15 For a weighted draw · 16  · 17  · 18  · 19 A dict seeded with a · 20  · 21  · 22  · 23  · 24 In · 25  · 26 Inside q-sql · 27 Indexing a table with a list · 28  · 29  · 30  · 31  · 32  · 33  · 34  · 35  · 36  · 37  · 38 A lambda does not capture th · 39  · 40  · 41  · 42  · 43 A functional delete with an  · 44  · 45 .
 
 1. **Never `each` a generator.** `g each xs` applies the drawn *value* to each element; if the value is a small
    integer, q treats it as an IPC handle and writes to it. Draw several with `.qc.draw k#enlist g`.
