@@ -750,3 +750,368 @@ particular commands in order with matching arguments, and at the default budget 
 them. The lesson is about budget, not about the oracle: a machine over a system with days in it wants more steps
 and more runs than a stack does, and a `cover` requirement on the seams would have said so before I asked.
 
+
+### Entry 21: run 2, renames — the machine finds what no piece could
+
+The last nudge from the plan. A rename `old→new` takes effect from a day, through piece 1's `ren` and `canon`.
+The contract I chose is the one most kdb shops live with: an event is stored under the name current when it
+arrives, so a closed day keeps the names it had and nothing on disk is rewritten; the live state — the quote cache
+and the positions — follows the rename at the close that rolls into the effective day, the old name's entry
+merging into the new name's, the later quote winning, the positions adding up and averaging their cost. `rename`
+is the reference-data update; the new name inherits the instrument's terms (step 20). The machine (step 21) gains
+a `rename` command — a name still current tomorrow, to a fresh one, effective tomorrow, at most three per run —
+and the feed keeps using any name it has ever seen, so old names arrive after their rename. The model stores each
+event under its arrival name, as the contract says, and the oracle's live state uses today's names for everything.
+
+Two harness slips first, again without transcripts: `each` over an empty typed column returns a *general* empty
+list, so the oracle's "under today's names" table lost its symbol type on the empty fill log and `.qc.eq` reported
+the two empty dictionaries as differing in `order` — the diff was empty, since there was nothing to walk, and
+`eq` now says `keytype` in that case; and the quote command's postcondition looked the cache up by the arrival name
+where the contract says today's. Then:
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/20_rename.q"
+q)system"l examples/mdp/steps/21_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+ok 100 tests (seed 7)
+```
+
+A pass at the default budget — which entry 20 had just taught me not to trust. With the seam labels and the
+larger budget:
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/20_rename.q"
+q)system"l examples/mdp/steps/21_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`rename_in_effect; any (c=`eod) and 0<sums c=`rename]; .qc.classify[`old_name_used_after_its_rename; any {[r] $[r[`cmd] in `quote`trade`fill; (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; .qc.classify[`positions_merged_at_a_close; any {[r] $[`eod=r`cmd; any (exec sym from r[`model]`f)<>.mdp.canon'[exec sym from r[`model]`f;r[`model]`day]; 0b]} each tr]; .qc.classify[`query_of_a_past_day_by_a_renamed_name; any {[r] $[`query=r`cmd; (r[`arg][0]<r[`model]`day) and (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; 1b}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
+FAIL falsified after 117 tests, 25 shrinks (116 attempts, seed 7)
+qc.inv
+step cmd    arg                 res ok
+--------------------------------------
+0    fill   (`A;`buy;1;1f)      ::  1 
+1    rename (`A;`N0;2024.01.03) ::  1 
+2    fill   (`N0;`sell;1;2f)    ::  1 
+3    eod    ::                  ::  1 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
+label                                 n  pct      req lo        hi       ok bar
+-------------------------------------------------------------------------------
+rename_in_effect                      18 15.38462     9.958576  23.01153 1  ###
+old_name_used_after_its_rename        9  7.692308     4.099471  13.9751  1  #  
+positions_merged_at_a_close           8  6.837607     3.505129  12.91438 1  #  
+query_of_a_past_day_by_a_renamed_name 2  1.709402     0.4700284 6.019128 1     
+```
+
+Four steps. Buy one A at 1. Rename A to N0 from tomorrow. Sell one N0 at 2 — the same instrument, under its new
+name, before the rename is in effect, so the system holds a long of A and a short of N0. Close the day, and the
+roll merges A into N0: quantities add to zero, the cost of a flat position is zero, the realised PnL is the sum of
+the two, which is zero. But the book bought at 1 and sold at 2. The balance-sheet identity — realised plus
+unrealised equals cash plus the marked position — is off by one, and `qc.inv` says so without a diff, because
+the identity is a single boolean.
+
+This is the bug the whole exercise was for. Every piece is right on its own: positions realise PnL correctly on
+every fill sequence (entry 13), renames resolve correctly (entry 3), the close writes and clears correctly (entry
+16). The merge is a *new* operation that exists only because renames and positions and the day boundary meet, and
+I wrote it the way one writes it first — add the quantities, average the costs — which is right when the two
+positions point the same way and wrong when they do not: an opposite position under the new name is a partial
+close, and a close realises. No test of piece 4 could see it, because piece 4 has no renames; no test of piece 1
+could see it, because piece 1 has no positions. The machine reached it in 117 runs and shrank it to the four steps
+that are its definition. Step 22 closes the overlap and realises it, at the two costs, and leaves the larger side
+at its own cost.
+
+### Entry 22: the next thing the machine found was the oracle's
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/21_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`rename_in_effect; any (c=`eod) and 0<sums c=`rename]; .qc.classify[`old_name_used_after_its_rename; any {[r] $[r[`cmd] in `quote`trade`fill; (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; .qc.classify[`positions_merged_at_a_close; any {[r] $[`eod=r`cmd; any (exec sym from r[`model]`f)<>.mdp.canon'[exec sym from r[`model]`f;r[`model]`day]; 0b]} each tr]; .qc.classify[`query_of_a_past_day_by_a_renamed_name; any {[r] $[`query=r`cmd; (r[`arg][0]<r[`model]`day) and (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; 1b}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
+FAIL falsified after 186 tests, 22 shrinks (105 attempts, seed 7)
+qc.post qc.eq
+path           why   a b
+------------------------
+`trades `bid 0 value 1  
+`trades `ask 0 value 1  
+0:
+  step cmd    arg                                      res                                                                                                                                                                                                     ok
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  0    eod    ::                                       ::                                                                                                                                                                                                      1 
+  1    rename (`A;`N0;2024.01.04)                      ::                                                                                                                                                                                                      1 
+  2    quote  (2024.01.03D09:30:00.000000000;`A;1f;0f) ::                                                                                                                                                                                                      1 
+  3    eod    ::                                       ::                                                                                                                                                                                                      1 
+  4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  +`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)                                                                                                                   1 
+  5    query  (2024.01.04;`N0;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,2024.01.04D09:30:00.000000000;,1f;,1f;,1f;,1f;,1;,1);1f;+`seq`time`sym`px`qty`bid`ask!(`s#,1;,2024.01.04D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)) 0 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
+label                                 n  pct      req lo       hi       ok ba..
+-----------------------------------------------------------------------------..
+rename_in_effect                      48 25.80645     20.05226 32.5398  1  ##..
+old_name_used_after_its_rename        29 15.5914      11.08037 21.495   1  ##..
+positions_merged_at_a_close           28 15.05376     10.62509 20.89677 1  ##..
+query_of_a_past_day_by_a_renamed_name 16 8.602151     5.364144 13.5156  1  # ..
+```
+
+With the merge fixed the machine ran further, and at 186 stopped on enrichment: a quote for A on day two, a rename
+of A to N0 effective day three, a trade under A on day three, canonicalised to N0 and enriched from the cache —
+whose A entry had rolled into N0 at the close, as the contract says — and the oracle's batch join, which joined
+by the *stored* names, found no quote for N0 and said null. The system did what the contract says: the cache
+follows the rename, so the instrument's last quote is the instrument's last quote whatever it was called. The
+oracle was written by the stored names and did not follow. Step 23 has the oracle enrich a day's trades from the
+instrument's quotes under that day's names. I record it as what it was: a disagreement the machine found between
+two readings of my own contract, settled for the system, four steps long, found because the machine kept going.
+
+### Entry 23: run 2 passes, with renames, and the machine can see
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+ok 100 tests (seed 7)
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`rename_in_effect; any (c=`eod) and 0<sums c=`rename]; .qc.classify[`old_name_used_after_its_rename; any {[r] $[r[`cmd] in `quote`trade`fill; (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; .qc.classify[`positions_merged_at_a_close; any {[r] $[`eod=r`cmd; any (exec sym from r[`model]`f)<>.mdp.canon'[exec sym from r[`model]`f;r[`model]`day]; 0b]} each tr]; .qc.classify[`query_of_a_past_day_by_a_renamed_name; any {[r] $[`query=r`cmd; (r[`arg][0]<r[`model]`day) and (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; 1b}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
+ok 300 tests (seed 7)
+label                                 n   pct      req lo       hi       ok b..
+-----------------------------------------------------------------------------..
+rename_in_effect                      108 36           30.77684 41.57717 1  #..
+old_name_used_after_its_rename        75  25           20.43691 30.19526 1  #..
+positions_merged_at_a_close           69  23           18.59711 28.08564 1  #..
+query_of_a_past_day_by_a_renamed_name 40  13.33333     9.946588 17.64726 1  #..
+```
+
+Three sabotages of the rename path, each caught at the same budget and shrunk to its definition — a merge that
+keeps only the old name's position (a fill under each name, then the close); a roll that forgets the quote cache
+(a quote, a rename, a close); a cache merge that keeps the older quote (two renames chained across two days, a
+quote under each end of the chain, and the close that merges them):
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q).mdp.mergepos:{[o;n] a:.mdp.pos o; .mdp.pos[n]:`qty`cost`real!(a`qty;a`cost;a`real); .mdp.pos::delete from .mdp.pos where sym=o;}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+FAIL falsified after 111 tests, 21 shrinks (101 attempts, seed 7)
+qc.inv qc.eq
+path why   a b
+--------------
+N0   value 1 2
+0:
+  step cmd    arg                 res ok
+  --------------------------------------
+  0    fill   (`A;`buy;1;1f)      ::  1 
+  1    rename (`A;`N0;2024.01.03) ::  1 
+  2    fill   (`N0;`buy;1;1f)     ::  1 
+  3    eod    ::                  ::  1 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 0 0 0 0 1 1 3]
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q).mdp.roll:{[] ks:exec sym from .mdp.pos; o:ks where ks<>.mdp.canon'[ks;.mdp.today]; .mdp.mergepos'[o;.mdp.canon'[o;.mdp.today]];}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+FAIL falsified after 66 tests, 17 shrinks (64 attempts, seed 7)
+qc.inv qc.eq
+path   why   a b 
+-----------------
+`sym 0 value A N0
+0:
+  step cmd    arg                                      res ok
+  -----------------------------------------------------------
+  0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::  1 
+  1    rename (`A;`N0;2024.01.03)                      ::  1 
+  2    eod    ::                                       ::  1 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3]
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q).mdp.mergeq:{[o;n] a:.mdp.qcache o; b:.mdp.qcache n; if[null b`seq; .mdp.qcache[n]:a]; .mdp.qcache::delete from .mdp.qcache where sym=o;}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+FAIL falsified after 91 tests, 29 shrinks (146 attempts, seed 7)
+qc.inv qc.eq
+path   why   a b
+----------------
+`ask 0 value 1 2
+0:
+  step cmd    arg                                       res ok
+  ------------------------------------------------------------
+  0    rename (`A;`N0;2024.01.03)                       ::  1 
+  1    eod    ::                                        ::  1 
+  2    rename (`N0;`N1;2024.01.04)                      ::  1 
+  3    quote  (2024.01.03D09:30:00.000000000;`N1;1f;0f) ::  1 
+  4    quote  (2024.01.03D09:30:00.000000000;`A;1f;1f)  ::  1 
+  5    eod    ::                                        ::  1 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 5 0 0 0 1 3 1 6 2 0 0 1 0 757589400000000000 4 0 0 1 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 1 1 4]
+```
+
+Seeds 8 and 9 pass at the same budget (not shown).
+
+### Entry 24: the suite under random seeds — the oracle, once more
+
+The final system runs as `examples/mdp/run.q`: the surviving properties and the machine under `.qc.main`, three
+hundred tests each, seeded from the clock as a CI run would be. Its first run failed twice. The tick property
+(entry 3) fell to a float: a price near a thousand rounded to a hundredth is within half a tick by
+`0.5000000000000004`; the property gains a tolerance. And the machine, at a seed that seed 7 and its neighbours
+had not been:
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/23_sm.q"
+q).qc.chk[`n`seed!(300;826650575i);.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+FAIL falsified after 240 tests, 23 shrinks (109 attempts, seed 826650575)
+qc.post qc.eq
+path           why   a b
+------------------------
+`trades `bid 0 value 1  
+`trades `ask 0 value 1  
+0:
+  step cmd    arg                                      res                                                                                                                                                                                                     ok
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::                                                                                                                                                                                                      1 
+  1    rename (`A;`N0;2024.01.03)                      ::                                                                                                                                                                                                      1 
+  2    eod    ::                                       ::                                                                                                                                                                                                      1 
+  3    late   (2024.01.02D09:30:00.000000000;`A;1f;1)  +`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.02D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)                                                                                                                   1 
+  4    query  (2024.01.02;`N0;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,2024.01.02D09:30:00.000000000;,1f;,1f;,1f;,1f;,1;,1);1f;+`seq`time`sym`px`qty`bid`ask!(`s#,1;,2024.01.02D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)) 0 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 3 0 0]
+```
+
+A quote under A; a rename of A to N0 from tomorrow; the close, which rolls the cache's A into N0; a late trade
+under A for yesterday, canonicalised to N0, enriched from the rolled cache — and the oracle, enriching yesterday's
+trades under *yesterday's* names (step 23), where A was still A, finds no quote for N0. The cache enriched that
+trade with the names it had when the trade arrived; the oracle used the names of the day the trade was timed. For
+a trade that arrives on its own day the two are the same, which is why three hundred runs at three seeds had
+agreed. Step 24 gives the model's trades their arrival day and enriches each under that day's names:
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/22_rename.q"
+q)system"l examples/mdp/steps/24_sm.q"
+q).qc.chk[`n`seed!(300;826650575i);.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+ok 300 tests (seed 826650575)
+```
+
+Third reading of the oracle, and I believe the right one: names matter to enrichment only as the cache saw them.
+Every disagreement between the system and the oracle in run 2 was over what a rename means, and each one the
+machine found was a case I had not written down — which is the other thing a state machine is for.
+
+## Closing: what happened, and what qcheck did
+
+**The tally.** Twelve findings — nine in the system, one in the assembly's one line of q-SQL, two in the oracle:
+
+| where | found by | what |
+|---|---|---|
+| piece 1 | property | `canon` loops on a rename cycle (entry 2) |
+| piece 2 | property | the as-of tie: a quote and a trade at one timestamp (entry 6) |
+| piece 2 | property | `stamp` appended `seq` where the tables declare it first (entry 7) |
+| piece 2 | property | `aj` brought the quote's `time` across (entry 7) |
+| piece 4 | property | a namespace name inside q-SQL (entry 11) |
+| piece 4 | property | precedence in the average cost (entry 12) |
+| piece 5 | property | `exec` over a partitioned table (entry 14) |
+| piece 5 | property | enumerated symbols from disk (entry 15) |
+| assembly | state machine | a namespace name inside q-SQL, again (entry 17) |
+| renames × positions × the close | state machine | merging opposite positions loses the realised PnL (entry 21) |
+| renames × enrichment | state machine | the oracle joined by stored names (entry 22) |
+| renames × late trades × enrichment | state machine | the oracle used the trade's day's names, not its arrival day's (entry 24) |
+
+Piece 3 had none. Eight of the twelve fell to a property over one piece, each on a one- or two-row example; the
+one that mattered most fell to the state machine, on a four-step trace, and could not have fallen to anything
+else; the two in the oracle were readings of my own contract that the machine made me write down. Beside these: six mistakes in my test code (a lambda's locals, a mistyped comparison, a keyword as a
+parameter three times, a lookup by the wrong key, a float tolerance), two in the harness's reset (a stale map; a delete of
+everything), one generator that could not reach the seam it was for, and one that wasted its shots on a day
+nobody queried. The test code is code.
+
+**What qcheck did.** The minimal examples were the diagnosis: a one-row fill log, two trades in one minute, a
+quote and a trade at one nanosecond, four commands. Reading the failing input *was* understanding the bug, every
+time. The typed empty table (entry 4) mattered more than it looks: the minimal example of every table property is
+the empty table, so an untyped one would have made every table property fail first for the wrong reason. The
+state machine's trace, shrunk, is the reproduction a colleague would want; its `inv` hook carried the one property
+(the balance-sheet identity) that holds for any fill log under any names and any marks, and that is the property
+that saw the merge. `classify` told me what the runs had actually exercised, which is how run 1's clock design was
+caught and how run 2's budget was set.
+
+**What qcheck did not do, and what I changed.** It did not tell me the budget: three-command conjunctions need
+more than a hundred runs of twenty steps, and I learned that from a sabotage, not from a report (entry 20). A
+`cover` requirement on the seams would have. It did not, at first, show the command that raised — an error in
+`run` or `post` noted the trace *before* the failing step; it does now (entry 17). Its trace print buried the
+steps under a model that was a dict of tables; a model that holds tables is now left out of the print. `eq` said
+`order` for two empty dictionaries that differed in key type; it now says `keytype` (entry 21). And `tab`'s empty
+table is now typed (entry 4). Four library changes, each from a moment the report was not the diagnosis.
+
+**The q along the way**, for a practitioner's collection: `vs`, `inv` and `asof` are keywords (as `from`,
+`value`, `any` were before them); q-SQL inside a namespaced lambda resolves names in the root (pitfall 26, met
+twice); a keyed table indexed by a list of keys and a column is a `length` error; `exec` over a partitioned table
+is `nyi`; `\l dir` makes `dir` the working directory; a functional delete with no names deletes every global
+(pitfall 43); `each` over an empty typed list returns a general one (pitfall 45); and `c0*a+b` is `c0*(a+b)`.
+
+**The final system** is `examples/mdp/mdp.q` (the last step of each piece), its properties `props.q`, the machine
+`sm.q`, and `run.q`, which runs both under `.qc.main` and is run by the test suite; the steps stay, because every
+transcript above is executed against them by `t/doctest.q`, and a buggy step that stopped failing as logged would
+fail the suite.
+
