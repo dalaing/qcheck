@@ -1,6 +1,10 @@
 / C5: a name is free iff not in .Q.res,key .q; nothing in .qc may shadow a reserved word
 .t.t["no .qc name shadows a reserved word"; not any (key[`.qc] except `) in .Q.res,key .q]
 .t.t["the words that bit us are indeed reserved"; all `bin`tables`cov in .Q.res,key .q]
+/ a name defined twice in qc.q is a collision inside .qc (M8 defined blk twice; a generator overwrote a shrinker helper)
+defs:{`$x til x?":"} each src where {$[0=count x; 0b; not first[x] in .Q.a,.Q.A; 0b; (x?":")=count x; 0b; all (x til x?":") in .Q.a,.Q.A,.Q.n,"_"]} each src:read0 `:qc.q   / (a like with a middle * is nyi, pitfall 24)
+.t.t["no name is defined twice in qc.q"; (count defs)=count distinct defs]
+if[(count defs)<>count distinct defs; -1 "  defined twice: ",.Q.s1 defs where 1<(count each group defs) defs]
 / C14: the error vocabulary is closed: every 'qc. literal in the source is an engine signal in ENG or is qc.eq
 lits:raze {[l] {[l;i] first "\"" vs (i+2)_l}[l] each l ss "'\"qc."} each read0 `:qc.q
 .t.t["every qc. literal in the source is an engine signal (ENG) or begins with a failure-signal stem (FS)"; (0<count lits) and all (lits in .qc.ENG) or .qc.fsg each lits]

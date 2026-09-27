@@ -28,6 +28,13 @@ si:D[.qc.int -1000 1000;2000]
 fl:D[.qc.flt 0 1;2000]
 .t.t["flt 0 1: mean near a half, both halves populated"; near[avg fl;0.5;0.06] and (0.3<avg fl<0.5) and 0.3<avg fl>0.5]
 .t.t["dbl: negatives near 30%"; near[avg 0>D[.qc.dbl;2000];0.3;0.06]]
+/ two implementations of one law agree (AUDIT2, C17): mix vs mixn, unif vs unifn, on the ranges people use
+ms:D[.qc.int 0 1000;4000]; mv:.qc.mixn[0;1000;0;4000]
+.t.t["mixn agrees with mix on 0..1000: zeros, the bound, values under 10, the mean (within 3 sigma)"; (0.03>abs (avg 0=ms)-avg 0=mv) and (0.02>abs (avg 1000=ms)-avg 1000=mv) and (0.04>abs (avg ms<10)-avg mv<10) and 40>abs (avg ms)-avg mv]
+ms:D[.qc.int -1000 1000;4000]; mv:.qc.mixn[-1000;1000;0;4000]
+.t.t["mixn agrees with mix on -1000..1000: sign balance and the mean"; (0.04>abs (avg ms>0)-avg mv>0) and 40>abs (avg ms)-avg mv]
+us:D[.qc.elem til 10;4000]; uv:.qc.unifn[0;9;4000]
+.t.t["unifn agrees with unif on 0..9: every value within 3 sigma of a tenth in both"; (all near[;0.1;0.03] (count each group us)%4000) and all near[;0.1;0.03] (count each group uv)%4000]
 / structures: node counts of rec spread over the budget; step counts of sm spread over the cap
 .t.sz 30
 nb:D[.qc.rec[2 2;0;{1+sum x}];1000]

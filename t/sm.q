@@ -19,10 +19,10 @@ tr:.qc.minimal .qc.sm[h] cm
 / the bug is found, reported as a falsification with the trace noted, and shrunk to the minimal sequence
 r:.qc.chk[q;.qc.sm[h] cm;::]
 .t.t["sm: a failed postcondition falsifies with qc.post"; (`falsified=r`why) and ("qc.post"~r`err) and (::)~r`x]
-t:last r`notes
-.t.t["sm: the note is the trace, last step marked not ok"; (98h=type t) and (not last t`ok) and all -1_t`ok]
-.t.t["sm: shrinks to four incs (the get steps are deleted)"; (4=count t) and all `inc=t`cmd]
-.t.t["sm: model column is the model after each step"; 1 2 3 4~t`model]
+trc:last r`notes                                                / (trc, not t: .qc.t is the type zoo)
+.t.t["sm: the note is the trace, last step marked not ok"; (98h=type trc) and (not last trc`ok) and all -1_trc`ok]
+.t.t["sm: shrinks to four incs (the get steps are deleted)"; (4=count trc) and all `inc=trc`cmd]
+.t.t["sm: model column is the model after each step"; 1 2 3 4~trc`model]
 / preconditions
 cm2:([cmd:`a`b] pre:({[m] m<2};{[m] m>=2}); run:({[i] ::};{[i] ::}); upd:({[m;i;o] m+1};{[m;i;o] m+1}))
 tr:.qc.replay[1 0 1 0 1 0 1 0 0] .qc.sm[`m0`steps!(0;4 4)] cm2
@@ -35,12 +35,12 @@ r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist 0] cm3;::]
 / inputs shrink with the sequence
 cm4:([cmd:enlist `put] gen:enlist {[m] .qc.int 0 99}; run:enlist {[i] i}; post:enlist {[m;i;o] 50>sum m,i}; upd:enlist {[m;i;o] m,i})
 r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist `long$()] cm4;::]
-t:last r`notes
-.t.t["sm: inputs shrink: one put of 50"; (1=count t) and 50~first t`arg]
+trc:last r`notes
+.t.t["sm: inputs shrink: one put of 50"; (1=count trc) and 50~first trc`arg]
 / invariants and weights (M10)
 cm5:([cmd:`inc`dec] run:({[a] ::};{[a] ::}); upd:({[m;a;o] m+1};{[m;a;o] m-1}))
 r:.qc.chk[q;.qc.sm[`m0`inv!(0;{[m] m<3})] cm5;::]
-.t.t["sm: a failed invariant falsifies with qc.inv, the trace noted, and shrinks to the three steps that break it"; (`falsified=r`why) and ("qc.inv"~r`err) and (3=count t) and all `inc=(t:last r`notes)`cmd]
+.t.t["sm: a failed invariant falsifies with qc.inv, the trace noted, and shrinks to the three steps that break it"; (`falsified=r`why) and ("qc.inv"~r`err) and (3=count trc) and all `inc=(trc:last r`notes)`cmd]
 .t.t["sm: an invariant that errors is qc.inv with the text"; "qc.inv boom"~(.qc.chk[q;.qc.sm[`m0`inv!(0;{[m] '"boom"})] cm5;::])`err]
 .t.t["sm: a non-function inv is refused"; (@[.qc.draw;.qc.sm[`m0`inv!(0;5)] cm5;{x}]) like "qc: inv*"]
 cm6:([cmd:`a`b] run:({[a] ::};{[a] ::}); w:3 1f)

@@ -57,13 +57,13 @@ which is the documented scalar use; `TX` is seeded with an empty vector key.
 
 ### C5 — names: reserved words and engine globals
 `t/names.q` is green and the scan finds no reserved word used as a *name* in any file.
-- [ ] **break** `spikes/a26_time.q:6-7` — `from` is a reserved word used as a lambda **parameter** (`{[from;to;d]`).
+- [x] **break** `spikes/a26_time.q:6-7` — `from` is a reserved word used as a lambda **parameter** (`{[from;to;d]`).
   q accepts it, which is why it ran; the first audit's rule says never.
-- [ ] **spirit** root globals in test files that mirror engine names, new since the first pass: `dp`
+- [x] **spirit** root globals in test files that mirror engine names, new since the first pass: `dp`
   (`t/tables.q:27`, mirrors the interpreter depth), `schema` (`t/outcomes.q:19`, now mirrors `.qc.schema`), `t`
   (`t/tables.q`, `t/sm.q`, `t/dist.q`, `examples/aj.q`; mirrors the type zoo). Spikes mirror deliberately
   (`a22_scale.q` patches `.qc.shr`, `.qc.chn`); that is what a spike is for.
-- [ ] **gap** the scan cannot see a collision *inside* `.qc` (M8 defined `blk` twice; caught by hand). A duplicate
+- [x] **gap** the scan cannot see a collision *inside* `.qc` (M8 defined `blk` twice; caught by hand). A duplicate
   definition check over `qc.q` belongs in `t/names.q`; today there are none.
 
 ### C6 — a top-level draw is an example
@@ -121,7 +121,7 @@ Clean. `bulk`'s and `btab`'s ranges go through `rng`; `ktab`'s `k` through `(),k
 
 ### C17 — measure the distribution you ship
 `t/scale.q:16-20` measures the vectorised laws, `t/sm.q:48` the weights, `t/types.q:35` `val`'s reach.
-- [ ] **spirit** `mix` and `mixn` (`qc.q:65-66,75-76`), `unif` and `unifn` are two implementations each of one
+- [x] **spirit** `mix` and `mixn` (`qc.q:65-66,75-76`), `unif` and `unifn` are two implementations each of one
   law; nothing asserts they agree. A pinned test comparing their distributions on the same ranges is the C17
   form of "two implementations".
 
@@ -159,7 +159,7 @@ functions with `~`; `colg`'s `f$` is an enumeration, not an application.
 **2. `'[f;g]` after `:`.** *Relies*: `qc.q:149` `cast` parenthesises.
 
 **3. Reserved words.** *Relies*: `t/names.q` for the library; the scan for the rest.
-- [ ] *Exposed*: `spikes/a26_time.q:6-7` uses `from` as a parameter name (C5 above).
+- [x] *Exposed*: `spikes/a26_time.q:6-7` uses `from` as a parameter name (C5 above).
 - Recorded in §3, not §4: `asc`, `attr`, `like`, `cols`, `vs`, `value`, `any`, `inv` all bit during phase 2.
 
 **4. q-sql parameter shadowed by a column.** *Relies*: `qc.q:445-446` `pblk` filters `cE` on the local `bl`;
@@ -314,7 +314,7 @@ as `0=n?8`, a boolean.
   unsorted with no warning (reproduced: `mono[int 0 9;int -9 9]` is unsorted). The design (§1.3) says "sorted by
   construction". Either `mono` clamps the delta at zero, or the design says the delta must be non-negative.
 - [x] `qc.q:203` `atr[`u]` neither dedupes nor checks; the `u-fail` is q's, not the library's (C14 above).
-- [ ] `t/scale.q:26` test name says "shrinks to two elements 99 and 1 or one of 99..." — its assertion is
+- [x] `t/scale.q:26` test name says "shrinks to two elements 99 and 1 or one of 99..." — its assertion is
   `3>=count`; the name should say what is asserted.
 
 ---

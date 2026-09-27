@@ -28,8 +28,8 @@ r:.qc.chk[q;ui;{20>sum x`v}]
 ud:.qc.draw .qc.tabr[2 2] enlist[`k]!enlist .qc.uniq .qc.one (.qc.const `a`b!1 2;.qc.const (enlist `c)!enlist 3)
 .t.t["uniq over a generator that draws dicts of different shapes (AUDIT2: the used set collapsed to a table)"; (2=count ud) and 2=count distinct ud`k]
 / dep: sees the row so far, in column order
-dp:.qc.tab `bid`ask!(.qc.int 0 9;.qc.dep {[r] .qc.int (r`bid;9)})
-.t.t["dep: ask >= bid in every row of 100 tables"; all {all x[`ask]>=x`bid} each D[dp;100]]
+dpt:.qc.tab `bid`ask!(.qc.int 0 9;.qc.dep {[r] .qc.int (r`bid;9)})
+.t.t["dep: ask >= bid in every row of 100 tables"; all {all x[`ask]>=x`bid} each D[dpt;100]]
 .t.t["dep: a dep column sees only the columns before it"; all 0=(.qc.draw .qc.tabr[5 5] `a`b!(.qc.dep {[r] .qc.const count r};.qc.int 0 9))`a]
 .t.t["dep outside a table receives an empty row"; 0~.qc.draw .qc.dep {[r] .qc.const count r}]
 .t.t["dep refuses a non-function"; (@[.qc.draw;.qc.dep 5;{x}]) like "qc: dep*"]

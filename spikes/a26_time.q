@@ -3,8 +3,8 @@
 / A26: finite temporal generators. Timestamps inside a session as a base plus non-negative deltas (A18), dates in
 / a business range; do xbar and ltime round-trip under shrinking, and what do the defaults look like?
 .s.last:0p
-ts:{[from;to;d] .s.last:from+.qc.draw .qc.int[(0;`long$to-from;0)]; .qc.draw .qc.lst[0 20] {[to;d] .s.last:to&.s.last+.qc.draw .qc.int 0 60000000000; .s.last}[to]}   / deltas up to a minute
-dates:{[from;to;d] from+.qc.draw .qc.int (0;to-from;0)}
+ts:{[a;b;d] .s.last:a+.qc.draw .qc.int[(0;`long$b-a;0)]; .qc.draw .qc.lst[0 20] {[b;d] .s.last:b&.s.last+.qc.draw .qc.int 0 60000000000; .s.last}[b]}   / deltas up to a minute (a b, not from to: from is a keyword)
+dates:{[a;b;d] a+.qc.draw .qc.int (0;b-a;0)}
 day:2024.01.02D09:30; close:2024.01.02D16:00
 / planted: at most three timestamps per minute (minimum: four timestamps in one minute)
 r:.qc.chk[.b.q;ts[day;close];{not any 3<count each group 0D00:01 xbar x}]

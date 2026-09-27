@@ -24,7 +24,7 @@ r:ms[{.qc.chk[q;x;{x~asc x}]};.qc.bulk[0 99;0 100000]]
 .t.t["bulk: x~asc x over up to 1e5 elements shrinks to 1 0"; 1 0~r[0][`x]`x]
 .t.t["bulk: in under 100 attempts and 5 seconds (spike: 44 attempts, 3 ms)"; (100>r[0]`attempts) and 5000>r 1]
 r:.qc.chk[q;.qc.bulk[0 99;0 100000];{100>sum x}]
-.t.t["bulk: a global bug (sum >= 100) shrinks to two elements 99 and 1 or one of 99... within budget"; (100<=sum r[`x]`x) and 3>=count r[`x]`x]
+.t.t["bulk: a global bug (sum >= 100) shrinks to at most three elements within the budget"; (100<=sum r[`x]`x) and 3>=count r[`x]`x]
 / btab
 tb:.qc.draw .qc.btab[5 5] `a`b`c!(0 9;("d";0 9);("f";0 9))
 .t.t["btab: typed columns, one row count"; (5=count tb) and (7h=type tb`a) and (14h=type tb`b) and 9h=type tb`c]

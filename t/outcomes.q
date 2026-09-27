@@ -16,12 +16,12 @@ psig:{[e] .qc.chk[q;.qc.int 0 9;{[e;x] 'e}[e]]}
 / result schema for every outcome and stop kind
 KS:`ok`why`stop`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale
 ty:{(type x`ok;type x`why;type x`stop;type x`n;type x`shrinks;type x`attempts;type x`seed;type x`err;type x`bt;type x`cover;type x`choices;type x`hist;type x`disc;type x`stale)}
-schema:{[r] (KS~key r) and (-1 -11 -11 -7 -7 -7 -6 10 10 98 7 98 99 -1h~ty r) and (0h=type r`notes)}
+sch:{[r] (KS~key r) and (-1 -11 -11 -7 -7 -7 -6 10 10 98 7 98 99 -1h~ty r) and (0h=type r`notes)}
 R:(.qc.chk[q;.qc.int 0 999;{1b}]; .qc.chk[q;.qc.bool;{1b}]; .qc.chk[q;.qc.list .qc.int 0 9;{x~asc x}]; .qc.chk[q;{'"boom"};{1b}];
    .qc.chk[q;.qc.such[{0b}] .qc.int 0 9;{1b}]; .qc.chk[q;.qc.elem til 1000;{.qc.cover[`m;90;x<800]; 1b}];
    .qc.chk[q;.qc.elem til 1000;{.qc.cover[`m;90;x<950]; 1b}]; .qc.chk[q,enlist[`nmax]!enlist 200;.qc.elem til 1000;{.qc.cover[`m;90;x<910]; 1b}];
    .qc.recheck[.qc.int 0 9;{x<5};enlist 7]; .qc.recheck[.qc.int 0 9;{x<5};enlist 2])
-.t.t["schema: every field present with its type, for every outcome"; all schema each R]
+.t.t["schema: every field present with its type, for every outcome"; all sch each R]
 pieces:(`n`exhausted`fail`fail`gaveup~(5#R)@\:`stop; `ok`ok`falsified`error`gaveup`cover~(6#R)@\:`why; (R[6]`stop) in `cover`nmax; (R[7]`stop) in `cover`nmax; `fail`n~(-2#R)@\:`stop)
 if[not all pieces; -1 "  outcome pieces: ",.Q.s1 pieces; -1 "  stops: ",.Q.s1 R@\:`stop; -1 "  whys: ",.Q.s1 R@\:`why]
 .t.t["outcomes exercised: ok n, ok exhausted, falsified, error, gaveup, cover, cover settled, nmax-or-cover, recheck fail, recheck ok"; all pieces]
