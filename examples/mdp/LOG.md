@@ -3,8 +3,9 @@
 A worked example, kept as it happened. Five pieces — reference data, quotes, bars, positions, end of day — are
 written one at a time, each with properties as it is written, then assembled and driven by a state machine. Every
 code change is a file under `steps/`, so every transcript below still runs: `t/doctest.q` executes each `q)` block
-in a fresh q from the repository root (seed 7, `\c 25 80`) and requires the output shown. Nothing here is planted;
-a bug appears in the log when it appeared in the work.
+in a fresh q from the repository root (seed 7, `\c 25 80`) and requires the output shown. Nothing here is planted
+except the sabotages of entries 20 and 23, which are labelled as such and exist to test the test; a bug appears in
+the log when it appeared in the work.
 
 ## Piece 1 — reference data
 
@@ -1000,13 +1001,14 @@ path   why   a b
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 5 0 0 0 1 3 1 6 2 0 0 1 0 757589400000000000 4 0 0 1 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 1 1 4]
 ```
 
-Seeds 8 and 9 pass at the same budget (not shown).
+Seeds 8 and 9 were run at the same budget and passed; a doctested log cannot show a claim it does not execute, so
+take that as a note, not evidence.
 
 ### Entry 24: the suite under random seeds — the oracle, once more
 
 The final system runs as `examples/mdp/run.q`: the surviving properties and the machine under `.qc.main`, three
 hundred tests each, seeded from the clock as a CI run would be. Its first run failed twice. The tick property
-(entry 3) fell to a float: a price near a thousand rounded to a hundredth is within half a tick by
+(entries 1–2) fell to a float: a price near a thousand rounded to a hundredth is within half a tick by
 `0.5000000000000004`; the property gains a tolerance. And the machine, at a seed that seed 7 and its neighbours
 had not been:
 ```q
@@ -1067,7 +1069,7 @@ machine found was a case I had not written down — which is the other thing a s
 
 | where | found by | what |
 |---|---|---|
-| piece 1 | property | `canon` loops on a rename cycle (entry 2) |
+| piece 1 | writing the generator | `canon` loops on a rename cycle (entry 3) |
 | piece 2 | property | the as-of tie: a quote and a trade at one timestamp (entry 6) |
 | piece 2 | property | `stamp` appended `seq` where the tables declare it first (entry 7) |
 | piece 2 | property | `aj` brought the quote's `time` across (entry 7) |
@@ -1080,12 +1082,15 @@ machine found was a case I had not written down — which is the other thing a s
 | renames × enrichment | state machine | the oracle joined by stored names (entry 22) |
 | renames × late trades × enrichment | state machine | the oracle used the trade's day's names, not its arrival day's (entry 24) |
 
-Piece 3 had none. Eight of the twelve fell to a property over one piece, each on a one- or two-row example; the
-one that mattered most fell to the state machine, on a four-step trace, and could not have fallen to anything
-else; the two in the oracle were readings of my own contract that the machine made me write down. Beside these: six mistakes in my test code (a lambda's locals, a mistyped comparison, a keyword as a
-parameter three times, a lookup by the wrong key, a float tolerance), two in the harness's reset (a stale map; a delete of
-everything), one generator that could not reach the seam it was for, and one that wasted its shots on a day
-nobody queried. The test code is code.
+Piece 3 had none. Eight of the twelve fell to a property over one piece — six on a one- or two-row example, two
+(entries 14 and 15) on the empty day, before any row existed. The one that mattered most fell to the state machine,
+on a four-step trace; no existing piece's property could have seen it (a unit property over `mergepos` with two
+opposite positions would have — but nobody had written one, because the merge did not exist until renames met
+positions). The two in the oracle were readings of my own contract that the machine made me write down. Beside
+these: eight mistakes in my test code (a lambda's locals, a mistyped comparison, a keyword as a parameter four
+times — `vs` twice, `inv`, `asof` — a lookup by the wrong key, a float tolerance), two in the harness's reset (a
+stale map; a delete of everything), one generator that could not reach the seam it was for, and one that wasted
+its shots on a day nobody queried. The test code is code.
 
 **What qcheck did.** The minimal examples were the diagnosis: a one-row fill log, two trades in one minute, a
 quote and a trade at one nanosecond, four commands. Reading the failing input *was* understanding the bug, every
