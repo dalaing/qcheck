@@ -4,5 +4,6 @@
 \l examples/mdp/mdp.q
 \l examples/mdp/props.q
 \l examples/mdp/sm.q
-.qc.cfg[`n]:300
+.qc.cfg[`n`db]:(300;`)                                     / no failure db: a CI run must not replay a developer's, nor leave one behind
+system"c 50 200"                                            / wide enough that the coverage tables are not cut in the log
 .qc.main props,machine
