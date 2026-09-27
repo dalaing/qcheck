@@ -139,7 +139,7 @@ ok 100 tests (seed 7)
 
 ## Serialisation, over any value
 
-`val` draws any q value. `-9!-8!` is the identity on all of them; JSON is not, and the smallest witness is a byte.
+`val` draws any q value. `-9!-8!` is the identity on all of them; JSON is not, and the smallest counterexample is a byte.
 
 ```q
 q).qc.check[.qc.val; {x~-9!-8!x}];

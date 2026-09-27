@@ -49,7 +49,7 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 
 `val` draws an arbitrary q value — every atom type with its nulls and infinities, typed and general lists, dicts,
 tables — for properties about the things every q program does to values. Serialisation round-trips; JSON does not,
-and the smallest witness is a byte.
+and the smallest counterexample is a byte.
 
 ```q
 q).qc.check[.qc.val; {x~-9!-8!x}];

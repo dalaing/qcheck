@@ -55,6 +55,12 @@ The library rests on three ideas, each one q-native:
 
 ### 1.2 Vocabulary and calling convention
 
+The words, used the same way in every document: a **spec** is anything `.qc.draw` interprets — a generator, a list
+or dict of specs, or a constant; a **generator** is the function kind of spec; an **example** is one value drawn
+from a spec (the *input* to the property); a **test** is one run of the property on one example, which is what the
+report counts; a **counterexample** is the example a failure shrinks to. Long and short names differ by taking a
+range or a configuration first (`list`/`lst`, `check`/`chk`).
+
 A **generator** is any q function value (lambda, projection, composition — `type` within `100 112h`) that, when
 applied to `::` (called as `g[]`), draws from the stream and returns a value. Users never see that trailing
 argument: library generators are functions whose *last* parameter is the implicit `d`, so supplying the
