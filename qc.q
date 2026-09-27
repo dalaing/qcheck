@@ -231,7 +231,7 @@ ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; if[not dct cg; '"qc: ktab needs a d
 / schema t: a generator of tables shaped like t — the column types from the values (an enumeration's domain from
 / key, nested columns from the first element, a general column as a mix), attributes and keys as t has them,
 / typed empties from 0# (an empty table carries no attributes, as 0# of a table does not, A21)
-colg:{[c] tc:type c; $[tc>=20h; {[f;d] f$draw elem value f}[key c]; 10h=tc; str; tc within 1 19h; t .Q.t tc;
+colg:{[c] tc:type c; $[tc within 20 76h; {[f;d] f$draw elem value f}[key c]; 10h=tc; str; tc within 1 19h; t .Q.t tc;   / enumerations are 20h-76h; a table or dict value (98h 99h) is a general column
   $[0h<>tc; 0b; 0=count c; 0b; all (type each c) within 1 19h]; vec[0 3] .Q.t abs type first c; one (int 0 9;sym;str)]}
 / schema t is a constructor (as lin is): it reads t once and returns the generator schx[k;cg;em;at]
 schema:{[x] if[not type[x] in 98 99h; '"qc: schema takes a table"]; k:keys x; u:0!x; cs:cols u; vals:value flip u;

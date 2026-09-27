@@ -52,6 +52,7 @@ rt:{[t] all {[t;i] tb:.qc.draw .qc.schema t; (meta $[count tb; t; 0#t])~meta tb}
 .t.t["schema: the minimal table is empty, typed, and without attributes (as 0# is)"; (meta 0#shapes`sorted)~meta .qc.minimal .qc.schema shapes`sorted]
 .t.t["schema: keys are distinct"; all {(count x)=count distinct (0!x)`k} each D[.qc.schema shapes`keyed;30]]
 .t.t["schema: a u# column is drawn distinct and keeps u# (an empty table carries none)"; all {$[count x; (`u=attr x`v) and x[`v]~distinct x`v; 1b]} each D[.qc.schema ([]v:`u#1 2 3);30]]
+.t.t["schema: a column whose value is a table or a keyed table is a general column, not an enumeration (AUDIT2)"; ((first value .qc.colg ([]a:1 2;b:3 4))~.qc.one) and (first value .qc.colg ([k:1 2]v:3 4))~.qc.one]
 .t.t["schema: p# with s# is refused, so is a non-table"; ((@[.qc.schema;([]a:`p#1 1 2;b:`s#1 2 3);{x}]) like "qc: schema*") and (@[.qc.schema;5;{x}]) like "qc: schema*"]
 .t.t["schema: the generator carries the canary"; (@[.qc.schema shapes`plain;1;{x}]) like "qc: too many*"]
 / the as-of join (A20): two tables over one drawn symbol list; a naive join that takes the first quote instead of the last

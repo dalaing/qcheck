@@ -41,7 +41,7 @@ Library: clean. The phase-2 `and`s have independent terms (`qc.q:224` `count[at]
   as in `AUDIT.md`: acceptable, listed so nobody reads a `raised: type` as a harness fault.
 
 ### C3 — type dispatch is total
-- [ ] **bug** `qc.q:232` `colg`: the first test `tc>=20h` is meant for enumerations (`20h`–`76h`) but also catches
+- [x] **bug** `qc.q:232` `colg`: the first test `tc>=20h` is meant for enumerations (`20h`–`76h`) but also catches
   `98h` and `99h`, so a column whose value is a table (rows that are conforming dicts collapse to one) raises
   `type` from `key`, and a keyed-table value builds an enumeration generator over the key table. Reproduced:
   `.qc.colg ([]a:1 2;b:3 4)` raises `type`. The test should be `tc within 20 76h`; tables and keyed tables then
