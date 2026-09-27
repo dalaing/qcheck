@@ -1,6 +1,6 @@
 # Audit 2 — the conventions and pitfalls, as applied after phase 2
 
-*Superseded: a closed snapshot, moved from the top level; its `file:line` references are to the tree it was written against, and some of its statements about the library (an untyped empty table, no C22) are no longer true — see `DESIGN.md` and `docs/HISTORY.md`.*
+*Superseded: a closed snapshot, moved from the top level; its `file:line` references are to the tree it was written against, and some of its statements about the library (an untyped empty table, no C22) are no longer true — see `docs/DESIGN.md` and `docs/HISTORY.md`.*
 
 *2026-09-27, against `6f5b7de` (M11 complete): `qc.q` (511 lines), every file in `t/`, `examples/`, `tools/`,
 `spikes/`. Method as in `AUDIT.md`: every file read in full, mechanical checks in q (reserved words and engine-name

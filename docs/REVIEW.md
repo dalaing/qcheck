@@ -6,6 +6,8 @@ worked example), each claim verified against the file or by running q; measureme
 has been changed. Every item has a box so this can drive a cleanup pass the way `AUDIT.md` and `AUDIT2.md` did.
 
 Status: **closed** — every task in §8 is ticked or carries its decision; the tree is green (1492 tests) at the closing commit.
+Moved from the top level to `docs/` on closing; its `file:line` references and the measurements in §0 are to the tree it
+was written against (`DESIGN.md` was at the top level then and is `docs/DESIGN.md` now).
 
 ## 0. The state of the tree
 
@@ -179,7 +181,7 @@ Status: **closed** — every task in §8 is ticked or carries its decision; the 
   copying `qc.q` into a project, that `\l qc.q` is cwd-relative, that doctests need `q` on PATH
   (`t/doctest.q:10`), that the suite writes `./.qc/`, spawns child q processes and takes two minutes, or that the
   measurements are macOS-only (`DESIGN.md:754`).
-- [x] **D17** *(README now says there is none and that one must be chosen before publishing; the choice is the owner's, not the review's)* No LICENSE file and no licence mention anywhere.
+- [x] **D17** *(the owner chose MIT: `LICENSE` at the top level, a one-line notice in `qc.q`'s header since the file travels alone, and README names the licence)* No LICENSE file and no licence mention anywhere.
 
 ### 4.4 Terminology
 - [x] **D18** "spec" vs "generator" (README:17-19 vs :54-55; DESIGN:41 vs :110): the distinction (spec = anything `draw`

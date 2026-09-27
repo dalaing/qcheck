@@ -1,6 +1,7 @@
-/ qcheck — property-based testing for q.   design and rationale: DESIGN.md
+/ qcheck — property-based testing for q.   design and rationale: docs/DESIGN.md
 /   \l qc.q
 /   .qc.check[.qc.list .qc.int 0 9; {x~asc x}]
+/ Copyright (c) 2026 Dave Laing. MIT licence (SPDX-License-Identifier: MIT), https://opensource.org/license/mit
 \d .qc
 
 / ---- configuration ----------------------------------------------------------------------------------

@@ -117,7 +117,7 @@ system"S 3"
 .t.t["C11 every library generator replays across sizes"; all {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} each gs]
 .t.t["C11 a range that narrows with size does not (the rule is on users)"; not {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.int {(x div 2;x)}]
 .qc.cfg[`v]:1
-/ conventions (DESIGN.md 1.10)
+/ conventions (docs/DESIGN.md 1.10)
 e:@[{.qc.list[3 5] x};.qc.int 0 9;{x}]
 .t.t["C1 canary: .qc.list[3 5] g signals and names .qc.lst"; (e like "qc: too many arguments*") and e like "*qc.lst*"]
 .t.t["C1 canary: .qc.bool[0.9] signals and names .qc.bit"; (e like "qc: too many arguments*") and (e:@[.qc.bool;0.9;{x}]) like "*qc.bit*"]

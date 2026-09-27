@@ -32,7 +32,7 @@ ALLOW:enlist `label                                                         / a 
 .t.t["no lambda local shadows an engine global"; 0=count (locs inter G) except ALLOW]
 if[count pars inter G; -1 "  params: ",.Q.s1 pars inter G]; if[count (locs inter G) except ALLOW; -1 "  locals: ",.Q.s1 (locs inter G) except ALLOW]
 / the same reserved-word check over every other q file in the repository: the worked example met vs, inv and asof as
-/ names four times before this ran anywhere but qc.q (REVIEW.md T15). Shadowing engine globals is qc.q's concern only.
+/ names four times before this ran anywhere but qc.q (docs/REVIEW.md T15). Shadowing engine globals is qc.q's concern only.
 qfiles:{[d] f:key d; ` sv/: d,/:f where f like "*.q"}
 fs:raze qfiles each `:examples`:examples/mdp`:examples/mdp/steps`:tools`:t`:spikes
 rsv:{[f] r:pl f; (r[0],r[1]) inter .Q.res,key .q}

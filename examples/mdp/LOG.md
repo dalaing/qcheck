@@ -135,7 +135,7 @@ columns. That was qcheck's doing: `tab`'s empty table was untyped (its design sa
 minimal example is *always* the empty table, so every property over a generated table met it first. I fixed the
 library rather than the property: `tab` now types its empty columns from a probe of one minimal row (the report
 above is quoted, not executed, because the library that produced it is gone; the change and what it found on the
-way are in DESIGN.md, M7 and pitfall 26's neighbours).
+way are in docs/DESIGN.md, M7 and pitfall 26's neighbours).
 
 ### Entry 5: a bug in my replay, not in the piece
 
@@ -991,7 +991,7 @@ machine found was a case I had not written down — which is the other thing a s
 
 ### Entry 25: after the review — what a reader found that no test had
 
-`REVIEW.md` read the finished system and found things the properties and the machine could not, because none of
+`docs/REVIEW.md` read the finished system and found things the properties and the machine could not, because none of
 them is a *wrong answer*: a trade timed after today was enriched and returned but stored nowhere; a rename of an
 unknown name inserted an all-null instrument; a fill for an unknown instrument booked a position with a null
 multiplier; "is this day on disk" was answered by "does a table called `trade` exist", the test that the stale

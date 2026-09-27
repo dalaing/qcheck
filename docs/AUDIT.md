@@ -1,6 +1,6 @@
 # Audit — the conventions and pitfalls, as applied
 
-*Superseded: a closed snapshot, moved from the top level; its `file:line` references are to the tree it was written against, and some of its statements about the library (an untyped empty table, no C22) are no longer true — see `DESIGN.md` and `docs/HISTORY.md`.*
+*Superseded: a closed snapshot, moved from the top level; its `file:line` references are to the tree it was written against, and some of its statements about the library (an untyped empty table, no C22) are no longer true — see `docs/DESIGN.md` and `docs/HISTORY.md`.*
 
 *2026-09-27, against the working tree: commit `81ab299` plus the uncommitted choice-tree change (C19). Scope:
 `qc.q` (401 lines), every file in `t/`, `examples/`, `tools/`, and `spikes/`. Method: every file read in full,

@@ -1,4 +1,4 @@
-/ the gaps REVIEW.md T1/T2 named: public names and configuration keys that had no behavioural test. loaded by t/run.q
+/ the gaps docs/REVIEW.md T1/T2 named: public names and configuration keys that had no behavioural test. loaded by t/run.q
 / dble: single-precision-shaped doubles; finite, both signs, minimal 0, replays
 v:.qc.draw 200#enlist .qc.dble; c:.qc.C`v
 .t.t["dble: floats, finite, both signs, replays, minimal 0"; (9h=type v;all not null v;any v<0;any v>0;v~.qc.replay[c] 200#enlist .qc.dble;0f~.qc.minimal .qc.dble)]

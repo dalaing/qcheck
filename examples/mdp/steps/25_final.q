@@ -1,4 +1,4 @@
-/ mdp after the review (REVIEW.md, section 5): step 25. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.
+/ mdp after the review (docs/REVIEW.md, section 5): step 25. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.
 / Nothing here was found by a test; a reader found them (entry 25). The constants the pieces and the machine had each
 / written down are defined once; a closed day is one the HDB has (`.Q.pv`), not "some table named trade exists"; a trade timed after today, a fill for an unknown instrument
 / and a rename of an unknown name are refused instead of lost; upd leaves an empty table alone (pitfall 45).

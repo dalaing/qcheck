@@ -569,7 +569,7 @@ plugins, no `peach` (state is global, so `.qc.check` is not reentrant and a nest
 ```
 qc.q            the library
 README.md       usage, built from the examples in §1.2–1.7
-DESIGN.md       this document
+LICENSE         MIT; qc.q carries a one-line notice in its header, since it travels alone
 spikes/         one script per validated assumption; sh spikes/run.sh runs them all
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
@@ -583,8 +583,8 @@ REFERENCE.md    every public name, one line each; t/docs.q checks it against qc.
 COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
 examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12)
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
-docs/           HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here), AUDIT.md, AUDIT2.md (closed)
-REVIEW.md       the review after M12 with its checklist, at the top level while open
+docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here),
+                AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed
 .qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
 examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
 ```
@@ -837,7 +837,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 
 Moved to `docs/HISTORY.md`: the milestone plan M1–M12 with what each was and found, the review rounds 1–10 and the
 suite that would have caught what they found, and pointers to the two audits (`docs/AUDIT.md`, `docs/AUDIT2.md`) and
-the review after M12 (`REVIEW.md`, at the top level while it is open).
+the review after M12 (`docs/REVIEW.md`, closed).
 
 ## 4. Pitfalls
 

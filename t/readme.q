@@ -3,7 +3,7 @@
 .qc.cfg[`v`db`seed]:(0;`;7i)                                / the blocks run their own checks: pinned (C8)
 qbs:{[f] ln:read0 f; fence:where ln like "```*"; b:{[ln;se] ln (1+se 0)+til (se 1)-1+se 0}[ln] each 2 cut fence;
   b where (ln[fence 2*til count b] like "```q") and not any each b like\:"q)*"}
-qb:raze qbs each `:README.md`:DESIGN.md`:COOKBOOK.md
+qb:raze qbs each `:README.md`:docs/DESIGN.md`:COOKBOOK.md
 S:([]v:`long$())                                             / the state-machine block redefines these; harmless
 runb:{[i;b] e:@[{value each .t.stmts[x] 1; ""};b;{x}]; $[count e; (first b),": ",e; ""]}   / statement by statement, as t/run.q does: loading a script echoes the value of every bare expression
 errs:runb'[til count qb;qb]
