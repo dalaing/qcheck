@@ -168,10 +168,10 @@ functions with `~`; `colg`'s `f$` is an enumeration, not an application.
 **5 and 24. `like` wildcards.** No middle `*` or `[` in any pattern (mechanical).
 
 **6. `xs,:y` does not promote a typed vector.**
-- [ ] *Exposed (bug)*: `qc.q:207,215` — `CS` starts as `(0#`)!()`; the first `CS[k]:v` makes its value list typed,
+- [x] *Exposed (bug)*: `qc.q:207,215` — `CS` starts as `(0#`)!()`; the first `CS[k]:v` makes its value list typed,
   and a second `mono` column of another type raises `type` (reproduced with a long and a timestamp column). The
   row accumulator in `rowd` was seeded for exactly this reason (`:212`); `CS` was not.
-- [ ] *Exposed*: `qc.q:209` `US[k]:US[k],enlist v` — for dict-valued `v`, `enlist v` is a table and the next
+- [x] *Exposed*: `qc.q:209` `US[k]:US[k],enlist v` — for dict-valued `v`, `enlist v` is a table and the next
   non-conforming dict cannot join (pitfall 30); reproduced as `type` through `uniq` over `one` of two dict shapes.
 - *Relies*: `lst`, `sub`, `subb`, `rowd` grow behind a `::` seed; `nxt`'s `p,:v` is long onto long.
 

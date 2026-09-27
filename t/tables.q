@@ -12,6 +12,8 @@ r:.qc.chk[q;mt;{if[not x[`t]~asc x`t; bad+:1]; $[1<count x; 9>max 1_deltas x`t; 
 .t.t["mono: a planted gap bug shrinks to two rows nine apart, and no candidate was ever unsorted"; (2=count r[`x]`x) and (9=last deltas r[`x][`x;`t]) and 0=bad]
 .t.t["mono: the base draws the first row and the deltas the rest"; 5 6 7~(.qc.draw .qc.tabr[3 3] enlist[`t]!enlist .qc.mono[.qc.int 5 5;.qc.int 1 1])`t]
 .t.t["mono outside a table is its base"; 0~.qc.minimal .qc.mono[.qc.int 0 9;.qc.int 1 9]]
+tt:.qc.draw .qc.tabr[3 3] `a`t!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.mono[.qc.ts[2024.01.01;2024.01.02];.qc.int 0 100])
+.t.t["mono: two columns of different types in one table (AUDIT2: the state was a typed dict)"; (7h=type tt`a) and (12h=type tt`t) and (tt[`a]~asc tt`a) and tt[`t]~asc tt`t]
 / uniq: distinct three ways (A19)
 ue:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.elem `a`b`c;.qc.int 0 9)
 ui:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.int 0 3;.qc.int 0 9)
@@ -23,6 +25,8 @@ uo:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.int 0 1000000;.qc.int 0 9)
 r:.qc.chk[q;ui;{20>sum x`v}]
 .t.t["uniq: a planted bug shrinks to three rows with distinct keys summing to 20"; (3=count r[`x]`x) and (20<=sum r[`x][`x;`v]) and 3=count distinct r[`x][`x;`k]]
 .t.t["uniq outside a table is its generator"; 0~.qc.minimal .qc.uniq .qc.int 0 9]
+ud:.qc.draw .qc.tabr[2 2] enlist[`k]!enlist .qc.uniq .qc.one (.qc.const `a`b!1 2;.qc.const (enlist `c)!enlist 3)
+.t.t["uniq over a generator that draws dicts of different shapes (AUDIT2: the used set collapsed to a table)"; (2=count ud) and 2=count distinct ud`k]
 / dep: sees the row so far, in column order
 dp:.qc.tab `bid`ask!(.qc.int 0 9;.qc.dep {[r] .qc.int (r`bid;9)})
 .t.t["dep: ask >= bid in every row of 100 tables"; all {all x[`ask]>=x`bid} each D[dp;100]]

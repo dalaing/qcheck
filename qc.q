@@ -204,9 +204,11 @@ atr:{[a;g;d] dd[d;".qc.atr[a] g"]; if[not a in `s`u`p`g; '"qc: atr takes one of 
 mark:{[g] $[104h<>type g; `; (f:first value g)~mono; `mono; f~uniq; `uniq; f~dep; `dep; `]}
 / the finite candidate set of a generator, or :: — an elem's list, an int's constant range of at most 1024 values
 cands:{[g] $[104h<>type g; ::; (f:first value g)~elem; (),value[g] 1; not f~int; ::; type[value[g] 1] within 100 112; ::; 1024<w:wid . 2#r:rng value[g] 1; ::; r[0]+til "j"$w]}
-CS:(0#`)!(); UR:(0#`)!(); US:(0#`)!()                   / per-table state: mono's last value, uniq's remaining candidates, uniq's used values
+/ per-table state: mono's last value, uniq's remaining candidates, uniq's used values. CS and each US entry grow behind
+/ a :: seed: a dict amended with one long has a typed value list and refuses the next timestamp (pitfall 6, dict form)
+CS:(enlist `)!enlist (::); UR:(0#`)!(); US:(0#`)!()
 udraw:{[k;g] $[k in key UR; [rem:UR k; v:rem ch[(0;-1+count rem;0);`u]; UR[k]:rem except v; v];
-  [n:0; while[n<cf`tries; v:draw g; if[not v in US k; US[k]:US[k],enlist v; :v]; n+:1]; '"qc.discard"]]}
+  [n:0; while[n<cf`tries; v:draw g; if[not any v~/:1_US k; US[k]:US[k],enlist v; :v]; n+:1]; '"qc.discard"]]}   / (match, not in: a dict has no place on in's left; 1_: the seed)
 / one row: the columns in order, a constrained column with the state and the row so far. The row grows behind a ::
 / seed (a dict amended with one symbol has a typed value list and refuses the next long: pitfall 6). d: via draw
 rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
@@ -217,7 +219,7 @@ rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
 / tab's empty table is untyped); at (col -> attribute) is applied after the rows, sorting by the s and p columns
 tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
   $[all `=value ks; rs:draw lst[r] cg;
-    [s0:(CS;UR;US); CS::(0#`)!(); UR::(0#`)!(); US::(0#`)!(); uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist ();   / the generator inside each uniq
+    [s0:(CS;UR;US); CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!(); uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
      if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
      rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] CS::s0 0; UR::s0 1; US::s0 2; 'e}[s0]]; CS::s0 0; UR::s0 1; US::s0 2]];
   tb:$[count rs; flip key[cg]!flip value each rs; (::)~em; flip key[cg]!count[cg]#enlist (); flip em];
