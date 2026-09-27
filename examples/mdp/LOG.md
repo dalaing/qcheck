@@ -307,3 +307,118 @@ The second property is the one the pipeline will lean on: feeding the day in two
 the bars that feeding it in one does. That is what an incremental bar table is *for*, and it is what a late trade
 will test later, when the split is not at the end of the stream but inside a minute already closed. Piece 3 tally:
 no bugs in the piece; one over-strict property.
+
+## Piece 4 — positions and PnL
+
+### Entry 11: positions, and two runs that never reached the position logic
+
+Per symbol: signed quantity, average cost of the open position, realised PnL. A fill that adds averages its price
+in; one that reduces realises `(px-cost)*closed*mult` and keeps the cost; one that flips realises the whole old
+position and opens the remainder at the fill price. `unreal` marks the open positions against a price per symbol.
+The generator draws a fill log and a mark. Two properties to start: the position is the signed sum of the fills,
+and the book balances — realised plus unrealised equals the cash flow of the fills plus the open position marked.
+
+```q
+q)system"l examples/mdp/steps/08_pos.q"
+q)system"l examples/mdp/steps/08_gen.q"
+q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; .qc.eq[exec qty from .mdp.pos; exec sum qty*1 -1 `buy`sell?side by sym from f]}];
+FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+x:
+  0:
+    sym side qty px
+    ---------------
+  1:
+    A: 1f
+qc.eq
+path why  a b 
+--------------
+     type 7 99
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+q)cash:{[f] exec sum .mdp.inst[sym;`mult]*qty*px*-1 1 `buy`sell?side from f}
+q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum .mdp.inst[sym;`mult]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
+FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+x:
+  0:
+    sym side qty px
+    ---------------
+  1:
+    A: 1f
+inst
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+```
+
+Both fell at the empty fill log, the minimal example, before a single fill was booked. The first is my property:
+one side is a vector (type 7), the other a dictionary (99); with no fills they cannot be equal, and with fills they
+would only agree by luck of order. Both sides become dictionaries sorted by key. The second is a q lesson that
+belongs in the piece: `unreal`'s `exec` names `inst` without its namespace, and a q-SQL expression inside a lambda
+defined under `\d .mdp` does *not* resolve the name to `.mdp.inst` the way the rest of the lambda body would
+(the table after `from` does resolve; the names inside the expressions do not). Step 09 writes the global in full.
+While fixing it I found that indexing a keyed table by a list of keys and a column — `inst[syms;`mult]` — is a
+`length` error, where the same with one key works; step 09 looks the multipliers up as a dictionary instead, and
+my `cash` had the same mistake.
+
+### Entry 12: the book does not balance on one fill
+
+```q
+q)system"l examples/mdp/steps/09_pos.q"
+q)system"l examples/mdp/steps/08_gen.q"
+q)mult:{exec sym!mult from .mdp.inst}
+q)cash:{[f] exec sum mult[][sym]*qty*px*-1 1 `buy`sell?side from f}
+q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum mult[][sym]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
+FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+x:
+  0:
+    sym side qty px
+    ---------------
+    A   buy  1   1 
+  1:
+    A: 1f
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; p:0!select from .mdp.pos where qty<>0; r:select mn:min px,mx:max px by sym from f; k:([]sym:p`sym); all (p[`cost]>=(r[k]`mn)-1e-9) and p[`cost]<=1e-9+r[k]`mx}];
+FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+x:
+  0:
+    sym side qty px
+    ---------------
+    A   buy  1   1 
+  1:
+    A: 1f
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); {[s;q;p] .mdp.inst::([sym:`A`B] tick:0.01 0.01; lot:1 1; mult:1 10); .mdp.pos::0#.mdp.pos; .mdp.onfill ([]sym:s,s; side:`buy`sell; qty:q,q; px:p,p); (0=.mdp.pos[s;`qty]) and 0=.mdp.pos[s;`real]}];
+FAIL falsified after 0 tests, 0 shrinks (2 attempts, seed 7)
+s: `A
+q: 1
+p: 1f
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 0 0 0 1]
+```
+
+Three properties, one cause, and the smallest case each time: buy one at 1, marked at 1, and the book is off by
+one; the cost of an open position is outside the range of the prices paid for it; a round trip at one price
+realises something. The position after one buy has cost `0`, not `1`. The average is written
+`(c0*abs[q0]+px*abs q)%abs q0+q`, and q has no precedence: right to left, `c0*abs[q0]+…` is `c0*(abs[q0]+…)`, zero
+times everything on the first fill. Every q programmer has written this line; the point is that three different
+properties refused it with a one-row fill log, and the failing input is so small that the diagnosis is a matter of
+evaluating one expression by hand. Step 10 brackets the product.
+
+### Entry 13: piece 4 passes
+
+```q
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/08_gen.q"
+q)byk:{k:asc key x; k!x k}
+q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; .qc.eq[byk exec sym!qty from .mdp.pos; byk exec sum qty*1 -1 `buy`sell?side by sym from f]}];
+ok 100 tests (seed 7)
+q)mult:{exec sym!mult from .mdp.inst}
+q)cash:{[f] exec sum mult[][sym]*qty*px*-1 1 `buy`sell?side from f}
+q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum mult[][sym]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
+ok 100 tests (seed 7)
+q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; p:0!select from .mdp.pos where qty<>0; r:select mn:min px,mx:max px by sym from f; k:([]sym:p`sym); all (p[`cost]>=(r[k]`mn)-1e-9) and p[`cost]<=1e-9+r[k]`mx}];
+ok 100 tests (seed 7)
+q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); {[s;q;p] .mdp.inst::([sym:`A`B] tick:0.01 0.01; lot:1 1; mult:1 10); .mdp.pos::0#.mdp.pos; .mdp.onfill ([]sym:s,s; side:`buy`sell; qty:q,q; px:p,p); (0=.mdp.pos[s;`qty]) and 0=.mdp.pos[s;`real]}];
+ok 100 tests (seed 7)
+```
+
+Piece 4 tally: two bugs in the piece (a namespace name inside q-SQL; operator precedence in the average cost), one
+mistyped property, and two q facts learned on the way (a keyed table indexed by a list of keys and a column;
+`exec … by` gives a dictionary). Four properties stand; the balance-sheet identity is the one the state machine
+will carry, since it holds for any fill log and any mark.
