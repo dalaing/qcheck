@@ -19,12 +19,11 @@ ll:.qc.list .qc.list .qc.int 0 9
 r:.qc.chk[q;ll;{6>sum count each x}]
 .t.t["nested lists: total of six elements, minimal shape"; (6=sum count each r[`x]`x) and all 0=raze r[`x]`x]
 tree:.qc.rec[2 2;.qc.int 0 9;{(x 0;x 1)}]
-depth:{$[0h=type x; 1+max .z.s each x; 0<type x; 1; 0]}
-nodes:{$[0h=type x; 1+sum .z.s each x; 0<type x; 1; 0]}
-r:.qc.chk[q;tree;{depth[x]<3}]
-.t.t["tree: depth 3 with exactly 3 internal nodes, all leaves 0"; (3=depth r[`x]`x) and (3=nodes r[`x]`x) and all 0=raze r[`x]`x]
-r:.qc.chk[q;tree;{nodes[x]<4}]
-.t.t["tree: 4 nodes minimal"; 4=nodes r[`x]`x]
+\l spikes/bench.q                                                                 / .b.depth and .b.nodes, shared with t/bench.q
+r:.qc.chk[q;tree;{.b.depth[x]<3}]
+.t.t["tree: depth 3 with exactly 3 internal nodes, all leaves 0"; (3=.b.depth r[`x]`x) and (3=.b.nodes r[`x]`x) and all 0=raze r[`x]`x]
+r:.qc.chk[q;tree;{.b.nodes[x]<4}]
+.t.t["tree: 4 .b.nodes minimal"; 4=.b.nodes r[`x]`x]
 rose:.qc.rec[0 4;.qc.int 0 9;{(`n;x)}]
 r:.qc.chk[q;rose;{$[0h=type x; 3>count x 1; 1b]}]
 .t.t["rose: a node with three children, all leaves 0"; (3=count r[`x][`x;1]) and all 0=raze r[`x][`x;1]]

@@ -1,9 +1,8 @@
 / M7: tables with constrained columns (mono uniq dep), attributes (atr) and schemas. loaded by t/run.q
 system"S 7"
-D:{[g;n] {.qc.draw x} each n#enlist g}
 / mono: sorted by construction, in every example and every shrink candidate (A18)
 mt:.qc.tab `t`v!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.int 0 9)
-.t.t["mono: every drawn table is sorted on the column"; all {x[`t]~asc x`t} each D[mt;100]]
+.t.t["mono: every drawn table is sorted on the column"; all {x[`t]~asc x`t} each .t.D[mt;100]]
 bad:0
 r:.qc.chk[q;mt;{if[not x[`t]~asc x`t; bad+:1]; $[1<count x; 9>max 1_deltas x`t; 1b]}]
 .t.t["mono: a planted gap bug shrinks to two rows nine apart, and no candidate was ever unsorted"; (2=count r[`x]`x) and (9=last deltas r[`x][`x;`t]) and 0=bad]
@@ -15,9 +14,9 @@ tt:.qc.draw .qc.tabr[3 3] `a`t!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.mono[.qc.t
 ue:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.elem `a`b`c;.qc.int 0 9)
 ui:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.int 0 3;.qc.int 0 9)
 uo:.qc.tabr[0 10] `k`v!(.qc.uniq .qc.int 0 1000000;.qc.int 0 9)
-.t.t["uniq over an elem: distinct, rows capped by the set (3)"; all {(x[`k]~distinct x`k) and 3>=count x} each D[ue;100]]
-.t.t["uniq over a small int range: distinct, rows capped by the range (4)"; all {(x[`k]~distinct x`k) and 4>=count x} each D[ui;100]]
-.t.t["uniq over an open generator: distinct and not capped"; (all {x[`k]~distinct x`k} each tb) and 4<max count each tb:D[uo;100]]
+.t.t["uniq over an elem: distinct, rows capped by the set (3)"; all {(x[`k]~distinct x`k) and 3>=count x} each .t.D[ue;100]]
+.t.t["uniq over a small int range: distinct, rows capped by the range (4)"; all {(x[`k]~distinct x`k) and 4>=count x} each .t.D[ui;100]]
+.t.t["uniq over an open generator: distinct and not capped"; (all {x[`k]~distinct x`k} each tb) and 4<max count each tb:.t.D[uo;100]]
 .t.t["uniq over a generator that cannot vary discards when the tries run out"; "qc.discard"~@[.qc.draw;.qc.tabr[2 2] enlist[`k]!enlist .qc.uniq .qc.const 7;{x}]]
 r:.qc.chk[q;ui;{20>sum x`v}]
 .t.t["uniq: a planted bug shrinks to three rows with distinct keys summing to 20"; (3=count r[`x]`x) and (20<=sum r[`x][`x;`v]) and 3=count distinct r[`x][`x;`k]]
@@ -26,7 +25,7 @@ ud:.qc.draw .qc.tabr[2 2] enlist[`k]!enlist .qc.uniq .qc.one (.qc.const `a`b!1 2
 .t.t["uniq over a generator that draws dicts of different shapes (AUDIT2: the used set collapsed to a table)"; (2=count ud) and 2=count distinct ud`k]
 / dep: sees the row so far, in column order
 dpt:.qc.tab `bid`ask!(.qc.int 0 9;.qc.dep {[r] .qc.int (r`bid;9)})
-.t.t["dep: ask >= bid in every row of 100 tables"; all {all x[`ask]>=x`bid} each D[dpt;100]]
+.t.t["dep: ask >= bid in every row of 100 tables"; all {all x[`ask]>=x`bid} each .t.D[dpt;100]]
 .t.t["dep: a dep column sees only the columns before it"; all 0=(.qc.draw .qc.tabr[5 5] `a`b!(.qc.dep {[r] .qc.const count r};.qc.int 0 9))`a]
 .t.t["dep outside a table receives an empty row"; 0~.qc.draw .qc.dep {[r] .qc.const count r}]
 .t.t["dep refuses a non-function"; (@[.qc.draw;.qc.dep 5;{x}]) like "qc: dep*"]
@@ -36,7 +35,7 @@ v:.qc.draw .qc.atr[`s] .qc.lst[1 9] .qc.int 0 9
 .t.t["atr: the shrunk counterexample keeps its attribute"; `s=attr (.qc.chk[q;.qc.atr[`s] .qc.lst[1 0W] .qc.int 0 9;{3>count x}])[`x]`x]
 .t.t["atr: an unknown attribute is refused"; (@[.qc.draw;.qc.atr[`x] .qc.list .qc.int 0 9;{x}]) like "qc: atr*"]
 / ktab: keys distinct
-.t.t["ktab: keys are distinct even from a small range, and the rows fit it"; all {((count x)=count distinct (0!x)`a) and 5>=count x} each D[.qc.ktab[`a;0 20] `a`b!(.qc.int 0 4;.qc.bool);50]]
+.t.t["ktab: keys are distinct even from a small range, and the rows fit it"; all {((count x)=count distinct (0!x)`a) and 5>=count x} each .t.D[.qc.ktab[`a;0 20] `a`b!(.qc.int 0 4;.qc.bool);50]]
 .t.t["ktab: a key that is not a column is refused"; (@[.qc.draw;.qc.ktab[`z;1 1] (enlist `a)!enlist .qc.int 0 9;{x}]) like "qc: ktab*"]
 / schema (A21)
 dom:`a`b`c
@@ -47,8 +46,8 @@ rt:{[t] all {[t;i] tb:.qc.draw .qc.schema t; (meta $[count tb; t; 0#t])~meta tb}
 .t.t["schema: a general column draws longs, symbols and strings"; all (type each (.qc.draw .qc.tabr[20 20] enlist[`b]!enlist .qc.colg (1;`x))`b) in -7 -11 10h]
 .t.t["schema: the enumerated column stays enumerated (20h)"; all 20h={type (.qc.draw .qc.schema shapes`enum)`s} each til 10]
 .t.t["schema: the minimal table is empty, typed, and without attributes (as 0# is)"; (meta 0#shapes`sorted)~meta .qc.minimal .qc.schema shapes`sorted]
-.t.t["schema: keys are distinct"; all {(count x)=count distinct (0!x)`k} each D[.qc.schema shapes`keyed;30]]
-.t.t["schema: a u# column is drawn distinct and keeps u# (an empty table carries none)"; all {$[count x; (`u=attr x`v) and x[`v]~distinct x`v; 1b]} each D[.qc.schema ([]v:`u#1 2 3);30]]
+.t.t["schema: keys are distinct"; all {(count x)=count distinct (0!x)`k} each .t.D[.qc.schema shapes`keyed;30]]
+.t.t["schema: a u# column is drawn distinct and keeps u# (an empty table carries none)"; all {$[count x; (`u=attr x`v) and x[`v]~distinct x`v; 1b]} each .t.D[.qc.schema ([]v:`u#1 2 3);30]]
 .t.t["schema: a column whose value is a table or a keyed table is a general column, not an enumeration (AUDIT2)"; ((first value .qc.colg ([]a:1 2;b:3 4))~.qc.one) and (first value .qc.colg ([k:1 2]v:3 4))~.qc.one]
 .t.t["schema: p# with s# is refused, so is a non-table"; ((@[.qc.schema;([]a:`p#1 1 2;b:`s#1 2 3);{x}]) like "qc: schema*") and (@[.qc.schema;5;{x}]) like "qc: schema*"]
 .t.t["schema: the generator carries the canary"; (@[.qc.schema shapes`plain;1;{x}]) like "qc: too many*"]

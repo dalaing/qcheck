@@ -17,6 +17,7 @@ q:()!()                                                                         
 .t.sz:{[s] .qc.cfg[`sz]:s; .qc.new[]}                                             / the interactive size, set the way a user would
 .t.tmp:{[nm] d:`$":",getenv[`TMPDIR],nm,"_",string .z.i; system"mkdir -p ",1_string d; d}   / a scratch directory; .t.rm removes it
 .t.rm:{system"rm -rf ",1_string x;}
+.t.D:{[g;n] {.qc.draw x} each n#enlist g}                                          / n independent examples of g
 .t.q:{[cmd] system "sh -c '",cmd," </dev/null 2>&1; echo EXIT $?'"}                 / a child q's output lines, the last "EXIT n" (a system command that begins with "q " prints instead of returning; sh -c captures)
 .t.code:{"J"$5_last x}                                                             / the exit code from .t.q's lines
 / a file is evaluated one top-level statement at a time (an indented line continues the statement above, as \l
