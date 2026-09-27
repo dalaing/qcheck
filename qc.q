@@ -270,18 +270,23 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of ho
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
   if[not `w in cols c; c:update w:1f from c]; if[$[not type[c`w] in 5 6 7 8 9h; 1b; any c[`w]<=0]; '"qc: cmds: w must be positive weights"]; c:update w:"f"$w from c;
-  r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;   / (cap in floats, C21)
+  r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz;   / (cap in floats, C21)
+  r:@[smloop[h;c;lo];mx;{[h;e] h[`fini][]; 'e}[h]]; h[`fini][]; r}   / fini on every way out: the one trap around the whole run (C9)
+/ the run itself: a step is a span; an error in run or post is a failure with its stem and the trace so far, the
+/ failing step included; a false post or inv notes the trace and signals its stem; an error in pre, gen or upd is
+/ the harness's and propagates as itself
+smloop:{[h;c;lo;mx] m:h`m0; h[`init][]; R:(); n:0; go:1b;
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
-    $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:@[draw;c[j;`gen] m;{[h;e] h[`fini][]; 'e}[h]]; end[];   / weighted over the available commands; fini on every exit; (a, not i: i is the cursor)
-        o:@[c[j;`run];a;{[h;R;e] note smnote R; h[`fini][]; '"qc.run ",e}[h;R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
-        ok:@[c[j;`post][m;a;];o;{[h;R;e] note smnote R; h[`fini][]; '"qc.post ",e}[h;R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
+    $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:draw c[j;`gen] m; end[];   / weighted over the available commands; (a, not i: i is the cursor)
+        o:@[c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
+        ok:@[c[j;`post][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
         m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
-        if[not ok; h[`fini][]; note smnote R; '"qc.post"];
-        iv:@[h`inv;m2;{[h;R;e] note smnote R; h[`fini][]; '"qc.inv ",e}[h;R]]; if[not $[(::)~iv; 1b; all iv]; h[`fini][]; note smnote R; '"qc.inv"];   / the invariant, on the model after the step
+        if[not ok; note smnote R; '"qc.post"];
+        iv:@[h`inv;m2;{[R;e] note smnote R; '"qc.inv ",e}[R]]; if[not $[(::)~iv; 1b; all iv]; note smnote R; '"qc.inv"];   / the invariant, on the model after the step
         m:m2; n+:1];
       end[]]];
-  h[`fini][]; smtab R}
+  smtab R}
 
 / ---- inside a property ------------------------------------------------------------------------------
 note:{N,:enlist x;}

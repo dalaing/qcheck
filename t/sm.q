@@ -64,3 +64,13 @@ system"S 3"
 .t.t["C11 sm replays across sizes"; {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.sm[h] cm2]
 .t.sz 100
 .qc.cfg[`v]:1
+/ C9: fini runs on every way out of a run, including the harness's own errors and an exhausted strict replay
+fc:0; hf:`m0`fini!(0;{fc+:1})
+.t.e[.qc.draw;.qc.sm[hf] ([cmd:enlist `a] pre:enlist {[m] '"prebang"})]
+.t.t["sm: fini runs when pre raises"; 1=fc]
+fc:0; .t.e[.qc.draw;.qc.sm[hf] ([cmd:enlist `a] upd:enlist {[m;a;o] '"updbang"})]
+.t.t["sm: fini runs when upd raises"; 1=fc]
+fc:0; .t.e[.qc.strict[enlist 1];.qc.sm[hf] ([cmd:enlist `a] gen:enlist {[m] .qc.int 0 9})]
+.t.t["sm: fini runs when a strict replay runs out of choices"; 1=fc]
+fc:0; .qc.draw .qc.sm[hf] ([cmd:enlist `a] run:enlist {[a] ::})
+.t.t["sm: fini runs exactly once on a clean run"; 1=fc]
