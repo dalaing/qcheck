@@ -1,7 +1,7 @@
 # qcheck — property-based testing for q
 
 *Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README says
-3.5 or later should work and that this is unverified); M1–M12 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, a tour in `EXAMPLES.md`, recipes in `COOKBOOK.md`, a worked example with its log in `examples/mdp/`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
+3.5 or later should work and that this is unverified); M1–M12 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, a tour in `EXAMPLES.md`, recipes in `COOKBOOK.md`, a worked example with its log in `examples/mdp/` and its walkthrough in `WALKTHROUGH.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
@@ -55,13 +55,14 @@ The library rests on three ideas, each one q-native:
 
 ### 1.2 Vocabulary and calling convention
 
-The words, used the same way in every document: a **spec** is anything `.qc.draw` interprets — a generator, a list
-or dict of specs, or a constant; a **generator** is the function kind of spec; an **example** is one value drawn
-from a spec (the *input* to the property); a **test** is one run of the property on one example, which is what the
+The words, used the same way in every document: a **generator** is anything `.qc.draw` interprets — a function
+that draws, a list or dict of generators, or a constant (the library's names and its rerun line still say `spec`
+for this, the word the documents used before; they say generator because nothing here specifies behaviour); an
+**example** is one value drawn from a generator (the *input* to the property); a **test** is one run of the property on one example, which is what the
 report counts; a **counterexample** is the example a failure shrinks to. Long and short names differ by taking a
 range or a configuration first (`list`/`lst`, `check`/`chk`).
 
-A **generator** is any q function value (lambda, projection, composition — `type` within `100 112h`) that, when
+A generator of the function kind is any q function value (lambda, projection, composition — `type` within `100 112h`) that, when
 applied to `::` (called as `g[]`), draws from the stream and returns a value. Users never see that trailing
 argument: library generators are functions whose *last* parameter is the implicit `d`, so supplying the
 configuration arguments yields a projection, and the projection is the generator.
@@ -128,8 +129,8 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 
 | Name | Meaning |
 |---|---|
-| `.qc.draw x` | interpret a spec: function → call; dict / general list → draw elementwise; else constant |
-| `.qc.minimal x`, `.qc.replay[choices;x]`, `.qc.strict[choices;x]` | the other interactive entry points: the simplest value of a spec; the value a recorded choice vector produces; the same with the prefix strict, so a draw past it is `qc.overrun` — what every shrink candidate sees (C10) |
+| `.qc.draw x` | interpret a generator: function → call; dict / general list → draw elementwise; else constant |
+| `.qc.minimal x`, `.qc.replay[choices;x]`, `.qc.strict[choices;x]` | the other interactive entry points: the simplest value of a generator; the value a recorded choice vector produces; the same with the prefix strict, so a draw past it is `qc.overrun` — what every shrink candidate sees (C10) |
 | `.qc.ch[r;w]` | **the primitive**: a long in range `r` = `lo hi o`; `w` is a fresh-draw distribution hint |
 | `.qc.int r` | long in range; no nulls or infinities |
 | `.qc.bool`, `.qc.bit p` | boolean; `bit p` draws `1b` with probability `p` on fresh draws; origin `0b` |
@@ -141,19 +142,19 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.list g`, `.qc.lst[r] g` | variable-length list of `g`, length range `r` (default `0 0W`, capped by size); homogeneous atoms become a typed vector automatically |
 | `.qc.vec[r] c` | typed vector of `.qc.t c`, typed even when empty |
 | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. an empty draw's columns are typed from a probe of one minimal row (M7's limitation, removed at M12) |
-| `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g`, which must be non-negative — a negative delta is a usage error, never a quietly unsorted column (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
+| `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g`, which must be non-negative — a negative delta is a usage error, never a quietly unsorted column (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a generator. On their own each is its plain part |
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
 | `.qc.tf c` | the **finite** domain of an atom type: no null, no infinity (`h i j` stop one short of their infinities, `e` fits a real, `c` has no space, `s` no empty symbol); `t c` is `tf c` wrapped in `spc` with the specials (M10) |
 | `.qc.ts[from;to]`, `.qc.dates[from;to]` | one timestamp or date in a window, the start simplest (dates accepted as timestamp bounds); a monotone series is `mono[ts[a;b];int 0 60000000000]` in a table or `atr[`s] list ts[a;b]` (A26) |
 | `.qc.val` | an arbitrary q value: `rec` over the full-domain zoo with list, dict, table and keyed-table nodes — every atom type, both list kinds, dicts, tables at size 30; `-9!-8!x` round-trips all of it (A27) |
-| `.qc.one gs` | one of several alternative specs; the first is the simplest *provided it draws no more choices than the others* (C12) |
+| `.qc.one gs` | one of several alternative generators; the first is the simplest *provided it draws no more choices than the others* (C12) |
 | `.qc.freq[w] gs` | weighted alternatives, parallel lists |
 | `.qc.elem xs` | an element of a constant list (preferred over generating symbols) |
 | `.qc.such[p] g` | filter with bounded retries, then discard |
-| `.qc.rec[k;leaf;node]` | **recursive structures**: child-count range `k`, leaf spec, and `node`, a function of the list of already-drawn children (below) |
-| `.qc.const x` `.qc.sized f` `.qc.small g` | constant escape hatch; `f` of size returning a spec; halve the budget for a sub-spec |
+| `.qc.rec[k;leaf;node]` | **recursive structures**: child-count range `k`, leaf generator, and `node`, a function of the list of already-drawn children (below) |
+| `.qc.const x` `.qc.sized f` `.qc.small g` | constant escape hatch; `f` of size returning a generator; halve the budget for a sub-generator |
 
 #### How they are built
 
@@ -277,9 +278,9 @@ space is smaller than the rows discards (`sym` has 85 values; a `u#` column with
 line each in `REFERENCE.md`; this section is what they do and why.)
 
 ```
-.qc.check[spec; prop]            / .qc.cfg defaults
-.qc.chk[cfg; spec; prop]         / cfg: dict merged over defaults, e.g. `n`seed!1000 42i; a long means n; :: means defaults
-.qc.recheck[spec; prop; choices] / exact replay, no shrinking
+.qc.check[g; prop]               / .qc.cfg defaults
+.qc.chk[cfg; g; prop]            / cfg: dict merged over defaults, e.g. `n`seed!1000 42i; a long means n; :: means defaults
+.qc.recheck[g; prop; choices]    / exact replay, no shrinking
 ```
 
 `recheck` is `.qc.replay` plus the property. `draw`, `minimal`, `replay` and the shrinker are the four sources a
@@ -287,10 +288,10 @@ choice value can come from — fresh, origin, prefix, refusal — each owning it
 
 How the drawn value reaches the property:
 
-- general-list spec → `prop . x` (one argument per element);
-- dict spec and `prop` a lambda whose parameter names are all keys of the dict → applied **by name**,
+- general-list generator → `prop . x` (one argument per element);
+- dict generator and `prop` a lambda whose parameter names are all keys of the dict → applied **by name**,
   `` .qc.check[`n`xs!(.qc.int 0 9;.qc.list .qc.sym); {[xs;n] n<=count xs}] ``; otherwise the dict is passed whole;
-- anything else → `prop @ x`. `.qc.check[::;prop]` is the interactive form: the spec draws to `::`, and the
+- anything else → `prop @ x`. `.qc.check[::;prop]` is the interactive form: the generator draws to `::`, and the
   unary property draws whatever it needs with `.qc.draw`.
 
 A property passes iff it returns `::` or `all` of a boolean result. Any signal fails it — except the engine's
@@ -305,12 +306,12 @@ fails with `"qc.eq"`; a reordered dict or table is reported as `order`), `.qc.no
 good — use it on small value spaces, pitfall 11), `.qc.cover[s;pct;b]` (the run fails with
 `why` `` `cover `` only when it is confident the label's rate is under `pct`: the Wilson 95% upper bound of the
 observed rate is below it, C15),
-`.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its spec, property and choices.
-`.qc.checks d` runs a dict of name → `(spec;prop)` and returns a table (`.qc.chks[cfg;d]` with config).
+`.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its generator, property and choices (keys `spec`, `prop`, `choices`).
+`.qc.checks d` runs a dict of name → `(g;prop)` and returns a table (`.qc.chks[cfg;d]` with config).
 
 Run loop for one property — **`n` is a budget; the run stops when it has learned what it can** (C19):
 (0) replay the saved failure from the db if there is one (`cfg`db`, default `` `:.qc ``,
-one file per property keyed by `cfg`name` or an md5 of the spec and property source; a saved example that no
+one file per property keyed by `cfg`name` or an md5 of the generator and property source; a saved example that no
 longer fails is deleted, a shrunk one is saved) — if the replay overruns or clamps any choice the generator has
 changed since it was saved, and `recheck` says so rather than silently testing a different input; (1) example 0 in *minimal mode* — every fresh draw returns its origin, so the
 simplest input is always tried first, for free; (2a) every example's choices are recorded as a path in the
@@ -320,7 +321,7 @@ DataTree), and while every recorded path has a product of widths within the budg
 the next example is the tree's simplest open branch — descend from the root taking at each node the value
 nearest the origin whose child is absent or open, then origins for the rest — so every input is tried once,
 in shortlex order for a fixed structure, and the run stops `exhausted` when the root is: `ok 4 tests,
-exhausted` is a proof, not a sample, and a constant spec is the one-input case. This covers structure that
+exhausted` is a proof, not a sample, and a constant generator is the one-input case. This covers structure that
 depends on earlier choices (`one`, short lists, `rec` at a small size, small state machines) because the tree
 is the structure. A path whose product exceeds the budget switches the run to sampling for good (a tree whose
 every path fits has at most `n` leaves, so the switch is only ever taken when the space may not fit); so does
@@ -337,7 +338,7 @@ Every field is always present and typed the same way: absent
 composites are empty (`disc` an empty dict, `cover` an empty table, `notes` an empty list, `err` an empty
 string); only `x` is `::` when there is no counterexample (C4).
 
-**Inside another framework, and as a script (M9).** `.qc.must[spec;prop]` (`.qc.mustc[cfg;spec;prop]` with a
+**Inside another framework, and as a script (M9).** `.qc.must[g;prop]` (`.qc.mustc[cfg;g;prop]` with a
 config) runs the check quietly, returns the result on ok, and otherwise signals the whole report as one error
 string — `qc: FAIL falsified after 3 tests, …` on the first line, the counterexample and rerun line after it — so a
 property can sit inside k4unit, qspec or a `.Q.trp` script and be one failing assertion (A24: the text survives
@@ -459,7 +460,7 @@ comparable cases (`[1, 0]`, `[0, 1]`, `[0, 0]`, five zeros, `51`, `-1`, a three-
   duration and restores it, because `.Q.s` and `.Q.s1` both truncate to `\c` and `.Q.s` prints a table
   nested in a dict in flip notation (A9).
 - **The counterexample** is a dict keyed by the property's parameter names (`(value prop)[1]`, A1) or by the
-  spec's own keys, printed by the formatter.
+  generator's own keys, printed by the formatter.
 - **`.qc.diff[a;b]`** returns a table `([] path; why; a; b)`, `why` one of `` `type`count`value`key`order ``,
   built type-first, then count, then values, never comparing values of different types (C2, C3). `a`/`b` hold
   the types for a `type` row, the counts for a `count` row, the values otherwise; `path` is the list of keys,
@@ -497,7 +498,7 @@ bytes and a log file may not be UTF-8; plain words are safer in the one line peo
 
 ### 1.7 State machines
 
-A state machine is a **keyed table of commands**. `.qc.sm[h] cmds` is a *spec* whose value is the executed
+A state machine is a **keyed table of commands**. `.qc.sm[h] cmds` is a *generator* whose value is the executed
 trace, so it composes with `.qc.check` like any other generator, and the property `::` reads as "run the
 machine; the postconditions are the property":
 
@@ -518,7 +519,7 @@ step cmd  arg res model ok
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
 ```
 
-The columns of `cmds`: `pre` (model → can this command run?), `gen` (model → input spec, `::` for none), `run`
+The columns of `cmds`: `pre` (model → can this command run?), `gen` (model → input generator, `::` for none), `run`
 (input → output, acting on the real system), `post` (model before, input, output → ok?), `upd` (model before,
 input, output → model after). `pop` has a planted bug: it returns the first item once three are stacked.
 
@@ -531,7 +532,7 @@ from `gen m`, runs it, checks `post`, applies `upd`, and appends a row `step cmd
 (Hypothesis-style, not Hedgehog's generate-then-execute) outputs are concrete at generation time: **no
 symbolic-variable machinery** — the model stores whatever it needs. Constraints on *inputs* belong in `gen`,
 which draws only valid inputs from the model (`{.qc.int 0,x`balance}`), not in a filter; `pre` says whether
-the command can run at all. Drawing an `sm` spec executes the real system, on every path that draws: examples,
+the command can run at all. Drawing an `sm` generator executes the real system, on every path that draws: examples,
 shrink candidates, `minimal`, `replay`, a saved failure, `again[]`, and after a discard — which is why `init`
 is part of `h` and not something the property does.
 
@@ -544,7 +545,7 @@ is one span deletion and misaligned command indices clamp to available commands 
 length by command, the one exception to C12's rule, stated there); when no command is
 available a forced stop is still recorded (C7). A false postcondition notes the trace, with the failing row's
 `ok` 0b, and raises `qc.post`; an error inside `run` or `post` notes the trace so far and raises `qc.run <e>`
-or `qc.post <e>`. These are **failure signals** (C14): although they arise while the spec is being drawn, they
+or `qc.post <e>`. These are **failure signals** (C14): although they arise while the generator is being drawn, they
 are falsifications, not generator errors, and they shrink like any other failure — the shrinker deletes steps
 and shrinks inputs with the ordinary passes. The report prints the trace from the notes; there is no separate
 counterexample because the trace *is* the input.
@@ -568,25 +569,29 @@ plugins, no `peach` (state is global, so `.qc.check` is not reentrant and a nest
 
 ```
 qc.q            the library
-README.md       usage, built from the examples in §1.2–1.7
+README.md       what property-based testing is, and usage; written for a q programmer new to it
 LICENSE         MIT; qc.q carries a one-line notice in its header, since it travels alone
 spikes/         one script per validated assumption; sh spikes/run.sh runs them all
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
-                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, this file and examples/mdp/LOG.md; QC_FAST=1
-                skips the state-machine blocks, most of the suite's time), docs (names in docs exist),
+                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file and examples/mdp/LOG.md; QC_FAST=1
+                skips the state-machine blocks, most of the suite's time), docs (names in docs exist; WALKTHROUGH's
+                excerpts are in their files),
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
-EXAMPLES.md     a tour in verified transcripts
+EXAMPLES.md     a tour in verified transcripts, which talks through the scripts in examples/
 REFERENCE.md    every public name, one line each; t/docs.q checks it against qc.q both ways
 COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
-examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12)
+WALKTHROUGH.md  the pipeline of examples/mdp/ as a narrative for readers, drawn from its log; doctested
+examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12), left as
+                it was written; walk.q holds what WALKTHROUGH.md's sessions load
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here),
                 AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed
 .qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
-examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
+examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q, commented as tutorials, each run without a failure
+                database (sm_ipc.q starts a child q process)
 ```
 
 ### 1.10 Conventions
@@ -613,7 +618,7 @@ value (`rec`, `one`, `freq`, `.qc.t`) handles the leaf or scalar case first. Ori
 that assumed a `rec` value is a node.
 
 **C4 — absence is empty, not `::`.** A composite that may be absent is an empty composite of its type; `::` is
-kept for "no value" scalars and for the `::` spec and property. The result dict, the shrink history (M2), the
+kept for "no value" scalars and for the `::` generator and property. The result dict, the shrink history (M2), the
 coverage and trace tables (M3, M5) all follow this. Origin: joining a failure dict onto a `::` sentinel.
 
 **C5 — a name is free iff `not x in .Q.res,key .q`, and a local never shadows an engine global.** `key .q` holds
@@ -630,7 +635,7 @@ suppresses this so draws inside a property share the example's stream. Origin: c
 REPL until `qc.toolarge`.
 
 **C7 — zero choices means exhausted, so every structure records at least one.** A passing example that drew
-nothing ends the run with `n` 1: the cheapest form of Hypothesis's exhaustion rule, it makes the constant-spec
+nothing ends the run with `n` 1: the cheapest form of Hypothesis's exhaustion rule, it makes the constant-generator
 mistake visible as "✓ 1 test" and is honest for genuinely constant properties. The rule has a dual: a generator
 that *could* vary must always record a choice, even when the current size leaves it no room — a list with
 capacity 0 records its stop bit, `rec` at size 0 records its node count, a single-alternative `one` records
@@ -687,7 +692,7 @@ bit behind, and a tree that ended at the size cap without a stop.
 **C14 — the error vocabulary is closed and classified.** Three classes, three spellings: control signals
 (`qc.discard qc.overrun qc.toodeep qc.toolarge qc.misaligned`, the `ENG` list; never counterexamples, discards
 during generation, invalid candidates during shrinking), failure signals (`qc.<stem>` optionally followed by
-detail, stems `qc.eq qc.post qc.run qc.inv` in `FS`; a falsification wherever raised, even while a spec is being
+detail, stems `qc.eq qc.post qc.run qc.inv` in `FS`; a falsification wherever raised, even while a generator is being
 drawn, and they shrink like one), and usage errors (`qc: …`, colon and space: canary, range, config, bad
 property result; and `must`'s `qc: FAIL …`, the library telling the caller that the property failed). A new engine signal goes in `ENG`; a new failure stem goes in `FS`; `t/names.q` scans the
 source for `'"qc.` literals to enforce both. Origin: a `qc.*` prefix test that classified `qc.eq` as an engine signal and silently
@@ -727,7 +732,7 @@ promised and never written). The harness fails a test whose result is not a bool
 `all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
 top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
 broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
-README.md, EXAMPLES.md, COOKBOOK.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
+README.md, EXAMPLES.md, COOKBOOK.md, WALKTHROUGH.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
 (seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. What that cannot
 see, so that nobody relies on it: prose claims outside a fence; timing; stderr from stdout (merged); the child's exit
 code; the value of a statement that ends in `;` or is an assignment (silenced — a wrong value can hide behind a
@@ -758,7 +763,7 @@ nested. Origin: the two items deferred from C7 and C15, which turned out to be t
 indexes it, and a small integer is an IPC handle: `5 @ x` writes to handle 5. Every site where the library
 applies something a user handed it — the property, `sized`'s function, `such`'s predicate, `rec`'s node, a
 state machine's hooks and columns, `checks`' pairs — goes through `need` first and fails with `qc: … must be a
-function`; a lambda property's arity is checked against a list spec up front. Origin: pitfall 1 seen from the
+function`; a lambda property's arity is checked against a list generator up front. Origin: pitfall 1 seen from the
 library's side, during the review rounds.
 
 **C21 — arithmetic on choice bounds is done in floats, or guarded.** A difference, product or midpoint of two
@@ -775,7 +780,7 @@ table's columns need memory across rows (the last `mono` value, `uniq`'s remaini
 three globals that `tabx` saves on entry and restores on every exit, including the error path, so tables nest and a
 failed table leaves nothing behind. Per-example state belongs to `reset` and per-run state to `chk1`; this is the
 third tier, owned by the structure. Origin: M7, where the first draft kept the state per example and two tables in
-one spec shared it.
+one generator shared it.
 
 **C23 — a list that may hold anything grows behind a `::` seed.** `enlist d` is a table, a list of conforming
 dicts is a table, and a dict amended with one long has a typed value list: the next element of another shape

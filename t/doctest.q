@@ -17,5 +17,5 @@ fast:count getenv `QC_FAST
 slow:{[b] any (b like "q)*") and b like "*.qc.sm*"}                                / (an input line that runs a state machine; a like with a * in the middle is nyi, pitfall 5)
 doc:{[f] b:blocks f; sk:$[fast; where slow each b; `long$()]; ix:(til count b) except sk;
   .t.t[string[f]," transcripts (",string[count b]," blocks",$[count sk; ", fast: ",string[count sk]," machine blocks skipped"; ""],") produce their stated output"; (0<count ix) and all runb[f]'[ix;b ix]]}
-doc each `:README.md`:EXAMPLES.md`:docs/DESIGN.md`:COOKBOOK.md`:examples/mdp/LOG.md
+doc each `:README.md`:EXAMPLES.md`:docs/DESIGN.md`:COOKBOOK.md`:WALKTHROUGH.md`:examples/mdp/LOG.md
 .t.rm dir

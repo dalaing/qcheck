@@ -1,7 +1,7 @@
 # The steps
 
-One file per logged code change, the whole piece as it stood at that step. Buggy versions stay: `LOG.md`'s
-transcripts load them by name, and `t/doctest.q` requires each to still fail as logged.
+One file per logged code change, the whole piece as it stood at that step. Buggy versions stay: the sessions of
+`LOG.md` and of `WALKTHROUGH.md` load them by name, and `t/doctest.q` requires each to still fail as shown.
 
 - The number is a clock across the whole development, not a count per piece: a piece skips numbers while another
   piece is being written (`upd` is 14 then 16; the state machine is 15, 18, 19, 21, 23, 24). Thirty files, twenty-four
