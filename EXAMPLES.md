@@ -45,6 +45,39 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 `long$()
 ```
 
+## Tables
+
+A column can be constrained: `mono[b;g]` adds a drawn delta to the previous row, `uniq g` never repeats a value, and
+`dep f` sees the row so far. `schema t` makes tables shaped like a sample, and a planted bug on a keyed table
+shrinks to the fewest rows that show it.
+
+```q
+q).qc.draw .qc.tabr[4 4] `t`k`v!(.qc.mono[.qc.int 0 9;.qc.int 1 9]; .qc.uniq .qc.elem `a`b`c`d; .qc.dep {[r] .qc.int (r`t;20)})
+t k v 
+------
+1 b 3 
+4 a 10
+6 d 14
+8 c 8 
+q)dom:`a`b`c
+q)trade:([]time:`s#09:30:00 09:30:05 09:31:00; sym:`dom$`a`b`a; px:1.5 2.5 3.5)
+q)meta .qc.draw .qc.schema trade
+c   | t f a
+----| -----
+time| v   s
+sym | s    
+px  | f    
+q).qc.check[.qc.tab `k`v!(.qc.uniq .qc.int 0 3; .qc.int 0 9); {20>sum x`v}];
+FAIL falsified after 42 tests, 10 shrinks (124 attempts, seed 7)
+x:
+  k v
+  ---
+  0 2
+  1 9
+  2 9
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 2 1 0 9 1 0 9 0]
+```
+
 ## A first property, and what a failure looks like
 
 ```q

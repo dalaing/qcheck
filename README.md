@@ -33,7 +33,10 @@ a general list draws a tuple, a dict draws a record, anything else is a constant
 .qc.flt 0 1                            / a float in a range; .qc.dbl is any finite double
 .qc.str                                / a string; .qc.sym a symbol over a bounded alphabet
 .qc.vec[0 5]"d"                        / a typed vector, here of dates
-.qc.tab `a`b!(.qc.int 0 9; .qc.sym)    / a table; .qc.ktab[`a;0 9] cols keyed
+.qc.tab `a`b!(.qc.int 0 9; .qc.sym)    / a table; .qc.ktab[`a;0 9] cols keyed (keys distinct)
+.qc.tab `t`k`v!(.qc.mono[.qc.int 0 9;.qc.int 1 9]; .qc.uniq .qc.elem `a`b`c; .qc.dep {[r] .qc.int (r`t;99)})   / a sorted column, distinct keys, a column that sees the row
+.qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations
+.qc.atr[`s] .qc.list .qc.int 0 9         / a sorted vector carrying s#
 .qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
 ```
 
@@ -106,7 +109,7 @@ See `EXAMPLES.md` for a tour in verified transcripts.
 ## Files
 
 ```
-qc.q          the library            examples/   reverse.q tree.q sm_table.q sm_ipc.q
+qc.q          the library            examples/   reverse.q tree.q sm_table.q sm_ipc.q aj.q
 DESIGN.md     design, conventions,   t/          q t/run.q runs the tests and prints one table
               measurements, pitfalls spikes/     sh spikes/run.sh re-runs the design's measurements
 ```

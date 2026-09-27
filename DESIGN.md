@@ -119,6 +119,9 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.list g`, `.qc.lst[r] g` | variable-length list of `g`, length range `r` (default `0 0W`, capped by size); homogeneous atoms become a typed vector automatically |
 | `.qc.vec[r] c` | typed vector of `.qc.t c`, typed even when empty |
 | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. An empty draw has untyped columns (no row was drawn to learn them); use `tabr[1 0W]` when a typed empty table matters |
+| `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g` (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
+| `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
+| `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.one gs` | one of several alternative specs; the first is the simplest *provided it draws no more choices than the others* (C12) |
 | `.qc.freq[w] gs` | weighted alternatives, parallel lists |
 | `.qc.elem xs` | an element of a constant list (preferred over generating symbols) |
@@ -226,6 +229,15 @@ a type error — while the plain join does (A1).
 origin for all temporals (`` `date$0 `` is `2000.01.01`); guids from sixteen byte draws (`0x0 sv`); typed
 versus general lists; empty-list typing. Symbols default to a bounded alphabet because q interns symbols
 forever: 1e5 unbounded symbols cost 5.4 MB that is never reclaimed (A11).
+
+**Tables with constraints (M7).** A column is either a plain generator or a projection of `mono`, `uniq` or `dep`;
+`tab` recognises the latter (`mark`) and then draws each row column by column, in column order, with three pieces
+of per-table state — the previous value of each `mono` column, the candidates not yet used and the values used so
+far of each `uniq` column — saved and restored around the table so tables nest. Rows remain spans (C13); the
+constraints live in the choices, which is why they hold on every shrink candidate (A18, A19, A20). `ktab` sends
+its key columns through `uniq`, so keys are distinct. An empty `tab` has untyped columns because a column dict
+cannot say what it would have drawn; `schema` knows, from `0#` of the sample. A `uniq` over a generator whose
+space is smaller than the rows discards (`sym` has 85 values; a `u#` column with 100 rows cannot be drawn).
 
 ### 1.4 Properties and the runner
 
@@ -514,7 +526,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
-examples/       reverse.q tree.q sm_table.q sm_ipc.q   (sm_ipc.q starts a child q process)
+examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
 ```
 
 ### 1.10 Conventions
@@ -782,6 +794,15 @@ Dogfooding found one real bug: `byname` took any 99h value for a dict of paramet
 the guard with `and` — C2 and C3 in one line, and the reason the conventions exist. Folded back afterwards (the M6
 check): the interactive entry points refuse to run inside a run, as `chk` does (C10 complete); every runner
 dispatcher is exercised over one shape zoo; the README's blocks are executed by `t/readme.q` (C18).
+
+**M7 — tables and schemas.** Done, from spikes A18–A21 and A23: `mono`, `uniq`, `dep` as constrained columns
+drawn row by row inside `tab`; `atr`; `schema` as a constructor over a sample table; distinct keys in `ktab`;
+`t/tables.q` (the A18 minima, the A20 as-of-join bug, meta round trips for six shapes) and six registry rows.
+What it taught, folded back: a dict amended with one symbol has a typed value list and refuses the next long, so
+the row grows behind a `::` seed (pitfall 6 in dict form); `where` over a dict gives keys, over a list indices;
+`p#` failing is reported as `u-fail`; `asc`, `attr`, `like`, `cols`, `vs` are all keywords (pitfall 3, five times
+in one milestone); `0#` of a table drops attributes while `0#` of a vector keeps them; and a general column's
+`meta` type is read from its first element only.
 
 ---
 

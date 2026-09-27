@@ -9,6 +9,8 @@ r:ex "tree.q"
 .t.t["examples/tree.q: exits 0, leaves=1+nodes and the classify property pass, depth<4 fails"; (0=code r) and (2=sum r like "ok *") and 1=sum r like "FAIL falsified*"]
 r:ex "sm_table.q"
 .t.t["examples/sm_table.q: exits 0 and finds the planted pop bug as a postcondition failure"; (0=code r) and (1=sum r like "FAIL falsified*") and 1=sum r like "qc.post"]
+r:ex "aj.q"
+.t.t["examples/aj.q: exits 0 and finds the planted as-of-join bug"; (0=code r) and 1=sum r like "FAIL falsified*"]
 r:ex "sm_ipc.q"
 $[any r like "could not start a child q*"; -1 "  examples/sm_ipc.q skipped: no child q could be started";
   .t.t["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; (0=code r) and 1=sum r like "qc.post"]]
