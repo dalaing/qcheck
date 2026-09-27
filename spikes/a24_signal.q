@@ -1,7 +1,7 @@
 \l spikes/h.q
 / A24: a signalling form for other test frameworks: does a multi-line report survive as an error string through
 / @, .Q.trp, -1 and an IPC boundary?
-msg:"qc: falsified after 3 tests, 2 shrinks (7 attempts, seed 7)\nx: 1 0\nrerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]"
+msg:"qc: falsified after 3 tests, 2 shrinks (7 attempts, seed 7)\nx: 1 0\nrerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]"
 e:@[{'x};msg;{x}]
 .h.t["@ hands back the whole multi-line text"; e~msg]
 e2:.Q.trp[{'x};msg;{[e;bt] e}]

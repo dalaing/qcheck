@@ -78,12 +78,12 @@ q).qc.check[.mdp.g.ref; {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}];
 FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}[(`A;0f)]
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 q).qc.check[.mdp.g.ref; {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}];
 FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}[(`A;0f)]
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 ```
 
 Both fail on the simplest input there is, the symbol `A` at a price of 0, and rounding 0 is not hard. The report
@@ -231,7 +231,7 @@ qc.eq
 path why   a b
 --------------
      count 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 0]
 ```
 
 One trade and no quotes, and the two sides differ in their `count`: the incremental side has no rows and the
@@ -266,7 +266,7 @@ path   why   a b
 ----------------
 `bid 0 value   1
 `ask 0 value   1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0]
 ```
 
 A trade and a quote with the same timestamp, the trade first. When the trade arrived there was no quote, so the
@@ -308,7 +308,7 @@ qc.eq
 path why   a                           b
 ------------------------------------------------------------------
      order time sym px qty seq bid ask seq time sym px qty bid ask
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0]
 ```
 
 This fails on the empty stream, and `why` is `order`: the two tables have the same columns in a different
@@ -330,7 +330,7 @@ qc.eq
 path    why   a                             b
 -------------------------------------------------------------------------
 `time 0 value 2024.01.02D09:30:00.000000001 2024.01.02D09:30:00.000000000
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0]
 ```
 
 A quote, and a trade one nanosecond later, and the enriched trade carries the *quote's* time. `aj` brings every
@@ -395,7 +395,7 @@ path   why   a b
 ----------------
 `sym 0 value B A
 `sym 1 value A B
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 1 0 1 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 1 0 1 0 1 0 0 1 0 0]
 ```
 
 Two trades in one minute, for `B` and then for `A`. The fold has `B`'s bar first, because `B` arrived first, and
@@ -473,7 +473,7 @@ qc.eq
 path why  a b
 --------------
      type 7 99
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 q).qc.check[.mdp.g.fills; balances];
 FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
 x:
@@ -483,7 +483,7 @@ x:
   1:
     A: 1f
 inst
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 ```
 
 Both fail on the empty fill log, before a single fill has been booked.
@@ -519,7 +519,7 @@ x:
     A   buy  1   1
   1:
     A: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[.mdp.g.fills; costs];
 FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
 x:
@@ -529,13 +529,13 @@ x:
     A   buy  1   1
   1:
     A: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); trip];
 FAIL falsified after 0 tests, 0 shrinks (2 attempts, seed 7)
 s: `A
 q: 1
 p: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 0 0 0 1]
 ```
 
 Three rules fail, each on the smallest case it could. Buy one at 1, mark it at 1, and the book is out of
@@ -613,7 +613,7 @@ ev:
 a: 2024.01.02D09:30:00.000000000
 b: 2024.01.02D09:30:00.000000000
 nyi
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
 ```
 
 `nyi`, on a day with no events. The VWAP query is an `exec`, and `exec` over a partitioned table is not
@@ -640,7 +640,7 @@ path           why  a  b
 -------------------------
 `bars   0 `sym type 11 20
 `trades 0 `sym type 11 20
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
 ```
 
 The empty day again, and still not a row in sight. The answers from disk have enumerated symbols (type 20)
@@ -747,7 +747,7 @@ qc.run round
 step cmd   arg                                   res model ok
 -------------------------------------------------------------
 0    trade 2024.01.02D09:30:00.000000000 `A 1f 1 ::  ::    0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 757503000000000000 0 0 0 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 757503000000000000 0 0 0 1 1]
 ```
 
 `qc.run round` says that `run` signalled an error, and that the error was `round`. The trace is one step long: a
@@ -821,7 +821,7 @@ qc.run ./2024.01.02/trade/seq. OS reports: No such file or directory
 step cmd  arg                                   res model ok
 ------------------------------------------------------------
 0    late 2024.01.01D15:30:00.000000000 `A 1f 1 ::  ::    0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 757438200000000000 0 0 0 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 757438200000000000 0 0 0 1 1]
 ```
 
 The first step of a sequence, a late trade for the day before the system started, and a read from the HDB fails
@@ -870,7 +870,7 @@ bars count 0 1
   0    eod   ::                                      ::                                                             1
   1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) "+`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.00..." 1
   2    query (2024.01.02;`A;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`..." 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
 ```
 
 **The machine passed a system that was known to be broken.** A hundred sequences of up to twenty steps did not
@@ -921,7 +921,7 @@ step cmd    arg                 res ok
 1    rename (`A;`N0;2024.01.03) ::  1
 2    fill   (`N0;`sell;1;2f)    ::  1
 3    eod    ::                  ::  1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
 ```
 
 Four steps.
@@ -979,7 +979,7 @@ path           why   a b
   3    eod    ::                                       ::                                                             1
   4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.00..." 1
   5    query  (2024.01.04;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
 ```
 
 With the merge fixed the machine ran further and stopped on enrichment. A quote for `A` on the second day. A

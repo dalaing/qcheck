@@ -32,12 +32,12 @@ q).qc.check[.mdp.g.ref; {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}];
 FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}[(`A;0f)]
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 q).qc.check[.mdp.g.ref; {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}];
 FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}[(`A;0f)]
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 q).qc.check[(.mdp.g.ref; .qc.int 0 1000); {[sp;q] l:.mdp.lots[sp 0;q]; (l<=q) and 0=l mod .mdp.inst[sp 0;`lot]}];
 ok 100 tests (seed 7)
 ```
@@ -163,7 +163,7 @@ qc.eq
 path why   a b
 --------------
      count 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 0]
 ```
 
 One trade, no quotes: the incremental side has no rows at all. The piece is fine; my `replay` is not. `out,:…`
@@ -189,7 +189,7 @@ path   why   a b
 ----------------
 `bid 0 value   1
 `ask 0 value   1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0]
 ```
 
 A trade and a quote at the same timestamp, the trade first. As it arrived, the trade saw no quote; the batch `aj`,
@@ -212,7 +212,7 @@ qc.eq
 path why   a                           b                          
 ------------------------------------------------------------------
      order time sym px qty seq bid ask seq time sym px qty bid ask
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0]
 q).qc.check[.mdp.g.stream; {inc:replay x; all (inc[`bid]<=inc`ask) or null inc`bid}];
 ok 100 tests (seed 7)
 ```
@@ -235,7 +235,7 @@ qc.eq
 path    why   a                             b                            
 -------------------------------------------------------------------------
 `time 0 value 2024.01.02D09:30:00.000000001 2024.01.02D09:30:00.000000000
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0]
 q).qc.check[.mdp.g.stream; {inc:replay x; all (inc[`bid]<=inc`ask) or null inc`bid}];
 ok 100 tests (seed 7)
 ```
@@ -283,7 +283,7 @@ path   why   a b
 ----------------
 `sym 0 value B A
 `sym 1 value A B
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 1 0 1 0 1 0 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0 0 0 1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 1 0 1 0 1 0 0 1 0 0]
 q).qc.check[.mdp.g.trades; {.mdp.bar::0#.mdp.bar; .mdp.onbar x; b:0!.mdp.bar; all (b[`h]>=b`o) and (b[`h]>=b`c) and (b[`l]<=b`o) and (b[`l]<=b`c) and b[`n]>0}];
 ok 100 tests (seed 7)
 ```
@@ -336,7 +336,7 @@ qc.eq
 path why  a b 
 --------------
      type 7 99
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 q)cash:{[f] exec sum .mdp.inst[sym;`mult]*qty*px*-1 1 `buy`sell?side from f}
 q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum .mdp.inst[sym;`mult]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
 FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
@@ -347,7 +347,7 @@ x:
   1:
     A: 1f
 inst
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 ```
 
 Both fell at the empty fill log, the minimal example, before a single fill was booked. The first is my property:
@@ -376,7 +376,7 @@ x:
     A   buy  1   1 
   1:
     A: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; p:0!select from .mdp.pos where qty<>0; r:select mn:min px,mx:max px by sym from f; k:([]sym:p`sym); all (p[`cost]>=(r[k]`mn)-1e-9) and p[`cost]<=1e-9+r[k]`mx}];
 FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
 x:
@@ -386,13 +386,13 @@ x:
     A   buy  1   1 
   1:
     A: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); {[s;q;p] .mdp.inst::([sym:`A`B] tick:0.01 0.01; lot:1 1; mult:1 10); .mdp.pos::0#.mdp.pos; .mdp.onfill ([]sym:s,s; side:`buy`sell; qty:q,q; px:p,p); (0=.mdp.pos[s;`qty]) and 0=.mdp.pos[s;`real]}];
 FAIL falsified after 0 tests, 0 shrinks (2 attempts, seed 7)
 s: `A
 q: 1
 p: 1f
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 0 0 0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 0 0 0 1]
 ```
 
 Three properties, one cause, and the smallest case each time: buy one at 1, marked at 1, and the book is off by
@@ -454,7 +454,7 @@ ev:
 a: 2024.01.02D09:30:00.000000000
 b: 2024.01.02D09:30:00.000000000
 nyi
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
 ```
 
 `nyi` on the empty day: `exec qty wavg px from trade where date=d, sym=s` — `exec` is not implemented over a
@@ -484,7 +484,7 @@ path           why  a  b
 -------------------------
 `bars   0 `sym type 11 20
 `trades 0 `sym type 11 20
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
 ```
 
 Still the empty day, and still not a row in sight: the disk answers carry enumerated symbols (type 20) where
@@ -549,7 +549,7 @@ qc.run round
 step cmd   arg                                   res model ok
 -------------------------------------------------------------
 0    trade 2024.01.02D09:30:00.000000000 `A 1f 1 ::  ::    0 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 757503000000000000 0 0 0 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 757503000000000000 0 0 0 1 1]
 ```
 
 The one line of q-SQL in the assembly — `update px:round'[sym;px]` — could not see `round`, the same lesson as
@@ -631,7 +631,7 @@ qc.run ./2024.01.02/trade/seq. OS reports: No such file or directory
 step cmd  arg                                   res model ok
 ------------------------------------------------------------
 0    late 2024.01.01D15:30:00.000000000 `A 1f 1 ::  ::    0 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 757438200000000000 0 0 0 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 757438200000000000 0 0 0 1 1]
 ```
 
 The first step of a run, a trade timed on the day before the system started, and the HDB read fails on a file that
@@ -708,7 +708,7 @@ bars count 0 1
   0    eod   ::                                      ::                                                             1 
   1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) "+`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.00..." 1 
   2    query (2024.01.02;`A;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`..." 0 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
 ```
 
 Missed at a hundred runs of up to twenty steps; found at three hundred of up to sixty, and shrunk to the three
@@ -765,7 +765,7 @@ step cmd    arg                 res ok
 1    rename (`A;`N0;2024.01.03) ::  1 
 2    fill   (`N0;`sell;1;2f)    ::  1 
 3    eod    ::                  ::  1 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
 label                                 n  pct      req lo        hi       ok bar
 -------------------------------------------------------------------------------
 rename_in_effect                      18 15.38462     9.958576  23.01153 1  ###
@@ -816,7 +816,7 @@ path           why   a b
   3    eod    ::                                       ::                                                             1 
   4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.00..." 1 
   5    query  (2024.01.04;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
 label                                 n  pct      req lo       hi       ok ba..
 -----------------------------------------------------------------------------..
 rename_in_effect                      48 25.80645     20.05226 32.5398  1  ##..
@@ -887,7 +887,7 @@ N0   value 1 2
   1    rename (`A;`N0;2024.01.03) ::  1 
   2    fill   (`N0;`buy;1;1f)     ::  1 
   3    eod    ::                  ::  1 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 0 0 0 0 1 1 3]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 0 0 0 0 1 1 3]
 ```
 ```q
 q)system"l examples/mdp/steps/load_pieces.q"
@@ -908,7 +908,7 @@ path   why   a b
   0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::  1 
   1    rename (`A;`N0;2024.01.03)                      ::  1 
   2    eod    ::                                       ::  1 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3]
 ```
 ```q
 q)system"l examples/mdp/steps/load_pieces.q"
@@ -932,7 +932,7 @@ path   why   a b
   3    quote  (2024.01.03D09:30:00.000000000;`N1;1f;0f) ::  1 
   4    quote  (2024.01.03D09:30:00.000000000;`A;1f;1f)  ::  1 
   5    eod    ::                                        ::  1 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 5 0 0 0 1 3 1 6 2 0 0 1 0 757589400000000000 4 0 0 1 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 1 1 4]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 5 0 0 0 1 3 1 6 2 0 0 1 0 757589400000000000 4 0 0 1 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 1 1 4]
 ```
 
 Seeds 8 and 9 were run at the same budget and passed; a doctested log cannot show a claim it does not execute, so
@@ -966,7 +966,7 @@ path           why   a b
   2    eod    ::                                       ::                                                             1 
   3    late   (2024.01.02D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.02D09:30:00.00..." 1 
   4    query  (2024.01.02;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0 
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 3 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 3 0 0]
 ```
 
 A quote under A; a rename of A to N0 from tomorrow; the close, which rolls the cache's A into N0; a late trade

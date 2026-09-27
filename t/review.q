@@ -20,7 +20,7 @@ e:.[.qc.eq;((0#`)!`long$();()!());{x}]
        (@[.qc.draw;.qc.rec[2 2;0;5];{x}]) like "qc: rec*"; (@[.qc.draw;.qc.sm[`m0`init!(0;5)] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: init*";
        (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] ([cmd:enlist `a] run:enlist 5);{x}]) like "qc: cmds*"; (@[.qc.chk[q;.qc.int 0 9];5;{x}]) like "qc: the property*";
        (@[.qc.recheck[.qc.int 0 9;5];enlist 1;{x}]) like "qc: the property*"; (@[.qc.chks[q];5;{x}]) like "qc: checks*"; (@[.qc.draw;.qc.tab 5;{x}]) like "qc: tab*")]
-.t.t["C20 a property whose arity does not match a list spec is refused up front"; (@[.qc.chk[q;(.qc.int 0 9;.qc.int 0 9)];{x};{x}]) like "qc: the property takes 1 arguments*"]
+.t.t["C20 a property whose arity does not match a list generator is refused up front"; (@[.qc.chk[q;(.qc.int 0 9;.qc.int 0 9)];{x};{x}]) like "qc: the property takes 1 arguments*"]
 / round 3: arithmetic on bounds survives the full long range
 .t.t["zig and the key do not overflow at 0W"; (.qc.less[.qc.skey[enlist 5;enlist 0];.qc.skey[enlist 0W;enlist 0]]) and not null first .qc.zig 0W]
 r:.qc.chk[q;.qc.int -0W 0W;{x<1000000}]
@@ -41,7 +41,7 @@ r:.qc.chk[q;.qc.t"j";{$[null x; 1b; x<1000000]}]
 .t.t["C14 cover needs a numeric percentage"; (.qc.chk[q;.qc.int 0 9;{.qc.cover[`a;"90";1b]; 1b}])[`err] like "qc: cover*"]
 .t.t["C14 freq: all-zero or non-numeric weights are refused"; ((@[.qc.draw;.qc.freq[0 0] (1;2);{x}]) like "qc: freq*") and (@[.qc.draw;.qc.freq[`a`b] (1;2);{x}]) like "qc: freq*"]
 .t.t["C14 one, elem and freq of a dict say so"; all ((@[.qc.draw;.qc.one `a`b!(1;2);{x}]) like "qc: one*"; (@[.qc.draw;.qc.elem `a`b!1 2;{x}]) like "qc: elem*"; (@[.qc.draw;.qc.freq[1 1] `a`b!(1;2);{x}]) like "qc: freq*")]
-.t.t["C20 checks entries must be (spec;prop) pairs"; ((@[.qc.chks[q];enlist[`p]!enlist {x};{x}]) like "qc: checks*") and (@[.qc.chks[q];enlist[`p]!enlist .qc.int 0 9;{x}]) like "qc: checks*"]
+.t.t["C20 checks entries must be (gen;prop) pairs"; ((@[.qc.chks[q];enlist[`p]!enlist {x};{x}]) like "qc: checks*") and (@[.qc.chks[q];enlist[`p]!enlist .qc.int 0 9;{x}]) like "qc: checks*"]
 .t.t["C20 :: is not a function: sized, such and sm hooks refuse it"; ((@[.qc.draw;.qc.sized (::);{x}]) like "qc: sized*") and ((@[.qc.draw;.qc.such[::] .qc.int 0 9;{x}]) like "qc: such*") and (@[.qc.draw;.qc.sm[`m0`init!(0;::)] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: init*"]
 .t.t["C20 the :: property is still the 'generation must not fail' property"; (.qc.chk[q;.qc.int 0 9;::])`ok]
 / AUDIT2 (C14): phase-2 boundaries say qc: too

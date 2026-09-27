@@ -21,7 +21,7 @@ pblk:{.qc.cp::`blk; p:0b; g:2;
     while[(s<k) and not ok; w2:w&k-s; ok:.qc.try (enlist (.qc.cv 0)-w2),.qc.dl[1_.qc.cv;s;s+w2]; s+:w];
     $[ok; g:2|g div 2; g*:2]; if[ok; p:1b]];
   p}
-.qc.shr:{[spec;prop;o] .qc.sspec::spec; .qc.sprop::prop; .qc.cv::.qc.C`v; .qc.cC::.qc.C; .qc.cE::.qc.E; .qc.co::o; .qc.cerr::o`err; .qc.na::0; .qc.ns::0;
+.qc.shr:{[spec;prop;o] .qc.sgen::spec; .qc.sprop::prop; .qc.cv::.qc.C`v; .qc.cC::.qc.C; .qc.cE::.qc.E; .qc.co::o; .qc.cerr::o`err; .qc.na::0; .qc.ns::0;
   .qc.K::(enlist 0#0)!enlist 0N; .qc.H::0#.qc.H; .qc.bs::.qc.cf`sz;
   while[$[.qc.na<.qc.cf`shrinks; any {x[]} each (pblk;.qc.pdisc;.qc.pdel;.qc.pzero;.qc.pdesc;.qc.psort;.qc.pdup;.qc.pmin;.qc.pred); 0b]];
   .qc.co,`shrinks`attempts`hist!(.qc.ns;.qc.na;.qc.H)}

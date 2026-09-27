@@ -135,14 +135,14 @@ q)ints:.qc.list .qc.int -99 99
 q).qc.check[ints; {x~reverse x}];
 FAIL falsified after 5 tests, 1 shrinks (18 attempts, seed 7)
 x: 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 1 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 0]
 ```
 
 Five lists passed (the empty list and lists of one item are their own reverse, and so are some others). The sixth
 did not, and it was shrunk: 18 simpler lists were tried, and one of them also failed. `0 1` is what is left. No
 list of fewer than two items can fail, and no two different longs are nearer to 0 than these.
 
-In the `rerun:` line, `spec` and `prop` stand for the generator and the property that were given to `check`, and
+In the `rerun:` line, `gen` and `prop` stand for the generator and the property that were given to `check`, and
 the numbers are the choices that draw `0 1`.
 
 ### Seeing the difference
@@ -159,7 +159,7 @@ path why   a b
 --------------
 0    value 1 0
 1    value 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 One row for each difference: `path` is where it lies (here an index; for a table a column and a row, for a dict
@@ -177,7 +177,7 @@ q).qc.check[`xs`n!(.qc.list .qc.int 0 9; .qc.int 0 5); {[n;xs] n<=count xs}];
 FAIL falsified after 1 tests, 0 shrinks (3 attempts, seed 7)
 xs: ()
 n: 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 1]
 ```
 
 The second rule says a list has at least `n` items. The simplest input it could fail for is the empty list and
@@ -194,7 +194,7 @@ q).qc.check[.qc.list .qc.int 0 9; {if[3<count x; '"too long"]; 1b}];
 FAIL falsified after 7 tests, 5 shrinks (38 attempts, seed 7)
 x: 0 0 0 0
 too long
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 1 0 1 0 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 1 0 0]
 ```
 
 ## Running a failure again
@@ -207,11 +207,11 @@ property over corrected code.
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.again[];
 FAIL falsified after 1 tests, 0 shrinks (0 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.recheck[.qc.list .qc.int 0 100; {(asc x)~asc asc x}; 1 1 1 0 0];
 ok 1 tests (seed 7)
 ```
@@ -227,11 +227,11 @@ q).qc.cfg[`db]:hsym `$first system"mktemp -d"
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 The second run says `after 0 tests`: it failed on the saved counterexample before drawing anything. When a saved
@@ -248,7 +248,7 @@ everything else, but the report cannot know what to call it, so say so with `.qc
 q).qc.check[::; {n:.qc.draw .qc.int 1 9; .qc.note n; n<7}];
 FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
 7
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;7]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;7]
 ```
 
 ## Tables
@@ -301,7 +301,7 @@ x:
   0 2
   1 9
   2 9
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 2 1 0 9 1 0 9 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 2 1 0 9 1 0 9 0]
 ```
 
 The simplest table of all is the empty one, and its columns have their types, so a property over tables meets
@@ -339,14 +339,14 @@ thousand values is still reported in a handful:
 q).qc.check[.qc.bulk[0 99;0 100000]; {x~asc x}];
 FAIL falsified after 1 tests, 10 shrinks (26 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;2 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;2 1 0]
 q).qc.check[.qc.btab[0 100000] `k`v!(0 9;("d";0 9)); {all x[`v]<2000.01.09}];
 FAIL falsified after 1 tests, 9 shrinks (18 attempts, seed 7)
 x:
   k v
   ------------
   0 2000.01.09
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 8]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 8]
 ```
 
 ## Trees
@@ -379,7 +379,7 @@ ok 100 tests (seed 7)
 q).qc.check[tree; {depth[x]<3}];
 FAIL falsified after 4 tests, 2 shrinks (30 attempts, seed 7)
 x: (0;(0;0 0))
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;3 0 0 0 2 0 0 0 1 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0 0 0 2 0 0 0 1 0 0 0 0 0]
 ```
 
 A binary tree has one more leaf than it has nodes. It is not true that every tree is less than three deep, and
@@ -400,7 +400,7 @@ q).qc.check[(.qc.int 0 3; .qc.bool); {[a;b] a<3}];
 FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
 a: 3
 b: 0b
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;3 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0]
 ```
 
 `ok 2 tests, exhausted` is a proof and not a sample: there are two booleans and both passed. `.qc.one` draws from
@@ -458,7 +458,7 @@ ok 100 tests, exhausted (seed 7)
 --- sorted
 FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 name   ok why       stop      n   shrinks seed
 ----------------------------------------------
 comm   1  ok        exhausted 100 0       7
@@ -477,7 +477,7 @@ passes and signals the whole report as one error when it does not.
 q)r:.qc.check[.qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q)r`ok`why`n`shrinks
 0b
 `falsified
@@ -490,7 +490,7 @@ q)r`choices
 q).qc.report r
 "FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)"
 "x: 1 0"
-"rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]"
+"rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]"
 ```
 
 `REFERENCE.md` lists the keys.
@@ -553,7 +553,7 @@ qc.eq
 path  why   a b
 ---------------
 `px 0 value 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 1 0 0 0 0 1 0 0 0 1 0 0 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 1 0 0 0 0 1 0 0 0 1 0 0 1 0]
 ```
 
 Two quotes for one symbol at one time, with different prices, and one trade. With only one quote, first and last
@@ -587,7 +587,7 @@ step cmd  arg res model ok
 1    push 0   ::  0 0   1
 2    push 1   ::  0 0 1 1
 3    pop  ::  0   0 0   0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 1 0 0 1 0 1 1 1]
 ```
 
 `.qc.sm[h] cmds` is a generator, so `.qc.draw` works on it: it runs one sequence of commands on the real stack
@@ -630,7 +630,7 @@ step cmd arg res model ok
 1    inc ::  2   2     1
 2    inc ::  3   3     1
 3    inc ::  0   4     0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 1 0 1 0 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 1 0]
 ```
 
 Four increments, and every `get` that was in the sequence has been shrunk away, since reading the counter has

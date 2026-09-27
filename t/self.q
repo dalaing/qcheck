@@ -1,5 +1,5 @@
 / M6 dogfooding: qcheck testing qcheck's pure parts. loaded by t/run.q
-ok:{[spec;prop] (.qc.chk[q;spec;prop])`ok}
+ok:{[gen;prop] (.qc.chk[q;gen;prop])`ok}
 / the shortlex order on keys is a strict total order
 kv:.qc.list .qc.int -9 9                                    / a choice vector; origins 0
 k:{.qc.skey[x;count[x]#0]}

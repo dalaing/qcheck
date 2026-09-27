@@ -95,7 +95,7 @@ dr:{$[(::)~x; x; type[x] within 100 112; call x; 99h=type x; $[98h=type key x; x
 / on error: flag, depth, spans, size, and the minimal/strict modes and cursor (C6: nothing inconsistent)
 top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; mn::0b; sh::0b; i::0; P::`long$(); 'x}]; run::0b; r}
 draw:{$[run or dp>0; dr x; top[`long$();0b;0b;x]]}   / fresh draws; inside a run or a draw, just interpret
-minimal:top[`long$();1b;0b]                           / the simplest value of a spec: every draw is its origin
+minimal:top[`long$();1b;0b]                           / the simplest value of a generator: every draw is its origin
 replay:{[p;s] top[p;0b;0b;s]}                         / the value a recorded choice vector produces
 strict:{[p;s] top[p;0b;1b;s]}                         / the same with the prefix strict: a draw past it is qc.overrun (what the shrinker sees)
 
@@ -206,7 +206,7 @@ vec:{[r;c;d] dd[d;".qc.vec[r] c"]; c$draw lst[r] t c}            / typed even wh
 / (sortedness is in the choices, so it survives every shrink, A18). uniq g: distinct values — over a finite set
 / (an elem, or an int with a small constant range) by indexing the values not yet used, one choice and no retries,
 / with the row count capped by the set (A19); otherwise by retrying g and discarding when tries run out.
-/ dep f: f receives the row so far (a dict of the columns before it, in column order) and returns a spec.
+/ dep f: f receives the row so far (a dict of the columns before it, in column order) and returns a generator.
 / The delta must be non-negative: a negative one would break the promise in the name, so it is a usage error.
 mono:{[b;g;d] dd[d;".qc.mono[base;delta]"]; draw b}
 uniq:{[g;d] dd[d;".qc.uniq g"]; draw g}
@@ -266,7 +266,7 @@ schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k 
 
 
 / ---- state machines ---------------------------------------------------------------------------------
-/ sm[h] cmds: a spec whose value is the executed trace. h: `m0 the model, `init/`fini run before and after every
+/ sm[h] cmds: a generator whose value is the executed trace. h: `m0 the model, `init/`fini run before and after every
 / example and replay (the real system must be resettable), `steps a range (default 0 0W, capped by size).
 / cmds: a keyed table (or a table with a cmd column) with any of pre gen run post upd; missing columns take
 / the defaults. Each step's span holds its decision bit, command index and input draw and nothing else (C13);
@@ -325,14 +325,14 @@ ENG:("qc.discard";"qc.overrun";"qc.toodeep";"qc.toolarge";"qc.misaligned")   / t
 FS:("qc.eq";"qc.post";"qc.run";"qc.inv")              / failure-signal stems: qc.<stem>[ detail] is a falsification wherever raised (C14)
 fsg:{[e] any {[e;s] s~count[s]#e}[e] each FS}
 / one example: generate, apply, classify the outcome as pass / fail / disc
-run1:{[spec;prop]
-  g:trap[draw;spec];
+run1:{[gen;prop]
+  g:trap[draw;gen];
   if[not g`ok; :$[g[`e] in ENG; `st`why!(`disc;`$3_g`e); fsg g`e; `st`x`err`bt`ph`notes`choices!(`fail;::;g`e;g`bt;`prop;N;C`v);
     `st`err`bt`ph`notes`choices!(`fail;g`e;g`bt;`gen;N;C`v)]];
-  x:g`r; r:trap[{[p;s;x] pass app[p;s;x]}[prop;spec];x];
+  x:g`r; r:trap[{[p;s;x] pass app[p;s;x]}[prop;gen];x];
   $[not r`ok; $[r[`e] in ENG; `st`why!(`disc;`$3_r`e); `st`x`err`bt`ph`notes`choices!(`fail;x;r`e;r`bt;`prop;N;C`v)];   / an engine signal is a discard in either phase
     r`r; `st`x!(`pass;x); `st`x`err`bt`ph`notes`choices!(`fail;x;"false";"";`prop;N;C`v)]}
-named:{[spec;prop;x] $[99h=type spec; x; 0h=type spec; pnames[prop;count x]!x; enlist[`x]!enlist x]}
+named:{[gen;prop;x] $[99h=type gen; x; 0h=type gen; pnames[prop;count x]!x; enlist[`x]!enlist x]}
 pnames:{[p;n] $[100h=type p; $[n=count a:(value p)[1]; a; `$"x",/:string til n]; `$"x",/:string til n]}
 / Wilson 95% upper bound of a rate: a requirement fails only when the run is confident the rate is below it (C15)
 wils:{[sg;n;nn] z:1.96; p:n%nn; (p+(z*z%2*nn)+sg*z*sqrt((p*1-p)%nn)+z*z%4*nn*nn)%1+z*z%nn}   / the Wilson bound, sg 1 upper, -1 lower
@@ -340,9 +340,9 @@ wil:wils[1]; wlo:wils[-1]
 covt:{[tests] nn:1|tests; tb:([]label:key LB;n:value LB;pct:100*value[LB]%nn);
   tb:update req:.qc.RQ label,lo:100*.qc.wlo[n;nn],hi:100*.qc.wil[n;nn] from tb;   / q-sql resolves globals in the root, not the namespace
   update ok:(hi>=req) or null req,bar:{`$(floor x%5)#"#"} each pct from tb}
-result:{[why;tests;seed;spec;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`shrinks`attempts`hist`stop!(0;0;0#H;`n)),o;
+result:{[why;tests;seed;gen;prop;o] ok:why=`ok; f:why in `falsified`error; o:(`shrinks`attempts`hist`stop!(0;0;0#H;`n)),o;
   `ok`why`stop`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale!(ok;why;o`stop;tests;o`shrinks;o`attempts;seed;
-   $[(why=`falsified) and not (::)~o`x; named[spec;prop;o`x]; (::)]; $[f; o`err; ""]; $[f; o`bt; ""]; $[f; o`notes; ()]; covt tests;
+   $[(why=`falsified) and not (::)~o`x; named[gen;prop;o`x]; (::)]; $[f; o`err; ""]; $[f; o`bt; ""]; $[f; o`notes; ()]; covt tests;
    $[f; o`choices; C`v]; o`hist; o`disc; 0b)}
 / a coverage requirement is open while the run is not yet confident either way (C15, C19)
 opn:{[tests] tb:covt tests; any (tb[`lo]<tb`req)&tb[`req]<=tb`hi}
@@ -373,47 +373,47 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
 / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}
-chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
-chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
-  if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sgen::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}
+chk:{[c;gen;prop] if[run; '"qc: nested check"]; r:@[chk1[c;gen];prop;{tidy[]; 'x}]; tidy[]; r}
+chk1:{[c;gen;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
+  if[(100h=type prop) and 0h=type gen; if[count[gen]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the generator has ",string count gen]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
   LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; nmax:$[null c`nmax; 10*n; c`nmax]; dc:(`symbol$())!`long$();
   tests:0; nd:0; o:(`symbol$())!(); k:0; en:1b; ext:0b; tnew[]; run::1b;
-  f:dbf[spec;prop]; if[not null f; if[count key f; reset[get f;c`sz;0b;0b]; r:run1[spec;prop]; $[`fail=r`st; o:r; hdel f]]];
+  f:dbf[gen;prop]; if[not null f; if[count key f; reset[get f;c`sz;0b;0b]; r:run1[gen;prop]; $[`fail=r`st; o:r; hdel f]]];
   while[$[count o; 0b; nd>n*c`disc; 0b; en; not TR[0;`x]; tests<n; 1b; not opn tests; 0b; tests<nmax];
     if[tests>=n; ext:1b];
     $[en; reset[$[0=k; `long$(); nxt[]];c`sz;1b;0b]; reset[`long$();c[`sz]&(c[`sz]*tests) div n;0b;0b]];   / enumerating: the tree's next prefix, the rest origins, at full size so the ranges are the real ones; sampling: fresh, size ramping
-    r:run1[spec;prop];
+    r:run1[gen;prop];
     if[en; en:tput[n;r`st]];
     $[`pass=r`st; [tests+:1; {LB[x]:1+0^LB x} each LX]; `disc=r`st; [nd+:1; dc[r`why]:1+0^dc r`why]; o:r];
     k+:1];
   gu:(nd>n*c`disc) or (0=tests) and nd>0;                          / gave up: too many discards, or nothing but discards
   stp:$[count o; `fail; gu; `gaveup; en; `exhausted; not ext; `n; opn tests; `nmax; `cover];   / (stp, not st: st is the span stack)
-  if[(count o) and c[`shrinks]>0; o:shr[spec;prop;o]];
+  if[(count o) and c[`shrinks]>0; o:shr[gen;prop;o]];
   if[count o; if[not null f; f set o`choices]];
   run::0b; why:$[count o; $[`gen=o`ph; `error; `falsified]; gu; `gaveup; not all (covt tests)`ok; `cover; `ok];
-  if[count o; lf::`spec`prop`choices!(spec;prop;o`choices)];
-  res:result[why;tests;seed;spec;prop;o,`disc`stop!(dc;stp)];
+  if[count o; lf::`gen`prop`choices!(gen;prop;o`choices)];
+  res:result[why;tests;seed;gen;prop;o,`disc`stop!(dc;stp)];
   if[c[`v]>0; rep res]; res}
 check:chk[::]
-lf:`spec`prop`choices!(::;::;`long$())               / the last failure; again[] rechecks it
-again:{recheck[lf`spec;lf`prop;lf`choices]}
-/ a suite: dict of name -> (spec;prop); one report per failure, one row per property
-chks:{[c;d] if[$[not dct d; 1b; not all 2=count each value d]; '"qc: checks takes a dict of name -> (spec;prop)"];
+lf:`gen`prop`choices!(::;::;`long$())               / the last failure; again[] rechecks it
+again:{recheck[lf`gen;lf`prop;lf`choices]}
+/ a suite: dict of name -> (gen;prop); one report per failure, one row per property
+chks:{[c;d] if[$[not dct d; 1b; not all 2=count each value d]; '"qc: checks takes a dict of name -> (gen;prop)"];
   r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; t0:.z.p; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed;"j"$(.z.p-t0)%1000000)}[c]'[key d;value d];
   tb:flip `name`ok`why`stop`n`shrinks`seed`ms!flip r; if[0<conf[c]`v; show delete ms from tb]; tb}   / ms is data (timings are not for transcripts)
 checks:chks[::]
 / ---- integration (M9): a property inside another framework, a suite as a script --------------------------
 / must: check quietly and signal the whole report on anything but ok, so k4unit, qspec or a .Q.trp script sees one
 / error whose first line is the verdict (A24). The spelling "qc: FAIL …" keeps the error vocabulary (C14).
-mustc:{[c;spec;prop] c:conf c; c[`v]:0; r:chk[c;spec;prop]; if[not r`ok; '"qc: ","\n" sv report r]; r}
+mustc:{[c;gen;prop] c:conf c; c[`v]:0; r:chk[c;gen;prop]; if[not r`ok; '"qc: ","\n" sv report r]; r}
 must:mustc[::]
 main:{[d] r:checks d; exit "i"$sum not r`ok}                  / a suite as a CI script: prints the table, exits with the failure count
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded
-recheck:{[spec;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[spec;prop];p;{tidy[]; 'x}]; tidy[]; r}
-recheck1:{[spec;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;prop]; run::0b;
+recheck:{[gen;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[gen;prop];p;{tidy[]; 'x}]; tidy[]; r}
+recheck1:{[gen;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[gen;prop]; run::0b;
   why:$[`pass=o`st; `ok; `disc=o`st; `gaveup; `gen=o`ph; `error; `falsified];
-  res:result[why;1;system"S";spec;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];
+  res:result[why;1;system"S";gen;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];
   if[not `fail=o`st; res[`choices]:C`v];
   res[`stale]:(i<>count P) or not (count[P]#C`v)~"j"$p; if[cfg[`v]>0; rep res]; res}
 
@@ -425,13 +425,13 @@ less:{[a;b] $[a[0]<>b 0; a[0]<b 0; a[1]~b 1; 0b; (a[1]<b 1) first where a[1]<>b 
 dl:{[v;s;e] pt[v;s;e;()]}
 pt:{[v;s;e;w] (s#v),w,e _ v}
 / shrinker state: current vector, its choice and span tables, its outcome, the original error
-cv:`long$(); cC:C; cE:E; co:()!(); cerr:""; na:0; ns:0; cp:`; sspec:(::); sprop:(::)
+cv:`long$(); cC:C; cE:E; co:()!(); cerr:""; na:0; ns:0; cp:`; sgen:(::); sprop:(::)
 K:(enlist 0#0)!enlist 0N                              / candidates already tried (seeded with a vector key)
 H:([]n:`long$();pass:`symbol$();len:`long$())         / history of accepted shrinks
 / try one candidate, as a cond chain: budget, identical, cached, valid, same failure, strictly smaller (C2)
 try:{[cand] cand:"j"$cand;
   $[na>=cf`shrinks; 0b; cand~cv; 0b; not null K cand; 0b;
-    [na+:1; reset[cand;bs;0b;1b]; r:run1[sspec;sprop];
+    [na+:1; reset[cand;bs;0b;1b]; r:run1[sgen;sprop];
      ok:$[not `fail=r`st; 0b; (r`err) in ENG; 0b; cf`same; r[`err]~cerr; 1b];
      if[ok; ok:less[skey[C`v;C`o];skey[cv;cC`o]]];
      if[ok; cv::C`v; cC::C; cE::E; co::r; ns+:1; H,:(na;cp;count cv)];
@@ -486,12 +486,12 @@ pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
       $[ok; [ok0:1b; g:2|g div 2]; g*:2]];
     if[ok0; p:1b]; j+:1]; p}
 / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
-shr:{[spec;prop;o] sspec::spec; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
+shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
   K::(enlist 0#0)!enlist 0N; H::0#H; bs::cf`sz;
   while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;pred); 0b]];   / cond, not and: passes are not free
   co,`shrinks`attempts`hist!(ns;na;H)}
-/ failure database: one file per (spec;prop) under cfg`db, keyed by cfg`name or a hash of their source
-dbf:{[spec;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(spec;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console
+/ failure database: one file per (gen;prop) under cfg`db, keyed by cfg`name or a hash of their source
+dbf:{[gen;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(gen;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console
 
 / ---- formatting: a total dispatch over the nine shapes kind names (C3) -------------------------------------------
 kind:{ty:type x; $[(::)~x; `null; ty within 100 112; `fn; ty<0; `atom; ty within 1 19; `vec; 0h=ty; `list; 98h=ty; `tab;
@@ -525,7 +525,7 @@ dtab:{[p;a;b] ca:cols a; cb:cols b; n:count[a]&count b;
 
 / ---- reporting -------------------------------------------------------------------------------------
 sfx:`exhausted`cover`nmax!(", exhausted";", coverage settled";", coverage undecided")
-rerun:{[c] "rerun: .qc.again[]  or  .qc.recheck[spec;prop;",$[count c; " " sv string c; "`long$()"],"]"}   / exact: .Q.s1 truncates; an empty vector is spelled, not elided
+rerun:{[c] "rerun: .qc.again[]  or  .qc.recheck[gen;prop;",$[count c; " " sv string c; "`long$()"],"]"}   / exact: .Q.s1 truncates; an empty vector is spelled, not elided
 report:{[r] c:cf; s:$[r`ok; enlist "ok ",string[r`n]," tests",$[(r`stop) in key sfx; sfx r`stop; ""]," (seed ",string[r`seed],")";
   `gaveup=r`why; enlist "FAIL gave up after ",string[r`n]," tests; discards: ",", " sv {string[x]," ",string y}'[key r`disc;value r`disc];
   `cover=r`why; enlist "FAIL coverage not met after ",string[r`n]," tests";

@@ -51,7 +51,7 @@ range or a setting first (`list` and `lst`, `check` and `chk`).
 | `recheck`, `again` | `.qc.recheck[g;prop;choices]`, `.qc.again[]` | run the property on recorded choices; rerun the last failure |
 | `report`, `rerun` | `.qc.report r`, `.qc.rerun choices` | the report lines of a result; the rerun line |
 | `cfg`, `new` | `.qc.cfg`, `.qc.new[]` | the dict of [settings](#settings); fresh interactive state |
-| `lf` | `.qc.lf` | the last failure: its generator, property and choices, under the keys `spec`, `prop` and `choices` |
+| `lf` | `.qc.lf` | the last failure: its generator, property and choices, under the keys `gen`, `prop` and `choices` |
 
 ## Inside a property
 

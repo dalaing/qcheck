@@ -8,7 +8,7 @@ q)\l qc.q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 It is one file with no dependencies. Shrinking is built in, in the style of Hypothesis, so a generator you write
@@ -39,7 +39,7 @@ The rule in the transcript above is false on purpose, so that its report can be 
 | `8 shrinks (36 attempts` | the shrinker tried 36 simpler inputs; 8 of them still failed, each simpler than the last |
 | `x: 1 0` | the counterexample: no unsorted list is shorter, and none of this length has smaller items |
 | `seed 7` | the seed of the run: the same seed draws the same examples |
-| `rerun:` | `.qc.again[]` tests this counterexample again, which is how you see that a fix worked; in the longer form, `spec` and `prop` stand for the generator and the property you gave, and the numbers reproduce the counterexample |
+| `rerun:` | `.qc.again[]` tests this counterexample again, which is how you see that a fix worked; in the longer form, `gen` and `prop` stand for the generator and the property you gave, and the numbers reproduce the counterexample |
 
 Shrinking is what makes a failure readable. With it switched off, the report is the example as it was drawn:
 
@@ -47,7 +47,7 @@ Shrinking is what makes a failure readable. With it switched off, the report is 
 q).qc.chk[enlist[`shrinks]!enlist 0; .qc.list .qc.int 0 100; {x~asc x}];
 FAIL falsified after 5 tests, 0 shrinks (0 attempts, seed 7)
 x: 1 44 1 29 15
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 44 1 1 1 29 1 15 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 44 1 1 1 29 1 15 0]
 ```
 
 Five numbers leave you to work out which of them matter; `1 0` is the bug with nothing else in it.
@@ -58,7 +58,7 @@ A rule that sounds true finds the input you would not have written down. After `
 q).qc.check[.qc.list .qc.t"j"; {not any null fills x}];
 FAIL falsified after 23 tests, 2 shrinks (13 attempts, seed 7)
 x: ,0N
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0]
 ```
 
 `.qc.t"j"` draws any long, nulls and infinities included, and a list that starts with a null has nothing to fill
@@ -170,7 +170,7 @@ path why   a b
 --------------
 0    value 1 0
 1    value 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 `check` returns its result as a dict (`REFERENCE.md` lists the keys), and the report is made from it:
@@ -241,7 +241,7 @@ step cmd  arg res model ok
 1    push 0   ::  0 0   1
 2    push 1   ::  0 0 1 1
 3    pop  ::  0   0 0   0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 1 0 0 1 0 1 1 1]
 ```
 
 `qc.post` says a postcondition was false. Each row of the trace is one step: the command, the input drawn for it

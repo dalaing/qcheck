@@ -56,8 +56,8 @@ The library rests on three ideas, each one q-native:
 ### 1.2 Vocabulary and calling convention
 
 The words, used the same way in every document: a **generator** is anything `.qc.draw` interprets — a function
-that draws, a list or dict of generators, or a constant (the library's names and its rerun line still say `spec`
-for this, the word the documents used before; they say generator because nothing here specifies behaviour); an
+that draws, a list or dict of generators, or a constant (the word was once *spec*; it is generator because
+nothing here specifies behaviour, and the library's names, messages and rerun line say `gen`); an
 **example** is one value drawn from a generator (the *input* to the property); a **test** is one run of the property on one example, which is what the
 report counts; a **counterexample** is the example a failure shrinks to. Long and short names differ by taking a
 range or a configuration first (`list`/`lst`, `check`/`chk`).
@@ -306,7 +306,7 @@ fails with `"qc.eq"`; a reordered dict or table is reported as `order`), `.qc.no
 good — use it on small value spaces, pitfall 11), `.qc.cover[s;pct;b]` (the run fails with
 `why` `` `cover `` only when it is confident the label's rate is under `pct`: the Wilson 95% upper bound of the
 observed rate is below it, C15),
-`.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its generator, property and choices (keys `spec`, `prop`, `choices`).
+`.qc.discard[]`. After any failure `.qc.again[]` rechecks it and `.qc.lf` holds its generator, property and choices (keys `gen`, `prop`, `choices`).
 `.qc.checks d` runs a dict of name → `(g;prop)` and returns a table (`.qc.chks[cfg;d]` with config).
 
 Run loop for one property — **`n` is a budget; the run stops when it has learned what it can** (C19):
@@ -490,7 +490,7 @@ path why   a b
 --------------
 0    value 1 0
 1    value 0 1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 (`ok`/`FAIL` rather than `✓`/`✗`: the marks print fine on this console, but `like` and `ss` count them as three
@@ -516,7 +516,7 @@ step cmd  arg res model ok
 1    push 0   ::  0 0   1
 2    push 1   ::  0 0 1 1
 3    pop  ::  0   0 0   0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 1 0 0 1 0 1 1 1]
 ```
 
 The columns of `cmds`: `pre` (model → can this command run?), `gen` (model → input generator, `::` for none), `run`

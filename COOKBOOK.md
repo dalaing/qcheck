@@ -56,7 +56,7 @@ qc.eq
 path  why   a b
 ---------------
 `px 0 value 1 0
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 1 0 0 0 0 1 0 0 0 1 0 0 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 1 0 0 0 0 1 0 0 0 1 0 0 1 0]
 ```
 
 - `syms` is a list of one to three symbols, each one letter from `"abc"`.
@@ -120,7 +120,7 @@ qc.eq
 path why   a b
 --------------
      count 1 2
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 0 1 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 0 1 0 0 0]
 ```
 
 **The property** takes two tables, so the generator is a list of two, and the report names the inputs after the
@@ -158,7 +158,7 @@ qc.eq
 path why  a  b
 ---------------
 sym  type 11 20
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0]
 q).qc.check[trade; {.qc.eq[x; update value sym from saveload x]}];
 ok 100 tests (seed 7)
 ```
@@ -191,7 +191,7 @@ qc.inv
 step cmd arg                  res model ok
 ------------------------------------------
 0    upd +`sym`px!(`b`b;0 0f) ::  2     1
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 1 1 1 0 0 0 0 1 1 1 0 0 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 1 0 0 0 0 1 1 1 0 0 0 0 0]
 ```
 
 **The commands.** There is one, so every column is a list of one item, made with `enlist`.
@@ -234,7 +234,7 @@ ok 100 tests (seed 7)
 q).qc.check[.qc.val; {x~.j.k .j.j x}];
 FAIL falsified after 1 tests, 7 shrinks (26 attempts, seed 7)
 x: 0x00
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 2 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 2 0]
 q).j.k .j.j 0x00
 "00"
 ```
@@ -249,7 +249,7 @@ survive, and the way to find out is to try a narrower generator and read the cou
 q).qc.check[.qc.list .qc.flt 0 1; {x~.j.k .j.j x}];
 FAIL falsified after 4 tests, 53 shrinks (78 attempts, seed 7)
 x: ,0.0004882812
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 11 1 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 11 1 0]
 ```
 
 `0.0004882812` is how `2 xexp -11` prints at the console's precision of seven digits, and `.j.j` writes numbers
@@ -264,7 +264,7 @@ FAIL falsified after 0 tests, 0 shrinks (1 attempts, seed 7)
 x:
   px ok s
   -------
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;0]
 ```
 
 With seventeen digits the floats survive. The table does not, when it is empty: it goes out as `[]`, which
@@ -307,7 +307,7 @@ x:
   --------------------------------
   2024.01.02D09:30:00.000000000 1
   2024.01.02D09:30:00.000000000 2
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 757503000000000000 0 43 8796093022208 1 0 0 0 2 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 757503000000000000 0 43 8796093022208 1 0 0 0 2 0]
 ```
 
 **The report.** Two trades in one minute, the second at a higher price. One trade could not show the bug, since
@@ -340,5 +340,5 @@ x:
   --------------------------------
   2024.01.02D09:30:00.000000000 1
   2024.01.02D09:30:00.000000000 2
-rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 757503000000000000 0 24 16777216 1 0 0 0 2 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 757503000000000000 0 24 16777216 1 0 0 0 2 0]
 ```

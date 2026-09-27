@@ -36,11 +36,11 @@ calls,:({.qc.chk[q,enlist[`sz]!enlist 3;.qc.list .qc.int 0 9;{1b}]}; {.qc.chk[q,
 .t.t["state is clean after every entry point, on success and on error"; all {@[x;::;{x}]; clean[]} each calls]
 / C6/C9: what an error leaves behind — the entry points and the probe restore everything they touched
 .t.e[.qc.minimal;{'"boom"}]
-.t.t["minimal: a raising spec leaves the minimal flag clear and the cursor at 0"; (not .qc.mn) and 0=.qc.i]
+.t.t["minimal: a raising generator leaves the minimal flag clear and the cursor at 0"; (not .qc.mn) and 0=.qc.i]
 .qc.cfg[`sz]:100; .qc.new[]
 .t.e[.qc.draw;.qc.tab enlist[`a]!enlist .qc.small {'"boom"}]
 .t.t["probe: a small that raises inside the probe leaves the size unhalved and adds no note"; (100=.qc.sz) and 0=count .qc.N]
 r:.qc.chk[q;.qc.int 0 9;{x<3}]
-.t.t["chk: the shrinker's copy of the property does not outlive the run"; ((::)~.qc.sprop) and ((::)~.qc.sspec) and 0=count .qc.cv]
+.t.t["chk: the shrinker's copy of the property does not outlive the run"; ((::)~.qc.sprop) and ((::)~.qc.sgen) and 0=count .qc.cv]
 .t.e[.qc.draw;.qc.such[{1b}] {'"boom"}]
 .t.t["such: a raising generator leaves no open span (the next entry starts clean)"; 0=.qc.dp]
