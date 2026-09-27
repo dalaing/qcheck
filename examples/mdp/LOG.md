@@ -7,6 +7,11 @@ in a fresh q from the repository root (seed 7, `\c 25 80`) and requires the outp
 except the sabotages of entries 20 and 23, which are labelled as such and exist to test the test; a bug appears in
 the log when it appeared in the work.
 
+The log was reviewed on 2026-09-28. Where a statement in it was found to be wrong it has been put right, and
+each such place is marked *(corrected: …)* with what it said before. The library's word for what a property's
+inputs are drawn from is now *generator*, and its rerun line says `gen`, so the log says so too. Nothing else
+has been changed.
+
 ## Piece 1 — reference data
 
 ### Entry 1: instruments, tick rounding, lots
@@ -42,10 +47,10 @@ q).qc.check[(.mdp.g.ref; .qc.int 0 1000); {[sp;q] l:.mdp.lots[sp 0;q]; (l<=q) an
 ok 100 tests (seed 7)
 ```
 
-Not a bug in the piece: a mistake in how I wrote the properties. The spec `g.ref` is a lambda that *returns* a
+Not a bug in the piece: a mistake in how I wrote the properties. The generator `g.ref` is a lambda that *returns* a
 pair, so the property receives the pair as one argument (`prop @ x`), and a two-parameter property applied to one
 argument is a projection — which is what "property returned {…}[(`A;0f)]" is telling me, on the minimal input.
-A general-list spec (`(g.ref; .qc.int 0 1000)`) is applied with `.`, which is why the third check worked. The
+A general-list generator (`(g.ref; .qc.int 0 1000)`) is applied with `.`, which is why the third check worked. The
 report is exact about it; I just had to read it.
 
 ### Entry 2: the same properties, taking one argument
@@ -351,8 +356,9 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 ```
 
 Both fell at the empty fill log, the minimal example, before a single fill was booked. The first is my property:
-one side is a vector (type 7), the other a dictionary (99); with no fills they cannot be equal, and with fills they
-would only agree by luck of order. Both sides become dictionaries sorted by key. The second is a q lesson that
+one side is a vector (type 7), the other a dictionary (99), and a vector is never a dictionary, so the property
+could not have passed on any fill log *(corrected: this said that with fills the two "would only agree by luck
+of order")*. Both sides become dictionaries sorted by key. The second is a q lesson that
 belongs in the piece: `unreal`'s `exec` names `inst` without its namespace, and a q-SQL expression inside a lambda
 defined under `\d .mdp` does *not* resolve the name to `.mdp.inst` the way the rest of the lambda body would
 (the table after `from` does resolve; the names inside the expressions do not). Step 09 writes the global in full.
@@ -488,8 +494,10 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 75750300000000000
 ```
 
 Still the empty day, and still not a row in sight: the disk answers carry enumerated symbols (type 20) where
-memory's are plain (11). Equal to look at, different to compare — and different to a client that joins the answer
-to something of its own. Since the queries promise one shape for any date, step 13 has the disk branch return
+memory's are plain (11). Equal to look at and to join, different to `~` and to `type` — and so to any caller, or
+test, that compares an answer from disk with one from memory *(corrected: this said they were different "to a
+client that joins the answer to something of its own"; on kdb+ 5.0 the joins give the same results either
+way)*. Since the queries promise one shape for any date, step 13 has the disk branch return
 memory's shape: the `date` column dropped, the symbols un-enumerated.
 
 ### Entry 16: piece 5 passes
@@ -615,7 +623,8 @@ as agreed, run 2 adds scope: corrections, and late trades that fall on a day alr
 
 Step 17 adds the two operations a real feed needs: `bust[id]` removes a trade by the feed's sequence number,
 recomputing the bar of its minute from what is left; and a trade timed on a day already closed goes into that
-day's partition. Both go through `amend[d;f]`, which reads the closed day's trades back, applies `f`, recomputes
+day's partition. On a day already closed *(corrected: a bust of one of today's trades does not)*, both go
+through `amend[d;f]`, which reads the closed day's trades back, applies `f`, recomputes
 the day's bars, rewrites both splays and remaps the HDB. The machine (step 18) gains a `bust` command over the
 trades the model still has, and its `late` trade may be timed eighteen hours back, so one reported in the morning
 falls on the day before. The model keeps the busted ids and the oracle leaves them out.
@@ -1046,8 +1055,10 @@ the weaker one had missed, which is what one hopes for and cannot know without a
 | renames × enrichment | state machine | the oracle joined by stored names (entry 22) |
 | renames × late trades × enrichment | state machine | the oracle used the trade's day's names, not its arrival day's (entry 24) |
 
-Piece 3 had none. Eight of the twelve fell to a property over one piece — six on a one- or two-row example, two
-(entries 14 and 15) on the empty day, before any row existed. The one that mattered most fell to the state machine,
+Piece 3 had none. Eight of the twelve were found in a single piece: one while writing a generator (entry 3), and
+seven by a property — three on a one- or two-row example (entries 6, 7 and 12), four on an empty input, before
+any row existed (entries 7, 11, 14 and 15) *(corrected: this said all eight fell to a property, six on a one- or
+two-row example and two on the empty day)*. The one that mattered most fell to the state machine,
 on a four-step trace; no existing piece's property could have seen it (a unit property over `mergepos` with two
 opposite positions would have — but nobody had written one, because the merge did not exist until renames met
 positions). The two in the oracle were readings of my own contract that the machine made me write down. Beside

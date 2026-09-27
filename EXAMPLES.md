@@ -255,8 +255,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 1 0 0]
 
 `.qc.again[]` tests the last counterexample again. `.qc.recheck` does the same for a generator, a property and
 the choices of a `rerun:` line, which is how you test the fix: give it the corrected property, or the same
-property over corrected code. Both run one test, and their report counts it whether it passes or fails, so a
-failure here reads `after 1 tests`.
+property over corrected code. Both run one test, so their reports read `after 0 tests` for a failure and
+`ok 1 tests` for a pass.
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
@@ -264,7 +264,7 @@ FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.again[];
-FAIL falsified after 1 tests, 0 shrinks (0 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (0 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.recheck[.qc.list .qc.int 0 100; {(asc x)~asc asc x}; 1 1 1 0 0];
@@ -786,10 +786,36 @@ x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
-The first line of the error is the verdict, and the rest is what you need to reproduce the failure. In a
-framework whose tests fail by signalling, the test is that one expression. Where a framework wants a boolean,
-the test is ``(.qc.must[g;prop])`ok``, which is `1b` or signals. It has not been tried inside k4unit, qspec or
-QUnit. `.qc.mustc` takes settings first, as `.qc.chk` does.
+The first line of the error is the verdict, and the rest is what you need to reproduce the failure. `.qc.mustc`
+takes settings first, as `.qc.chk` does.
+
+A framework that treats an error in a test as a failed test can use `.qc.must[g;prop]` as the whole test. Most
+frameworks tell an *error* from a *failure*, though, and count a signal as an error. To have a failing property
+counted as a failure, run the check quietly, with the setting `v` of 0, and hand its result to the framework's
+own assertion, with the report as the message:
+
+```q
+q)r:.qc.chk[enlist[`v]!enlist 0; .qc.list .qc.int 0 9; {x~asc x}]
+q)r`ok
+0b
+q)"\n" sv .qc.report r
+"FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)\nx: 1 0\nrerun..
+```
+
+`examples/frameworks/` has a file for each of three frameworks, tried on kdb+ 5.0 with the versions of them
+current in September 2026:
+
+| framework | file | a test is | a failing property shows as |
+|---|---|---|---|
+| k4unit | `k4unit.csv` | a `true` row whose code is ``(.qc.check[g;prop])`ok`` | `ok` of `0b` in `KUTR`, with the report on the console |
+| qspec | `qspec.q` | `.qc.must[g;prop]` | an error, with the report |
+| | | ``must[r`ok; "\n" sv .qc.report r]`` | a failure, with the report |
+| QUnit | `qunit.q` | `.qc.must[g;prop]` | the status `error`, with the report as the result |
+| | | ``.qunit.assertTrue[r`ok; "\n" sv .qc.report r]`` | the status `fail`, with the report as the message |
+
+k4unit's `true` wants exactly `1b` and keeps no message from an error, which is why its row uses `check` and not
+`must`: `must` alone returns a dict, which k4unit would record as a failed test, and its report would be lost.
+In each file `qc.q` is loaded before the framework runs the tests.
 
 ## The result is data
 

@@ -99,6 +99,7 @@ c:.qc.recheck[s;p;a`choices]
 .t.t["recheck: a changed generator is reported stale (fewer draws)"; (.qc.recheck[.qc.int 0 9;{1b};a`choices])`stale]
 .t.t["recheck: a changed generator is reported stale (clamped value)"; (.qc.recheck[.qc.list .qc.int 0 0;{1b};a`choices])`stale]
 .t.t["recheck: passing choices report ok"; (.qc.recheck[s;{1b};a`choices])`ok]
+.t.t["recheck: n is the tests that passed, 1 or 0"; (1=(.qc.recheck[s;{1b};a`choices])`n) and 0=c`n]
 / C9: engine state is restored at the example boundary from run-level values
 e:@[.qc.draw;.qc.small {[d] '"boom"};{x}]
 .t.t["C9 an error inside small leaves the size at its base"; ("boom"~e) and (100=.qc.sz) and 100=.qc.bs]

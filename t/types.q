@@ -15,10 +15,11 @@ hasinf:{[c] v:.qc.draw 1000#enlist .qc.t c; (any v=inf c) and any v=neg inf c}
 / shrinking reaches the origin from wherever the failure was found
 .t.t["t: {null x} shrinks to the origin for numeric and temporal types"; all {[c] (c$0)~(.qc.chk[q;.qc.t c;{null x}])[`x]`x} each "hijefpmdznuvt"]
 .t.t["t: symbols shrink to `a, chars to \"a\""; ((`a)~(.qc.chk[q;.qc.t"s";{x=`}])[`x]`x) and ("a"~(.qc.chk[q;.qc.t"c";{x="b"}])[`x]`x)]
-/ the finite zoo (M10): no null, no infinity, same origin as t
+/ the finite zoo (M10): no null, no infinity, same origin as t (but for s and g, whose origin in t is a null)
 .t.t["tf: no nulls and no infinities for any type"; all {[c] v:.qc.draw 400#enlist .qc.tf c; (not any null v) and not any (v=inf c) or v=neg inf c} each "hijefpmdznuvt"]
 .t.t["tf: guids are never null, booleans and chars as before"; (not any null .qc.draw 200#enlist .qc.tf "g") and all (type each .qc.draw each .qc.tf "bcs") in -1 -10 -11h]
-.t.t["tf: the minimal value of each type is its origin, as t's (s: `a, there is no empty symbol)"; all {[c] $[c="s"; `a; org c]~.qc.minimal .qc.tf c} each cs]
+.t.t["tf: the minimal value of each type is its origin, as t's (s: `a, there is no empty symbol; g: the guid that ends in 1, there is no null guid)"; all {[c] $[c="s"; `a; c="g"; "G"$"00000000-0000-0000-0000-000000000001"; org c]~.qc.minimal .qc.tf c} each cs]
+.t.t["gidf: its minimal value is not null, so a shrink never heads for a null"; not null .qc.minimal .qc.gidf]
 .t.t["tf: no space in a char, no empty symbol; t keeps them"; (not any null .qc.draw 500#enlist .qc.tf "c") and (not any null .qc.draw 500#enlist .qc.tf "s") and any null .qc.draw 500#enlist .qc.t "s"]
 .t.t["t still reaches the infinities of h i j (one short in tf)"; all {[c] v:.qc.draw 2000#enlist .qc.t c; (any v=inf c) and any v=neg inf c} each "hij"]
 / time in a window (M10, A26)
@@ -40,6 +41,10 @@ kinds:{$[99h=type x; $[98h=type key x; `ktab; `dict]; 98h=type x; `tab; 0h=type 
 .t.t["flt: x<100 shrinks to 100"; 100f~(.qc.chk[q;.qc.flt 0 1000;{x<100}])[`x]`x]
 .t.t["flt: x<0.5 shrinks to 1 (an integer before a half)"; 1f~(.qc.chk[q;.qc.flt 0 1;{x<0.5}])[`x]`x]
 .t.t["flt: within 0.25 0.75 shrinks to 0.5"; 0.5~(.qc.chk[q;.qc.flt 0 1;{not x within 0.25 0.75}])[`x]`x]
+/ a range with no whole number in it starts at the coarsest grid that has a point in it; one narrower than every grid is lo plus a fraction of its width
+.t.t["flt: a range with no whole number in it draws within it, and its minimal value is on the coarsest grid that fits"; (all within[;0.2 0.8] .qc.draw 300#enlist .qc.flt 0.2 0.8) and (0.5~.qc.minimal .qc.flt 0.2 0.8) and (-0.5~.qc.minimal .qc.flt -0.8 -0.2) and 0.375~.qc.minimal .qc.flt 0.26 0.49]
+.t.t["flt: a range with no whole number in it can be checked, and shrinks to the coarsest point that fails"; ((.qc.chk[q;.qc.flt 0.2 0.8;{1b}])`ok) and 0.75~(.qc.chk[q;.qc.flt 0.2 0.8;{x<0.6}])[`x]`x]
+.t.t["flt: a range of one value, and one narrower than every grid, draw within it, lo simplest"; (all 0.3=.qc.draw 20#enlist .qc.flt 0.3 0.3) and (0.3~.qc.minimal .qc.flt 0.3 0.3) and (all within[;1e-20 2e-20] .qc.draw 300#enlist .qc.flt 1e-20 2e-20) and 1e-20~.qc.minimal .qc.flt 1e-20 2e-20]
 .t.t["flt: simple fractions are common (k<=2 alone puts 3/53 of values on quarters; observed ~9%, uniform floats ~0)"; 0.05<avg {0=(x*4) mod 1} .qc.draw 400#enlist .qc.flt 0 1]   / exact test: a multiple of 1/4 times 4 is whole (pitfall 23)
 .t.t["dbl: any finite double, large magnitudes reachable"; (all not null v) and 1e100<max abs v:.qc.draw 400#enlist .qc.dbl]
 .t.t["t f: x<1e308 shrinks to 0w (no finite double that large), {not null x} to 0n"; (0w~(.qc.chk[q;.qc.t"f";{x<1e308}])[`x]`x) and null (.qc.chk[q;.qc.t"f";{not null x}])[`x]`x]

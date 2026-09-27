@@ -159,11 +159,16 @@ spc:{[sp;g;d] dd[d;".qc.spc[specials] g"]; sp:(),sp; k:ch[(0;1;0);0.05]; ix:ch[(
 / dbl: any finite double, [sign; e; m] = sign*m*2^e; the exponent shrinks first so integers come before fractions
 dblx:{[e;m] s:ch[(0;1;0);0.3]; ee:ch[(e 0;e 1;0);::]; mm:ch[(0;m;0);::]; (1 -1 s)*mm*2 xexp ee}   / sign, exponent in e, mantissa up to m
 dbl:{[d] dd[d;".qc.dbl"]; dblx[-1022 970;9007199254740991]}
-/ flt r: a float in [lo;hi], [sign; k; m] = sign*m/2^k with m ranged so the value never leaves [lo;hi]:
-/ 0 (or the nearest bound) is simplest, integers before halves before quarters, uniform within each k
+/ flt r: a float in [lo;hi], [sign; k; m] = sign*m/2^k with m ranged so the value never leaves [lo;hi]. k starts at
+/ the coarsest grid that has a point in the range (0 when a whole number is in it: flt 0.2 0.8 starts at halves), so
+/ whole numbers come before halves before quarters, the point nearest 0 simplest, uniform within each k. A range
+/ narrower than every grid it may use is drawn as lo plus a fraction of its width, lo simplest, in the same layout
+fk:{[a;b;kx] k:0; while[$[k>kx; 0b; (ceiling a*2 xexp k)>floor b*2 xexp k]; k+:1]; k}   / the least k<=kx with a multiple of 2^-k in [a;b]; kx+1 when there is none
 flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[$[2<>count r; 1b; r[0]>r 1]; '"qc: range: flt takes lo hi with lo<=hi, got ",.Q.s1 r]; lo:r 0; hi:r 1;
   s:ch[(hi<0;lo<0;0);0.3]; a:$[s; neg 0&hi; 0|lo]; b:$[s; neg lo; hi];
-  k:ch[(0;0|52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}   / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
+  kx:0|52&"j"$62-xlog[2;1|b]; k0:fk[a;b;kx];                                                                  / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
+  if[k0>kx; ch[(0;0;0);`u]; m:ch[(0;4503599627370496;0);`u]; :(1 -1 s)*a|b&a+(b-a)*m%4503599627370496f];
+  k:ch[(k0;kx;k0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}
 gidb:{0x0 sv "x"$draw 16#enlist int 0 255}                          / sixteen bytes as a guid
 gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:gidb[]; $[k; 0Ng; b]}
 AZ:.Q.a,.Q.A,.Q.n," "
@@ -173,7 +178,7 @@ strc:{[s;r;d] dd[d;".qc.strc[s;r]"]; "c"$draw lst[r] chrc s}
 str:strc[AZ;0 0W]
 symc:{[s;r;d] dd[d;".qc.symc[s;r]"]; `$"c"$draw lst[r] chrc s}     / bounded alphabet: symbols intern forever
 sym:symc["abcd";0 3]
-gidf:{[d] dd[d;".qc.gidf"]; gidb[]}   / a guid that is never null
+gidf:{[d] dd[d;".qc.gidf"]; 0x0 sv "x"$draw (15#enlist int 0 255),enlist int 1 255}   / a guid that is never null: the last byte is not 0, so nor is its simplest value, which the all-zero guid would be
 / dble: a double that fits a real (24-bit mantissa, exponent to 2^103), so "e"$ never overflows to 0we
 dble:{[d] dd[d;".qc.dble"]; dblx[-126 103;16777215]}
 / tin: each atom type's finite domain — no null, no infinity (h i j stop one short of their infinities, e fits a
@@ -413,7 +418,7 @@ main:{[d] r:checks d; exit "i"$sum not r`ok}                  / a suite as a CI 
 recheck:{[gen;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[gen;prop];p;{tidy[]; 'x}]; tidy[]; r}
 recheck1:{[gen;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[gen;prop]; run::0b;
   why:$[`pass=o`st; `ok; `disc=o`st; `gaveup; `gen=o`ph; `error; `falsified];
-  res:result[why;1;system"S";gen;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];
+  res:result[why;"j"$`pass=o`st;system"S";gen;prop;o,`disc`stop!((`symbol$())!`long$();$[`fail=o`st;`fail;`n])];   / n is the tests that passed: 1 or 0
   if[not `fail=o`st; res[`choices]:C`v];
   res[`stale]:(i<>count P) or not (count[P]#C`v)~"j"$p; if[cfg[`v]>0; rep res]; res}
 
@@ -466,7 +471,9 @@ pdup:{cp::`dup; p:0b; ix:where cv<>cC`o; g:ix each value group (flip (cv;cC`lo;c
     if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[go and all 1<abs d; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];   / distances in floats (C21)
     if[ok; p:1b]; j+:1]; p}
 bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs ("f"$b)-"f"$a; m:"j"$(("f"$a)+"f"$b)%2; $[m in (a;b); a:b; try @[cv;j;:;m]; [b:m; p:1b]; a:m]]; p}   / float midpoint: b-a overflows on full ranges
-pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; j+:1]]]; p}
+/ a value below its origin is tried at the same distance above it, which is the simpler of the two (zig: 1 before -1)
+pmir:{[j] o:cC[`o] j; v:cv j; $[v>=o; 0b; (("f"$o)+("f"$o)-"f"$v)>"f"$cC[`hi] j; 0b; try @[cv;j;:;o+o-v]]}   / the room above, in floats (C21)
+pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; if[pmir j; p:1b]; j+:1]]]; p}
 / pairs: move value from an earlier choice to a later one of the same range within a small window (elements of a
 / list are separated by their decision bits), then lower both together
 pred:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1; vi:cv ii; oi:cC[`o] ii;

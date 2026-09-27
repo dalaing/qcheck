@@ -13,12 +13,12 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 |---|---|---|
 | `int` | `.qc.int r` | a long in `r`, the ends included; it adds no null and no infinity of its own |
 | `bool`, `bit` | `.qc.bool`, `.qc.bit p` | a boolean; `bit p` is `1b` with probability `p` on fresh draws, origin `0b` |
-| `flt` | `.qc.flt r` | a float from `lo` to `hi`, which are two numbers with a whole number between them or at an end (no origin, and no function of the size): whole numbers before halves before quarters, the whole number nearest 0 simplest |
+| `flt` | `.qc.flt r` | a float from `lo` to `hi`, which are two numbers (no origin, and no function of the size): whole numbers before halves before quarters, and the simplest is the value nearest 0 on the coarsest of those grids that has a value in the range, so 2 for `1.5 2.5` and 0.5 for `0.2 0.8` |
 | `dbl`, `dble` | `.qc.dbl`, `.qc.dble` | a finite double of any size up to about 9e307; `dble` over single-precision exponents and mantissas (a float32 column's values) |
 | `chr`, `chrc` | `.qc.chr`, `.qc.chrc s` | a char from `.qc.AZ` (letters, digits, space), or from alphabet `s` |
 | `str`, `strc` | `.qc.str`, `.qc.strc[s;r]` | a string, typed even when empty; alphabet `s`, length range `r` |
 | `sym`, `symc` | `.qc.sym`, `.qc.symc[s;r]` | a symbol over a bounded alphabet (default `"abcd"`, lengths 0–3); the null symbol simplest |
-| `gid`, `gidf` | `.qc.gid`, `.qc.gidf` | a guid; `gidf` draws no null, though its simplest value, all zero bytes, is the null guid |
+| `gid`, `gidf` | `.qc.gid`, `.qc.gidf` | a guid; `gidf` is never null, and its simplest value is `00000000-0000-0000-0000-000000000001` |
 | `t`, `tf` | `.qc.t c`, `.qc.tf c` | an atom of type char `c`, drawn widely (any long; dates a century either side of 2000; chars and symbols as `chr` and `sym`): `t` with the null and the infinities of the type, `tf` without |
 | `ts`, `dates` | `.qc.ts[from;to]`, `.qc.dates[from;to]` | a timestamp or a date in a window, the start simplest |
 | `const` | `.qc.const x` | the value `x` (for a value that would otherwise be taken for a generator, such as a list of functions) |
@@ -97,7 +97,7 @@ The result of a check is a dict:
 | `ok` | `1b` when the property passed |
 | `why` | `ok`, `falsified`, `error` (a generator signalled), `gaveup` (too many discards, or nothing but discards) or `cover` (a requirement not met) |
 | `stop` | why the run ended: `n`, `exhausted`, `cover`, `nmax`, `fail` or `gaveup` |
-| `n` | the number of tests that passed; from `recheck` and `again` it is 1, for the one test they run |
+| `n` | the number of tests that passed |
 | `shrinks`, `attempts` | how many times the counterexample was made simpler, and how many candidates were tried |
 | `seed` | the seed of the run |
 | `x` | the counterexample, as a dict: under `x` for one generator, under the names of the property's parameters for a list of generators, under its keys for a dict of them; `::` when no input was drawn, as in a failure of a state machine, whose trace is in `notes` |

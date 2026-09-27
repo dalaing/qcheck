@@ -179,8 +179,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 
 Inside another test framework, `.qc.must[g;prop]` returns the result when the property passes and otherwise
 signals the whole report as one error (`'qc: FAIL falsified after 3 tests…`), whose first line is the verdict.
-It is meant for a framework whose tests fail by signalling; it has not been tried inside k4unit, qspec or QUnit.
-`.qc.main d` runs a suite and exits with the number of failures, for CI.
+`examples/frameworks/` has a test file each for k4unit, qspec and QUnit, and `EXAMPLES.md` says what a failing
+property looks like in each. `.qc.main d` runs a suite and exits with the number of failures, for CI.
 
 A check sets the seed of the process (`\S`), and the state it had before cannot be put back. If your process
 depends on its own stream of random numbers, set `\S` again after a check.
@@ -279,7 +279,7 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 | `COOKBOOK.md` | recipes for kdb+ tasks: an as-of join, an upsert, a splayed table, a tickerplant handler, serialisation, bars, a sorted vector; most find a planted bug and then show the fix |
 | `WALKTHROUGH.md` | the long example: a market data pipeline built in five pieces and tested as it was written, wrong turns included, with a state machine over the whole |
 | `REFERENCE.md` | every public name and every setting, a line each |
-| `examples/` | the scripts that the tour and the cookbook talk through, to run and to change; `examples/mdp/` is the pipeline |
+| `examples/` | the scripts that the tour and the cookbook talk through, to run and to change; `examples/frameworks/` has tests for k4unit, qspec and QUnit; `examples/mdp/` is the pipeline |
 
 Every session shown with a `q)` prompt, in this file and in those, is run by the test suite, which requires the
 output shown. The sessions start with ``.qc.cfg[`db`seed]:(`;7i)``, and with that set yours will print the same.

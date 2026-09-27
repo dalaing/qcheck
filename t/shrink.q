@@ -55,4 +55,7 @@ r2:.qc.chk[qd,enlist[`seed]!enlist 99;ints;{x~asc x}]
 .t.t["db: a saved failure is replayed before generation"; (0=r2`n) and r2[`x]~r1`x]
 r3:.qc.chk[qd;ints;{1b}]
 .t.t["db: an entry that no longer fails is removed"; (r3`ok) and 0=count key ` sv d,`t1]
+/ a value below its origin is tried above it: 1 is simpler than -1, and the binary search makes no attempt at distance 1
+.t.t["a negative value shrinks to the positive one at the same distance where that still fails"; all {[s] 0 1~(.qc.chk[q,enlist[`seed]!enlist s;.qc.list .qc.int -99 99;{x~reverse x}])[`x]`x} each "i"$1+til 20]
+.t.t["and stays negative where the positive one passes"; all {[s] -5~(.qc.chk[q,enlist[`seed]!enlist s;.qc.int -99 99;{x>-5}])[`x]`x} each "i"$1+til 20]
 .t.rm d

@@ -1,0 +1,7 @@
+action,ms,bytes,lang,code,repeat,minver,comment
+comment,0,0,q,,1,,qcheck properties as k4unit tests. Load qc.q first; then KUltf on this file and KUrt[]
+before,0,0,q,ints:.qc.list .qc.int 0 99,1,,the generator
+before,0,0,q,rev2:{x~reverse reverse x},1,,a rule that holds
+before,0,0,q,sorted:{x~asc x},1,,a rule that does not
+true,0,0,q,"(.qc.check[ints;rev2])`ok",1,,passes: check prints its report and the test is the boolean
+true,0,0,q,"(.qc.check[ints;sorted])`ok",1,,fails: the report is on the console and KUTR has ok 0b

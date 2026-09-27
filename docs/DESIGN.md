@@ -134,7 +134,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.ch[r;w]` | **the primitive**: a long in range `r` = `lo hi o`; `w` is a fresh-draw distribution hint |
 | `.qc.int r` | long in range; no nulls or infinities |
 | `.qc.bool`, `.qc.bit p` | boolean; `bit p` draws `1b` with probability `p` on fresh draws; origin `0b` |
-| `.qc.flt r` | float in `[lo;hi]`, layout `[sign; k; m]` = `±m/2^k`; 0 (or the nearest bound) is simplest, integers before halves before quarters; `.qc.dbl` is any finite double, `[sign; e; m]` = `±m·2^e`; `.qc.dble` the same over single-precision exponents and mantissas (values a float32 column can hold) |
+| `.qc.flt r` | float in `[lo;hi]`, layout `[sign; k; m]` = `±m/2^k`; integers before halves before quarters, `k` starting at the coarsest grid that has a point in the range (so `flt 0.2 0.8` starts at halves and its simplest value is 0.5), the point nearest 0 simplest; a range narrower than every grid it may use is `lo` plus a fraction of its width, `lo` simplest (before this, a range with no whole number in it signalled on its minimal value, which is example 0 of every check); `.qc.dbl` is any finite double, `[sign; e; m]` = `±m·2^e`; `.qc.dble` the same over single-precision exponents and mantissas (values a float32 column can hold) |
 | `.qc.chr`, `.qc.chrc s` | a char from `.qc.AZ` (letters, digits, space; origin `"a"`), or from alphabet `s` |
 | `.qc.str`, `.qc.strc[s;r]` | a string (typed even when empty), alphabet `s`, length range `r` |
 | `.qc.sym`, `.qc.symc[s;r]` | a symbol over a **bounded** alphabet: default `"abcd"`, lengths 0–3, ≤ 85 symbols, the null symbol simplest |
@@ -146,7 +146,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
-| `.qc.tf c` | the **finite** domain of an atom type: no null, no infinity (`h i j` stop one short of their infinities, `e` fits a real, `c` has no space, `s` no empty symbol); `t c` is `tf c` wrapped in `spc` with the specials (M10) |
+| `.qc.tf c` | the **finite** domain of an atom type: no null, no infinity (`h i j` stop one short of their infinities, `e` fits a real, `c` has no space, `s` no empty symbol, `g` a last byte that is not 0, since sixteen zero bytes are the null guid); `t c` is `tf c` wrapped in `spc` with the specials (M10) |
 | `.qc.ts[from;to]`, `.qc.dates[from;to]` | one timestamp or date in a window, the start simplest (dates accepted as timestamp bounds); a monotone series is `mono[ts[a;b];int 0 60000000000]` in a table or `atr[`s] list ts[a;b]` (A26) |
 | `.qc.val` | an arbitrary q value: `rec` over the full-domain zoo with list, dict, table and keyed-table nodes — every atom type, both list kinds, dicts, tables at size 30; `-9!-8!x` round-trips all of it (A27) |
 | `.qc.one gs` | one of several alternative generators; the first is the simplest *provided it draws no more choices than the others* (C12) |
@@ -329,7 +329,7 @@ a contradiction — a range or an ending at a prefix that differs from what an e
 meaning the structure depended on something other than the choices — and then no exhaustion is claimed.
 Otherwise (2b) `n` examples with size ramping 0→100, and if a coverage requirement is still open at the budget (the requirement lies between the Wilson
 lower and upper bounds) the run continues until it is settled or `cfg`nmax` (default `10*n`) is reached; (3) on failure,
-shrink (§1.5); (4) report (§1.6). Discards are counted by cause (`filter`, `toodeep`, `toolarge`, explicit);
+shrink (§1.5); (4) report (§1.6). Discards are counted by cause (`discard` for a filter, `uniq` and `.qc.discard[]` alike, `toodeep`, `toolarge`, `overrun`, `misaligned`);
 more than `disc`×`n` of them ends the run as "gave up", and the report names the dominant cause.
 
 The result is data: `` `ok`why`stop`n`shrinks`attempts`seed`x`err`bt`notes`cover`choices`hist`disc`stale `` with `why` one
@@ -351,10 +351,10 @@ Seeds are 32-bit ints, because that is what `\S` takes and `system"S"` returns (
 becomes `"i"$1+.z.p mod 2147483646`, never 0, and is printed and accepted as an int.
 
 Defaults in `.qc.cfg`: `n` 100 (tests) · `nmax` `0N` (the cap when coverage extends a run; `0N` is 10×`n`) ·
-`seed` `0N` (from the clock) · `sz` 100 · `shrinks` 2000 · `disc` 10 (discards per test before giving up) ·
+`seed` `0N` (from the clock) · `sz` 100 · `shrinks` 2000 · `disc` 10 (the run gives up when its discards pass `disc`×`n`) ·
 `tries` 50 (filter retries) · `depth` 200 · `choices` 8192 · `same` 1b (a shrink must reproduce the same error
 text) · `clamp` 1b (an out-of-range replayed choice is clamped, not rejected) · `db` `` `:.qc `` · `name` `` ` ``
-(the label `checks` prints) · `rows` 20 (rows of a table shown in a report) · `v` 1 (verbosity: 0 silent, 2 adds
+(the file a failure is saved under in the db, in place of the hash) · `rows` 20 (rows of a table shown in a report) · `v` 1 (verbosity: 0 silent, 2 adds
 the backtrace).
 
 ### 1.5 Shrinking
@@ -390,7 +390,8 @@ vector (q dicts accept vector keys, A1). The loop and every pass are iterative, 
 3. replace a span by a descendant with the same label (collapses recursion);
 4. reorder sibling spans of the same label into sorted order (canonical lists);
 5. minimise duplicated values together (`group v`), then each choice individually by binary search toward its
-   origin;
+   origin, and a value left below its origin is tried at the same distance above it, which the order ranks
+   simpler (1 before -1; the binary search makes no attempt at distance 1, so -1 used to stay);
 6. redistribute numeric pairs (`x-k, y+k`) and lower pairs together;
 7. (M8) delete the same chunk from every block of a bulk span and lower its length, ddmin-style — first, since a
    block of 1e5 values must shrink to a handful before the per-choice passes can afford to touch it.
@@ -591,7 +592,8 @@ docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and th
                 AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed
 .qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
 examples/       reverse.q tree.q suite.q sm_table.q sm_ipc.q aj.q, commented as tutorials, each run without a failure
-                database (sm_ipc.q starts a child q process)
+                database (sm_ipc.q starts a child q process); frameworks/ has a test file each for k4unit, qspec and
+                QUnit, tried by hand, since those are not part of the repository
 ```
 
 ### 1.10 Conventions
