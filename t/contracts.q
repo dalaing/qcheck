@@ -16,7 +16,7 @@ c8:{[g] .qc.new[]; .qc.draw g; a:count .qc.L; l1:.qc.lbl g; do[50; .qc.draw g]; 
 c9:{[g] .qc.draw g; (not .qc.run) and (0=.qc.dp) and (0=count .qc.st) and 25 80i~system"c"}
 c10:{[g] (@[g;1;{x}]) like "qc: too many*"}
 c11:{[g] (.qc.chk[q;::;{[g;x] n0:count .qc.C; .qc.draw g; count[.qc.C]>=n0}[g]])`ok}
-{[r] nm:string r`name; g:r`gen;
+.t.each[{[r] nm:string r`name; g:r`gen;
   .t.t[nm,": draws at every size"; c1 g];
   .t.t[nm,": minimal is its origin"; c2[g;r`origin]];
   if[not (r`name) in .g.NOCH; .t.t[nm,": records a choice at every size"; c3 g]];
@@ -28,5 +28,5 @@ c11:{[g] (.qc.chk[q;::;{[g;x] n0:count .qc.C; .qc.draw g; count[.qc.C]>=n0}[g]])
   .t.t[nm,": state is clean after a top-level draw"; c9 g];
   if[r`canary; .t.t[nm,": the canary refuses an extra argument"; c10 g]];
   .t.t[nm,": a draw inside a property joins the example"; c11 g];
-  } each .g.T
+  }; .g.T]
 .qc.new[]

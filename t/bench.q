@@ -3,7 +3,7 @@
 \l spikes/bench.q
 res:.b.run[.b.q;.b.cases .qc.list]
 cap:`sorted`reverse`distinct`len5`sum100`adjeq`bound`neg`twoints`nested`bound5`tree3`tree4`rose3`filtered`bigint`interactive`squares!70 70 30 80 120 30 30 10 10 160 70 80 90 30 120 130 30 50
-{[r] .t.t["bench ",string[r`name],": analytic minimum within ",string[cap r`name]," attempts"; (r`ok) and r[`attempts]<=cap r`name]} each res
+.t.each[{[r] .t.t["bench ",string[r`name],": analytic minimum within ",string[cap r`name]," attempts"; (r`ok) and r[`attempts]<=cap r`name]}; res]
 .t.t["bench: the whole suite under 1200 attempts"; 1200>sum res`attempts]
 / the candidate cache: every attempt was a new candidate
 r:.qc.chk[.b.q;.qc.list .qc.int 0 99;{x~asc x}]

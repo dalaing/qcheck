@@ -60,5 +60,5 @@ naive:{[t;q] f:{[q;s;tm] $[count r:exec px from q where sym=s,time<=tm; first r;
 bad:0
 r:.qc.chk[q;pair;{if[not all (x[`q;`sym],x[`t;`sym]) in x`s; bad+:1]; (aj[`sym`time;x`t;x`q])~naive[x`t;x`q]}]
 m:r[`x]`x
-.t.t["aj: the planted bug shrinks to one symbol, two quotes at one time with two prices, one trade; every candidate referentially valid"; (2=count m`q) and (1=count m`t) and (1=count m`s) and (1=count distinct m[`q]`time) and (2=count distinct m[`q]`px) and 0=bad]
+.t.t["aj: the planted bug shrinks to one symbol, two quotes at one time with two prices, one trade; every candidate referentially valid"; (2=count m`q;1=count m`t;1=count m`s;1=count distinct m[`q]`time;2=count distinct m[`q]`px;0=bad)]   / (a list of conjuncts: a failure names which)
 .t.t["aj: within 300 attempts"; r[`attempts]<=300]

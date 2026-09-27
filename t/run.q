@@ -4,8 +4,10 @@
 q:()!()                                                                              / (defined per file by .t.load)
 .t.t:{[nm;ok] b:$[type[ok] in -1 1h; all ok; 0b]; if[not type[ok] in -1 1h; nm,:" (not a boolean: ",(.Q.s1 ok),")"];
   if[(1h=type ok) and 0=count ok; b:0b; nm,:" (no cases: an empty boolean list)"];   / all[] over nothing is true; a test with nothing to test has not passed
+  if[(1h=type ok) and (not b) and 1<count ok; nm,:" (false at ",(" " sv string where not ok),")"];   / a list of conjuncts says which failed; an and-chain cannot
   .t.r,:enlist (.t.f;`$nm;b); if[not b; -1 "FAIL ",string[.t.f],": ",nm];}
 .t.e:{[f;x] @[f;x;{x}]}
+.t.each:{[f;xs] {[f;x] e:.Q.trp[{[f;x] f x; 1b}[f];x;{[e;bt] e}]; if[10h=type e; .t.t["row ",(40#.Q.s1 x)," raised: ",e;0b]];}[f] each xs;}   / f over rows, each under its own trap: one row's raise is one failure, not the end of the loop
 .t.cfg0:.qc.cfg                                                                   / the library defaults; restored before every file (C9)
 .t.sz:{[s] .qc.cfg[`sz]:s; .qc.new[]}                                             / the interactive size, set the way a user would
 .t.tmp:{[nm] d:`$":",getenv[`TMPDIR],nm,"_",string .z.i; system"mkdir -p ",1_string d; d}   / a scratch directory; .t.rm removes it

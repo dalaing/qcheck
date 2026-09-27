@@ -14,8 +14,8 @@ modes:{[nm;g;r;f;org;ex]
   if[ex; w:.qc.wid . .qc.rng[r] 0 1;
     if[w<=100; .t.t[nm,": a space that fits the budget is exhausted"; (`exhausted=res`stop) and w=(res:.qc.chk[q;g;{1b}])`n]];
     if[w>100; .t.t[nm,": a space beyond the budget samples"; `n=(.qc.chk[q;g;{1b}])`stop]]];}
-{[r] modes["int ",nmr r;.qc.int r;r;::;{x 2};1b]} each RS
-{[r] modes["lst[",nmr[r],"] length";.qc.lst[r] .qc.int 0 9;r;count;{x 0};0b]} each (0 0;0 1;0 9;5 5;7 9 8;{0,x})
+.t.each[{[r] modes["int ",nmr r;.qc.int r;r;::;{x 2};1b]}; RS]
+.t.each[{[r] modes["lst[",nmr[r],"] length";.qc.lst[r] .qc.int 0 9;r;count;{x 0};0b]}; (0 0;0 1;0 9;5 5;7 9 8;{0,x})]
 / the length checks above test the *list* value against the range; do it explicitly
 .t.t["lst: lengths within every finite range at size 100"; all {[r] rr:.qc.rng r; all (count each {.qc.draw x} each 100#enlist .qc.lst[r] .qc.int 0 9) within rr 0 1} each (0 0;0 1;0 9;5 5;7 9 8)]
 {[r] modes["flt ",nmr r;.qc.flt r;r;::;{"f"$x 2};0b]} each (0 0;0 1;-1 1;0 9;5 5)   / flt takes lo hi only
