@@ -137,5 +137,6 @@ REFERENCE.md   every public name, one line each     examples/mdp/  a pipeline bu
 COOKBOOK.md    recipes for kdb tasks                t/             q t/run.q runs the tests and prints one table (~2 min; QC_FAST=1 skips the slow doctests)
 DESIGN.md      design, conventions,                 tools/         doc_child.q, the child q the doctests run
                measurements, pitfalls               spikes/        sh spikes/run.sh re-runs the design's measurements
-AUDIT.md AUDIT2.md REVIEW.md   audits of the code   .qc/           the failure database, written by runs, gitignored
+REVIEW.md      the open review; docs/       HISTORY.md (milestones, review rounds), the closed audits
+                                                    .qc/           the failure database, written by runs, gitignored
 ```
