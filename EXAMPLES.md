@@ -110,7 +110,8 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 
 `.qc.t` takes type characters as `$` does, and draws from the whole domain of the type, nulls and infinities
 included; `.qc.tf` leaves those out. An empty list from `.qc.vec` or `.qc.str` has its type, as the last line
-shows.
+shows. For a range of your own with a few nulls or infinities mixed in, see
+[Nulls and infinities](#nulls-and-infinities).
 
 ## A first property
 
@@ -250,6 +251,43 @@ FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
 7
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;7]
 ```
+
+## Nulls and infinities
+
+Code that is right for ordinary values is often wrong for a null or an infinity, and real data has both. There
+are two ways to get them into the examples. `.qc.t` draws from the whole domain of a type, so `.qc.t"f"` is any
+float at all. `.qc.spc[specials] g` keeps a range of your own: it draws from the generator `g` most of the time,
+and about one time in twenty it gives one of `specials` instead.
+
+Prices from 1 to 100, with now and then a null or an infinity:
+
+```q
+q)px:.qc.spc[0n 0w] .qc.flt 1 100
+q)sum (.qc.draw 1000#enlist px) in 0n 0w
+35i
+q).qc.minimal px
+1f
+```
+
+In a thousand draws a few dozen were special. (`1000#enlist px` is a list of a thousand generators, which is a
+generator of a list of a thousand values.) The simplest value is still the simplest ordinary one, so a special
+value stays in a counterexample only when the failure needs it.
+
+The rule: prices are positive, so a running total of them never falls.
+
+```q
+q)px:.qc.spc[0n 0w] .qc.flt 1 100
+q).qc.check[.qc.lst[1 0W] .qc.flt 1 100; {all 0<=1_deltas sums x}];
+ok 100 tests (seed 7)
+q).qc.check[.qc.lst[1 0W] px; {all 0<=1_deltas sums x}];
+FAIL falsified after 8 tests, 9 shrinks (37 attempts, seed 7)
+x: 0w 1
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0 1 1 0 0 0 0 1 0]
+```
+
+It holds for ordinary prices and fails once an infinity is among them. After an infinite price the running total
+is `0w 0w`, the step between the two is `0w-0w`, and that is null. The counterexample is as short as it can be:
+the infinity, and one price after it to take the step.
 
 ## Tables
 

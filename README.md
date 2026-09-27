@@ -11,9 +11,9 @@ x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
-It is one file with no dependencies. Shrinking is built in, in the style of Hypothesis, so a generator you write
-needs no shrinker written for it; failure reports are in the style of Hedgehog; and systems with state are tested
-as state machines.
+It is one file with no dependencies. Shrinking is built in, so a generator you write needs no shrinker written
+for it. A failure is reported with its simplest input, a diff where two values were compared, and a line that
+reproduces it. Systems with state are tested as state machines.
 
 ## What property-based testing is
 
