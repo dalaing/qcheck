@@ -17,14 +17,17 @@ database, which is explained [below](#the-failure-database). The test suite runs
 requires the output shown. A report from `check` will match wherever you run it. What `.qc.draw` prints depends
 on what the session has drawn before, so it matches in a fresh session.
 
-Five of the sections are also scripts under `examples/`, with the commentary as comments. Each runs from the
+Six of the sections are also scripts under `examples/`, with the commentary as comments. Each runs from the
 repository root, for example `q examples/reverse.q`. They take their seed from the clock, so the first line of a
-report (how many tests passed, how many shrinks) differs from run to run and from what is printed here.
+report (how many tests passed, how many shrinks) differs from run to run and from what is printed here. Now and
+then the counterexample differs too: shrinking stops where no single step makes the input simpler, and from
+another starting point that can be another place.
 
 | script | section |
 |---|---|
 | `examples/reverse.q` | [A first property](#a-first-property) |
 | `examples/tree.q` | [Trees](#trees) |
+| `examples/suite.q` | [A suite](#a-suite) |
 | `examples/aj.q` | [A generator of your own](#a-generator-of-your-own) |
 | `examples/sm_table.q` | [A state machine against a table](#a-state-machine-against-a-table) |
 | `examples/sm_ipc.q` | [A system in another process](#a-system-in-another-process) |
@@ -50,8 +53,8 @@ q).qc.minimal .qc.lst[2 2] .qc.int 0 9
 
 The simplest long is the one nearest 0, and the simplest list is the empty one. `.qc.lst` is `.qc.list` with a
 range for the length: up to five items in the second line, exactly two in the last. Many names come in such a
-pair, the short one taking a range or a setting first: `list` and `lst`, `tab` and `tabr`, `sym` and `symc`,
-`check` and `chk`.
+pair, one of which takes a range or a setting first: `lst`, `tabr`, `symc` and `chk`, beside `list`, `tab`,
+`sym` and `check`.
 
 Every random decision a generator makes is recorded as a *choice*, a long with the range it was drawn from, and
 `.qc.C` holds the choices of the last draw.
@@ -108,10 +111,56 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 `long$()
 ```
 
-`.qc.t` takes type characters as `$` does, and draws from the whole domain of the type, nulls and infinities
-included; `.qc.tf` leaves those out. An empty list from `.qc.vec` or `.qc.str` has its type, as the last line
+`.qc.t` takes type characters as `$` does, and draws widely over the type, with its nulls and infinities
+included: any long, dates a century either side of 2000. `.qc.tf` leaves the nulls and infinities out. An empty list from `.qc.vec` or `.qc.str` has its type, as the last line
 shows. For a range of your own with a few nulls or infinities mixed in, see
 [Nulls and infinities](#nulls-and-infinities).
+
+## Choosing between generators
+
+`.qc.elem xs` draws an item of the list `xs`. `.qc.one gs` draws from one of the generators in the list `gs`,
+each as likely as the others. `.qc.freq[w] gs` does the same with weights, for when the alternatives are not
+equally common, as quotes and trades are not:
+
+```q
+q)kind:.qc.freq[9 1] (`quote;`trade)
+q)count each group .qc.draw 1000#enlist kind
+quote| 893
+trade| 107
+q).qc.minimal kind
+`quote
+```
+
+`1000#enlist kind` is a list of a thousand generators, which is a generator of a list of a thousand values.
+Nine draws in ten are quotes. The simplest value is the first alternative, whatever its weight, so put the
+simplest first: a counterexample will use the later ones only where it needs them.
+
+The alternatives are generators, so they can be records of different shapes:
+
+```q
+q)quote:`kind`bid`spread!(`quote; .qc.flt 1 100; .qc.flt 0 5)
+q)trade:`kind`px`qty!(`trade; .qc.flt 1 100; .qc.elem 1 10 100)
+q)ev:.qc.freq[9 1] (quote;trade)
+q).qc.draw ev
+kind  | `quote
+bid   | 52.08199
+spread| 5f
+q).qc.draw ev
+kind  | `quote
+bid   | 53.93625
+spread| 2.342207
+```
+
+`` `quote `` and `` `trade `` in these are constants, and a constant is a generator of itself. One kind of
+constant needs care. A function in a generator is taken for a generator and called, so to have the function
+itself as the value, wrap it in `.qc.const`:
+
+```q
+q).qc.draw (.qc.int 0 9; `a; .qc.const {x+1})
+1
+`a
+{x+1}
+```
 
 ## A first property
 
@@ -121,7 +170,7 @@ A property is a function of one drawn value that returns `1b` when the rule it s
 twice gives the list back:
 
 ```q
-q)ints:.qc.list .qc.int -99 99
+q)ints:.qc.list .qc.int 0 99
 q).qc.check[ints; {x~reverse reverse x}];
 ok 100 tests (seed 7)
 ```
@@ -132,16 +181,16 @@ REPL from printing what `check` returns, which is the [result](#the-result-is-da
 A rule that is false, that a list is its own reverse:
 
 ```q
-q)ints:.qc.list .qc.int -99 99
+q)ints:.qc.list .qc.int 0 99
 q).qc.check[ints; {x~reverse x}];
-FAIL falsified after 5 tests, 1 shrinks (18 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (32 attempts, seed 7)
 x: 0 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 0]
 ```
 
 Five lists passed (the empty list and lists of one item are their own reverse, and so are some others). The sixth
-did not, and it was shrunk: 18 simpler lists were tried, and one of them also failed. `0 1` is what is left. No
-list of fewer than two items can fail, and no two different longs are nearer to 0 than these.
+did not, and it was shrunk: 32 simpler candidates were tried, and 7 of them also failed, each simpler than the
+one before. `0 1` is what is left. No list of fewer than two items can fail, and no two different longs in the range are nearer to 0 than these.
 
 In the `rerun:` line, `gen` and `prop` stand for the generator and the property that were given to `check`, and
 the numbers are the choices that draw `0 1`.
@@ -164,7 +213,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 One row for each difference: `path` is where it lies (here an index; for a table a column and a row, for a dict
-a key), `why` is the kind of difference (`value`, `type`, `count`, `order`), and `a` and `b` are the two sides.
+a key), `why` is the kind of difference (`value`, `type`, `count`, `key`, `order`), and `a` and `b` are what the
+two sides have there: the values, or their types, counts or keys.
 
 ### Several inputs
 
@@ -181,13 +231,16 @@ n: 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 1]
 ```
 
-The second rule says a list has at least `n` items. The simplest input it could fail for is the empty list and
-a count of 1, and that is the counterexample.
+The first report says `exhausted`: two digits make a hundred pairs, and the run tried every one, which
+[Small spaces are enumerated](#small-spaces-are-enumerated) explains. The second rule says a list has at least
+`n` items. The simplest input it could fail for is the empty list and a count of 1, and that is the
+counterexample.
 
 ### What a property may return
 
-A property passes when it returns `1b`, a boolean list that is all `1b`, or `::`. It fails when it returns
-anything else or signals an error, and an error is reported with its message. This property signals for a list
+A property passes when it returns `1b`, a boolean list that is all `1b` (an empty list counts), or `::`. It
+fails when it returns anything else, the long `1` included, or signals an error, and an error is reported with
+its message. This property signals for a list
 of more than three items, and the counterexample is the simplest list of four:
 
 ```q
@@ -202,7 +255,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 1 0 0]
 
 `.qc.again[]` tests the last counterexample again. `.qc.recheck` does the same for a generator, a property and
 the choices of a `rerun:` line, which is how you test the fix: give it the corrected property, or the same
-property over corrected code.
+property over corrected code. Both run one test, and their report counts it whether it passes or fails, so a
+failure here reads `after 1 tests`.
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
@@ -243,7 +297,8 @@ symbol turns the database off, as the sessions in this tour and the scripts in `
 
 A property can draw for itself with `.qc.draw`, which is useful when what to draw depends on something computed
 along the way. The generator given to `check` is then `::`, for nothing. What is drawn inside shrinks like
-everything else, but the report cannot know what to call it, so say so with `.qc.note`:
+everything else, but a report shows only what the generator given to `check` drew, so add the value to the
+report with `.qc.note`:
 
 ```q
 q).qc.check[::; {n:.qc.draw .qc.int 1 9; .qc.note n; n<7}];
@@ -255,8 +310,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;7]
 ## Nulls and infinities
 
 Code that is right for ordinary values is often wrong for a null or an infinity, and real data has both. There
-are two ways to get them into the examples. `.qc.t` draws from the whole domain of a type, so `.qc.t"f"` is any
-float at all. `.qc.spc[specials] g` keeps a range of your own: it draws from the generator `g` most of the time,
+are two ways to get them into the examples. `.qc.t` draws widely over a type, so `.qc.t"f"` is any float at
+all. `.qc.spc[specials] g` keeps a range of your own: it draws from the generator `g` most of the time,
 and about one time in twenty it gives one of `specials` instead.
 
 Prices from 1 to 100, with now and then a null or an infinity:
@@ -269,9 +324,8 @@ q).qc.minimal px
 1f
 ```
 
-In a thousand draws a few dozen were special. (`1000#enlist px` is a list of a thousand generators, which is a
-generator of a list of a thousand values.) The simplest value is still the simplest ordinary one, so a special
-value stays in a counterexample only when the failure needs it.
+In a thousand draws a few dozen were special. The simplest value is still the simplest ordinary one, so a
+special value stays in a counterexample only when the failure needs it.
 
 The rule: prices are positive, so a running total of them never falls.
 
@@ -285,9 +339,10 @@ x: 0w 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0 1 1 0 0 0 0 1 0]
 ```
 
-It holds for ordinary prices and fails once an infinity is among them. After an infinite price the running total
-is `0w 0w`, the step between the two is `0w-0w`, and that is null. The counterexample is as short as it can be:
-the infinity, and one price after it to take the step.
+It holds for ordinary prices and fails once an infinity has a price after it. After an infinite price the
+running total is `0w 0w`, the step between the two is `0w-0w`, and that is null. The counterexample is as short
+as it can be: the infinity, and one price after it to take the step. The nulls did no harm to this rule, since
+`sums` passes over them.
 
 ## Tables
 
@@ -328,7 +383,8 @@ px  | f
 ```
 
 A table shrinks by losing rows and by its values moving towards their origins. This rule says the values of a
-table never add up to 20, and the counterexample is the fewest rows that can, with the smallest values that do:
+table add up to less than 20, and the counterexample is the fewest rows that can reach 20, with the smallest
+values that do:
 
 ```q
 q).qc.check[.qc.tab `k`v!(.qc.uniq .qc.int 0 3; .qc.int 0 9); {20>sum x`v}];
@@ -342,8 +398,8 @@ x:
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 2 1 0 9 1 0 9 0]
 ```
 
-The simplest table of all is the empty one, and its columns have their types, so a property over tables meets
-the empty table first. Many of the failures in `COOKBOOK.md` and `WALKTHROUGH.md` are found there.
+The simplest table of all is the empty one, and its columns of atoms have their types, so a property over
+tables meets the empty table first. Many of the failures in `COOKBOOK.md` and `WALKTHROUGH.md` are found there.
 
 ## Any value at all
 
@@ -361,7 +417,8 @@ ok 100 tests (seed 7)
 
 The generators so far record a choice or two for each value, which is fine for a table of fifty rows and slow
 for a vector of a million. `.qc.bulk[r;nr]` draws a vector of longs in the range `r`, of a length in the range
-`nr`, as one block; `.qc.btab` is a table of such columns. `.qc.nch` is how many draws the last example made.
+`nr`, as one block; `.qc.btab` is a table of such columns. `.qc.nch` is how many choices the last example
+recorded, a block counting as one: here the length and the block.
 
 ```q
 q)count .qc.draw .qc.bulk[0 99;1000000 1000000]
@@ -414,15 +471,18 @@ q)leaves:{$[0h=type x; sum .z.s each x; 0<type x; count x; 1]}
 q)nodes:{$[0h=type x; 1+sum .z.s each x; 0<type x; 1; 0]}
 q).qc.check[tree; {leaves[x]=1+nodes x}];
 ok 100 tests (seed 7)
-q).qc.check[tree; {depth[x]<3}];
-FAIL falsified after 4 tests, 2 shrinks (30 attempts, seed 7)
-x: (0;(0;0 0))
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0 0 0 2 0 0 0 1 0 0 0 0 0]
+q).qc.check[tree; {depth[x]<4}];
+FAIL falsified after 6 tests, 2 shrinks (41 attempts, seed 7)
+x: (0;(0;(0;0 0)))
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;4 0 0 0 3 0 0 0 2 0 0 0 1 0 0 0 0 0]
 ```
 
-A binary tree has one more leaf than it has nodes. It is not true that every tree is less than three deep, and
-the counterexample is the simplest tree of depth three. A tree shrinks by a subtree becoming a leaf and by its
+A binary tree has one more leaf than it has nodes. It is not true that every tree is less than four deep, and
+the counterexample is the simplest tree of depth four. A tree shrinks by a subtree becoming a leaf and by its
 values being lowered, so what is left is a bare spine with 0 at every leaf.
+
+The script goes on to trees with up to four children at a node, and counts how many of those drawn were wide at
+the root, with `.qc.classify`, which [What the examples looked like](#what-the-examples-looked-like) explains.
 
 ## Small spaces are enumerated
 
@@ -444,8 +504,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0]
 `ok 2 tests, exhausted` is a proof and not a sample: there are two booleans and both passed. `.qc.one` draws from
 one of several generators, here a boolean or a long from 0 to 9, which is twelve values. This covers lists of a
 bounded length, alternatives, and short state machines, because what is enumerated is the choices. When the
-space is too large to try in the number of tests allowed, the run samples, and the report does not say
-`exhausted`.
+space is too large to try in the number of tests allowed, or the run cannot tell early on that it is small
+enough, the run samples, and the report does not say `exhausted`.
 
 ## What the examples looked like
 
@@ -465,6 +525,30 @@ long  67 67      57.30516 75.43702 1  #############
 `n` and `pct` are how many of the examples had the label. `lo` and `hi` are the bounds between which the true
 rate lies with 95% confidence, given that many examples.
 
+`.qc.label name` counts the example under a name that the property works out, and `.qc.collect x` counts it
+under a value, here the length of the list:
+
+```q
+q).qc.check[.qc.lst[0 4] .qc.int 0 99; {.qc.collect count x; 1b}];
+ok 100 tests (seed 7)
+label n  pct req lo       hi       ok bar
+-------------------------------------------
+0     27 27      19.26946 36.4323  1  #####
+1     17 17      10.89348 25.54818 1  ###
+4     17 17      10.89348 25.54818 1  ###
+2     22 22      15.00117 31.07053 1  ####
+3     17 17      10.89348 25.54818 1  ###
+q).qc.check[.qc.list .qc.int 0 99; {.qc.label `$("short";"long") 10<count x; 1b}];
+ok 100 tests (seed 7)
+label n  pct req lo       hi       ok bar
+-------------------------------------------------
+short 42 42      32.79822 51.79369 1  ########
+long  58 58      48.20631 67.20178 1  ###########
+```
+
+Use `collect` where the values are few. Each distinct value is a row of the table, and a row for each of a
+thousand lengths would tell you nothing.
+
 `.qc.cover[name;pct;b]` turns the count into a requirement. The run goes on until it can tell whether the label
 turns up in at least `pct` percent of examples, and fails if it does not:
 
@@ -482,9 +566,164 @@ big   77 77  90  67.84544 84.15685 0  ###############
 ```
 
 The first run needed 192 tests before the lower bound passed 90. The second stopped at 100, because by then the
-upper bound was below 90 and no more tests could change the answer. `.qc.elem` draws an item of a list.
+upper bound was below 90 and the run was confident that the rate is too. `.qc.elem` draws an item of a list.
+
+## How examples grow
+
+A run does not draw every example from the same place. Each example has a *size*, which rises over the run from
+0 to just short of 100, and the size is a cap on how much an example may hold: the items of a list, the rows of a table, the
+nodes of a tree. The early examples are therefore small and quick, and the later ones large. The labels show it:
+
+```q
+q).qc.check[.qc.list .qc.int 0 9; {.qc.classify[`under_10;10>count x]; .qc.classify[`over_50;50<count x]; 1b}];
+ok 100 tests (seed 7)
+label    n  pct req lo       hi       ok bar
+-----------------------------------------------
+under_10 33 33      24.56298 42.69484 1  ######
+over_50  19 19      12.51465 27.77902 1  ###
+q).qc.chk[enlist[`sz]!enlist 10; .qc.list .qc.int 0 9; {.qc.classify[`under_10;10>count x]; .qc.classify[`over_50;50<count x]; 1b}];
+ok 100 tests (seed 7)
+label    n   pct req lo       hi  ok bar
+---------------------------------------------------------
+under_10 100 100     96.30052 100 1  ####################
+```
+
+The setting `sz` is the size that a run rises to. Lower it when the property is slow and small examples will do,
+as in the second line, where no list is longer than ten.
+
+**Part of a generator.** `.qc.small g` draws from `g` at half the size. It is for the inner levels of something
+nested, where full size at every level is more than anyone wants: three lists of up to a hundred items each, or
+three of up to fifty.
+
+```q
+q).qc.check[.qc.lst[0 3] .qc.list .qc.int 0 9; {.qc.classify[`long;30<count raze x]; 1b}];
+ok 100 tests (seed 7)
+label n  pct req lo       hi       ok bar
+-----------------------------------------------
+long  48 48      38.46438 57.68359 1  #########
+q).qc.check[.qc.lst[0 3] .qc.small .qc.list .qc.int 0 9; {.qc.classify[`long;30<count raze x]; 1b}];
+ok 100 tests (seed 7)
+label n  pct req lo       hi       ok bar
+------------------------------------------
+long  21 21      14.16555 29.98015 1  ####
+```
+
+**A range that grows.** A range of longs may be a function of the size that returns one: for `.qc.int`, for the
+length of a list, a string or a vector, and for the rows of a table. (`.qc.flt` and the `k` of `.qc.rec` take a
+constant range only.) `.qc.int {0,x}` is a long from 0 to the size, and `.qc.lin[lo;hi]` is such a function,
+which would reach `hi` at size 100.
+
+```q
+q).qc.lin[0;1000] each 0 50 100
+0 0
+0 500
+0 1000
+q).qc.check[.qc.int {0,x}; {x<50}];
+FAIL falsified after 63 tests, 0 shrinks (7 attempts, seed 7)
+x: 50
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;50]
+```
+
+The first line shows the ranges that `.qc.lin[0;1000]` gives at three sizes. In the second, the rule `x<50`
+could not fail until the size had reached 50, so at least fifty tests had to pass first. Here it was 63 before a
+value of 50 or more was drawn. A range that grows keeps the first examples of a run simple.
+
+**A generator that depends on the size.** `.qc.sized f` calls `f` with the size and draws from the generator it
+returns. Lists of at most a tenth of the size, plus one:
+
+```q
+q)short:.qc.sized {[n] .qc.lst[0,1+n div 10] .qc.int 0 9}
+q).qc.check[short; {.qc.collect count x; 1b}];
+ok 100 tests (seed 7)
+label n  pct req lo        hi       ok bar
+-------------------------------------------
+0     24 24      16.69121  33.23252 1  ####
+1     24 24      16.69121  33.23252 1  ####
+2     16 16      10.0952   24.42044 1  ###
+3     7  7       3.431882  13.74967 1  #
+5     8  8       4.109297  14.99827 1  #
+4     7  7       3.431882  13.74967 1  #
+6     5  5       2.154336  11.1752  1  #
+7     5  5       2.154336  11.1752  1  #
+9     3  3       1.025434  8.452078 1
+8     1  1       0.1767387 5.448752 1
+q).qc.check[short; {3>count x}];
+FAIL falsified after 21 tests, 3 shrinks (28 attempts, seed 7)
+x: 0 0 0
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 0]
+```
+
+One rule goes with all of these. **As the size grows, a range may only widen**: its lower end must not rise and
+its upper end must not fall. A counterexample found at a small size is shrunk and run again at full size, and
+it is the same value there only if everything that could be drawn at the small size can still be drawn. So
+`{0,x}` is sound, and `{(x div 2;x)}`, "at least half the size", is not. For the same reason `short` draws a
+list of *up to* a length that depends on the size. A list of exactly that length would be a different list at
+full size.
+
+## Filtering
+
+`.qc.such[p] g` draws from `g` until the predicate `p` holds for the value:
+
+```q
+q)even:.qc.such[{0=x mod 2}] .qc.int 0 99
+q).qc.draw .qc.lst[5 5] even
+6 24 8 0 2
+```
+
+It is the first thing to reach for and often the wrong one, because a filter changes which values are drawn
+without saying so. Multiples of a thousand, by filter:
+
+```q
+q).qc.check[.qc.such[{0=x mod 1000}] .qc.int 1 100000; {.qc.collect x; 1b}];
+ok 100 tests (seed 7)
+label  n   pct req lo       hi  ok bar
+-------------------------------------------------------
+100000 100 100     96.30052 100 1  ####################
+```
+
+A hundred tests passed, and every one of them was the same number. One long in a thousand passes the filter.
+The simplest value of a range, its neighbours and the two ends are drawn far more often than the values in the
+middle, because bugs live there. The upper end of this range happens to pass the filter, and it is drawn about
+a hundred times as often as all the other multiples of a thousand together.
+
+The better way is to draw something simple and *make* the value from it. `'[f;g]` is the generator `g` with the
+function `f` applied to what it draws:
+
+```q
+q).qc.check[('[1000*;.qc.int 1 100]); {.qc.classify[`over_50000;x>50000]; 1b}];
+ok 100 tests, exhausted (seed 7)
+label      n  pct req lo       hi       ok bar
+-----------------------------------------------------
+over_50000 50 50      40.38298 59.61702 1  ##########
+```
+
+Every value is a multiple of a thousand, nothing is drawn and thrown away, and since there are only a hundred of
+them the run tried them all. The same goes for a sorted list (`'[asc;g]`, or `.qc.atr`, which gives the other
+attributes too), for distinct keys (`.qc.uniq`), and for an ask above its bid (`.qc.dep`). Keep `such` for a
+condition that most values meet.
+
+`such` tries fifty times, which is the setting `tries`, and then gives the example up as a *discard*. A property
+can discard too, with `.qc.discard[]`, when it finds that an example is not one the rule is about:
+
+```q
+q).qc.check[.qc.list .qc.int 0 9; {if[0=count x; .qc.discard[]]; (max x) in x}];
+ok 100 tests (seed 7)
+q).qc.check[.qc.list .qc.int 0 9; {if[5>count x; .qc.discard[]]; (max x) in x}];
+FAIL gave up after 0 tests; discards: discard 1001
+```
+
+A discarded example is not a test, and a run that discards too much gives up, which is a failure: nothing was
+learned. The second run discards every list of fewer than five items. The size of an example rises with the
+number of tests that have passed, and a discard is not a test, so the size never left 0 and almost every list
+drawn was empty. After a thousand discards, which is ten (the setting `disc`) for each test wanted, the run
+gave up. The fix is once more to draw what is wanted, here with `.qc.lst[5 0W]`, a list of at least five.
+
+One more thing to know: `.qc.minimal` of a filtered generator signals `qc.discard` when the simplest value of
+the generator fails the filter.
 
 ## A suite
+
+*As a script: `examples/suite.q`.*
 
 `.qc.checks` takes a dict from names to pairs of a generator and a property, runs each, and returns a table
 with a row for each.
@@ -503,9 +742,54 @@ comm   1  ok        exhausted 100 0       7
 sorted 0  falsified fail      5   1       7
 ```
 
-`.qc.main` does the same and then exits with the number of failures, which is the shape of a CI script.
-`.qc.must[g;prop]` is `check` for use inside another test framework: it returns the result when the property
-passes and signals the whole report as one error when it does not.
+The report of each property comes first, under its name, and the table last, with a row for each.
+
+`.qc.main` does the same and then exits, with the number of failures as the exit code, which is what a CI job
+looks at. `examples/suite.q` is a script of that shape:
+
+```
+$ q examples/suite.q; echo "exit code $?"
+--- reverse_twice
+ok 100 tests (seed 181508577)
+--- sum_any_order
+ok 100 tests (seed 226457577)
+--- count_of_a_join
+ok 100 tests (seed 267768577)
+--- already_sorted
+FAIL falsified after 4 tests, 3 shrinks (28 attempts, seed 345368577)
+x: 1 0
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
+name            ok why       stop n   shrinks seed
+-------------------------------------------------------
+reverse_twice   1  ok        n    100 0       181508577
+sum_any_order   1  ok        n    100 0       226457577
+count_of_a_join 1  ok        n    100 0       267768577
+already_sorted  0  falsified fail 4   3       345368577
+exit code 1
+```
+
+## Inside another test framework
+
+A test framework wants an expression that either returns or signals. `.qc.must[g;prop]` is `check` in that
+form. It prints nothing. When the property passes it returns the result, and when it fails it signals the whole
+report as one error:
+
+```q
+q)r:.qc.must[.qc.list .qc.int 0 9; {x~reverse reverse x}]
+q)r`ok`n
+1b
+100
+q)e:@[.qc.must[.qc.list .qc.int 0 9]; {x~asc x}; {x}]
+q)-1 e;
+qc: FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)
+x: 1 0
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
+```
+
+The first line of the error is the verdict, and the rest is what you need to reproduce the failure. In a
+framework whose tests fail by signalling, the test is that one expression. Where a framework wants a boolean,
+the test is ``(.qc.must[g;prop])`ok``, which is `1b` or signals. It has not been tried inside k4unit, qspec or
+QUnit. `.qc.mustc` takes settings first, as `.qc.chk` does.
 
 ## The result is data
 
@@ -630,13 +914,13 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 1 0 0 1 0 1 1 1]
 
 `.qc.sm[h] cmds` is a generator, so `.qc.draw` works on it: it runs one sequence of commands on the real stack
 and returns the trace. The draw here asks for exactly three steps (`steps` is a range, and without it a sequence
-is as long as the size of the example allows). `check` draws up to a hundred sequences and stops at the first
+is of any length up to the size of the example). `check` draws up to a hundred sequences and stops at the first
 with a row that is not `ok`.
 
 `pop` is wrong once three items are stacked, when it returns the bottom of the stack and not the top. The trace
-is the shortest sequence that shows it. With another seed the three pushes may carry other values, such as
-`1 0 0` with a `pop` that returns 1; what cannot change is that three pushes are needed and that the top and the
-bottom must differ.
+is the shortest sequence that shows it: three pushes are needed, and the top and the bottom must differ. With
+another seed the three pushes may carry other values, such as `1 0 0` with a `pop` that returns 1, and now and
+then a push and a pop that cancel each other are left in front of them.
 
 ## A system in another process
 

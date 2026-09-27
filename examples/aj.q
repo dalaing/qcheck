@@ -1,10 +1,12 @@
 / q examples/aj.q — an as-of join checked against a naive one, over generated quotes and trades. Run it from the
-/ repository root; COOKBOOK.md ("An as-of join against a naive one") talks through the output.
+/ repository root; EXAMPLES.md ("A generator of your own") and COOKBOOK.md ("An as-of join against a naive one")
+/ talk through the output.
 \l qc.q
 .qc.cfg[`db]:`                                   / no failure database: every run of this script searches afresh
 
-/ The quotes and the trades must share their symbols, or no trade would ever find a quote. So a symbol list is
-/ drawn first (one to three one-letter symbols) and both tables take their sym column from it.
+/ The quotes and the trades should share their symbols: drawn separately from any realistic universe, a trade
+/ would seldom find a quote. So a symbol list is drawn first (one to three one-letter symbols) and both tables
+/ take their sym column from it.
 syms:.qc.lst[1 3] .qc.symc["abc";1 1]
 
 / A table of at least one row: sym from the list s, time non-decreasing (mono: each row adds 0..9 to the one

@@ -11,6 +11,8 @@ r:ex "sm_table.q"
 et["examples/sm_table.q: exits 0 and finds the planted pop bug as a postcondition failure"; r; (0=code r) and (1=sum r like "FAIL falsified*") and 1=sum r like "qc.post"]
 r:ex "aj.q"
 et["examples/aj.q: exits 0 and finds the planted as-of-join bug"; r; (0=code r) and 1=sum r like "FAIL falsified*"]
+r:ex "suite.q"
+et["examples/suite.q: exits 1, the number of failures; three properties pass and the planted one fails"; r; (1=code r) and (1=sum r like "FAIL falsified*") and (3=sum r like "* 1  ok *") and 1=sum r like "* 0  falsified fail*"]
 r:ex "sm_ipc.q"
 $[any r like "could not start a child q*"; .t.t["examples/sm_ipc.q: skipped, no child q could be started (recorded, not hidden)"; 1b];
   et["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; r; (0=code r) and 1=sum r like "qc.post"]]

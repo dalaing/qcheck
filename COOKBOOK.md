@@ -1,8 +1,9 @@
 # qcheck cookbook
 
 Recipes for things a kdb+ programmer tests: a join, an upsert, a table written to disk, a tickerplant's `upd`,
-serialisation, bars. Each recipe has a bug planted in it, so that you see the report you would get, and then
-the fix, so that you see the passing run too.
+serialisation, bars, a sorted vector. Most recipes have a bug planted in them, so that you see the report you
+would get, and then the fix, so that you see the passing run too. In two of them the code is right and it is the
+rule that gives way.
 
 Each recipe goes the same way: what is being tested and which kind of rule fits it, the generator for the inputs,
 the property, the report and how to read it, and the fix. `README.md` explains the ideas and `EXAMPLES.md` the
@@ -20,6 +21,7 @@ requires the output shown.
 | [A tickerplant handler as a state machine](#a-tickerplant-handler-as-a-state-machine) | a model and an invariant | `sm`; a table as a command's input |
 | [Serialisation, over any value](#serialisation-over-any-value) | a round trip | `val`; narrowing a generator to what a rule covers |
 | [Per-minute bars](#per-minute-bars) | an oracle | `ts`, `mono` over timestamps |
+| [A sorted vector and its attribute](#a-sorted-vector-and-its-attribute) | an oracle, then an invariant | `atr` |
 
 ## An as-of join against a naive one
 
@@ -31,9 +33,9 @@ Here the roles are the other way round, so that the recipe runs as it stands: q'
 the hand-written join has the bug. It takes the *first* quote at or before the trade, where an as-of join takes
 the last.
 
-**The generators.** Two tables are needed, and they must share their symbols, or no trade would ever find a
-quote and the rule would pass without testing anything. So a list of symbols is drawn first and both tables draw
-their `sym` from it.
+**The generators.** Two tables are needed, and they should share their symbols. With symbols drawn separately
+for each table from any realistic universe, a trade would seldom find a quote, and the rule would pass while
+testing very little. So a list of symbols is drawn first and both tables draw their `sym` from it.
 
 ```q
 q)syms:.qc.lst[1 3] .qc.symc["abc";1 1]
@@ -93,12 +95,11 @@ of both tables and keys the result again, which looks right and keeps both copie
 share.
 
 **The generator.** `.qc.ktab[k;r] cols` draws a keyed table: `k` is the key column, `r` the range for the number
-of rows, and the key values within one table are distinct. The keys here come from 0 to 3, so that two tables
-drawn separately are likely to collide, which is the case the rule is about. A generator with keys from 0 to a
-million would pass this rule for a long time.
+of rows, and the key values within one table are distinct. The keys here come from 0 to 3, so a table has at
+most four rows, and two tables drawn separately are likely to collide, which is the case the rule is about.
 
 ```q
-q)kt:.qc.ktab[`k;0 5] `k`v!(.qc.int 0 3; .qc.int 0 9)
+q)kt:.qc.ktab[`k;0 4] `k`v!(.qc.int 0 3; .qc.int 0 9)
 q).qc.draw kt
 k| v
 -| -
@@ -129,10 +130,38 @@ property's parameters.
 **The report.** One row in each table, with the same key. The diff has no path, because the difference is in the
 tables as wholes: a `count` of 1 on one side and 2 on the other. The values did not matter, so they shrank to 0.
 
+**A wider range of keys.** With keys from 0 to a million, two tables drawn at random would almost never share
+a key, and you might expect the rule to pass for a long time. It does not:
+
+```q
+q)big:.qc.ktab[`k;0 4] `k`v!(.qc.int 0 1000000; .qc.int 0 9)
+q)bad:{[t;u] keys[t] xkey (0!t),0!u}
+q).qc.check[(big;big); {[t;u] .qc.eq[t upsert u; bad[t;u]]}];
+FAIL falsified after 45 tests, 4 shrinks (29 attempts, seed 7)
+t:
+  k| v
+  -| -
+  0| 0
+u:
+  k| v
+  -| -
+  0| 0
+qc.eq
+path why   a b
+--------------
+     count 1 2
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 0 1 0 0 0]
+```
+
+It took 45 tests where the narrow range took 4, and the counterexample is the same. `.qc.int` does not draw
+evenly. It draws small values, and the ends of its range, far more often than the values between, because that
+is where bugs are, and so two tables soon share a key. A narrow range says what is meant, but the bug does not
+hide behind a wide one.
+
 **The fix** is to join keyed tables as keyed tables: `,` on two keyed tables is an upsert.
 
 ```q
-q)kt:.qc.ktab[`k;0 5] `k`v!(.qc.int 0 3; .qc.int 0 9)
+q)kt:.qc.ktab[`k;0 4] `k`v!(.qc.int 0 3; .qc.int 0 9)
 q).qc.check[(kt;kt); {[t;u] .qc.eq[t upsert u; t,u]}];
 ok 100 tests (seed 7)
 ```
@@ -166,7 +195,8 @@ ok 100 tests (seed 7)
 **The report.** The rule fails on the first example, and the counterexample is a table with no rows: the
 difference is one of type, so no row is needed to show it. The `sym` column went in as symbols (type 11) and came
 back as an enumeration (type 20), which is what `.Q.en` is for. The two tables look the same at the console and
-are not the same to `~`, nor to a caller that joins the answer to a table of its own.
+join the same. They are not the same to `~`, and so not to any caller, or test, that compares what it read back
+with what it wrote.
 
 **The fix** is in the rule and not in the code. What is promised is that the *values* come back, so the property
 compares against `value sym`, and the second check passes. A failing property does not always mean the code is
@@ -179,7 +209,8 @@ That calls for a state machine (`README.md` explains them). The *model* is the s
 the table should hold: here, a count of the rows that have been fed. The rule is an *invariant*, checked after
 every call: the table has as many rows as the model has counted.
 
-This `upd` upserts by symbol, so a batch in which a symbol appears twice loses a row.
+This `upd` upserts by symbol, so the table keeps one row for each symbol, and a symbol that appears twice, in
+one batch or in two, loses a row.
 
 ```q
 q)TBL:([]sym:`symbol$(); px:`float$())
@@ -196,8 +227,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 1 0 0 0 0 1 1 1 0 0 0 0 0]
 
 **The commands.** There is one, so every column is a list of one item, made with `enlist`.
 
-- `gen` is the generator of the command's input, a batch of one to five rows. The symbols are one letter from
-  `"ab"`, so that repeats are common.
+- `gen` takes the model and returns the generator of the command's input, a batch of one to five rows. The
+  symbols are one letter from `"ab"`, so that repeats are common.
 - `run` makes the call on the real system.
 - `upd` moves the model on: the count goes up by the size of the batch. (This `upd` is the column of the command
   table; the `upd` in `run` is the handler.)
@@ -277,16 +308,17 @@ ok 100 tests (seed 7)
 ```
 
 The rule that stands is a statement of what JSON carries for you: tables of floats, booleans and strings, with
-at least a row, at full precision. Each of the three conditions came from a counterexample.
+at least a row, at full precision. The last two conditions came from counterexamples. The first is the set of
+types that JSON has: a long comes back as a float, and a symbol as a string.
 
 ## Per-minute bars
 
 **The rule.** An oracle once more. Bars are computed by one `select`, and the high of each bar can be checked
 against a second, simpler query that computes only the high. The bug: the high is taken with `first`.
 
-**The generator.** A table of trades in one session. `.qc.ts[from;to]` draws a timestamp in a window, and `mono`
-over it gives times that start somewhere in the session and move forward by up to a minute for each row, so
-that some minutes hold several trades and some trades cross into the next minute.
+**The generator.** A table of trades that starts within one session. `.qc.ts[from;to]` draws a timestamp in a
+window, and `mono` over it gives times that start somewhere in the session and move forward by up to a minute
+for each row, so that some minutes hold several trades and some trades cross into the next minute.
 
 ```q
 q)day:2024.01.02D09:30; close:2024.01.02D16:00
@@ -300,20 +332,24 @@ time                          px
 2024.01.02D09:39:31.901451871 50
 2024.01.02D09:39:31.901553860 9.04231
 q)bars:{select o:first px, h:first px, l:min px, c:last px by 0D00:01 xbar time from x}
-q).qc.check[trades; {b:0!bars x; mx:0!select mx:max px by 0D00:01 xbar time from x; all b[`h]>=mx`mx}];
+q).qc.check[trades; {b:0!bars x; mx:0!select mx:max px by 0D00:01 xbar time from x; .qc.eq[mx`mx; b`h]}];
 FAIL falsified after 3 tests, 11 shrinks (57 attempts, seed 7)
 x:
   time                          px
   --------------------------------
   2024.01.02D09:30:00.000000000 1
   2024.01.02D09:30:00.000000000 2
+qc.eq
+path why   a b
+--------------
+0    value 2 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 757503000000000000 0 43 8796093022208 1 0 0 0 2 0]
 ```
 
 **The report.** Two trades in one minute, the second at a higher price. One trade could not show the bug, since
 the first price of a bar of one trade is its highest, and two trades at falling prices could not either. The
 time shrank to the start of the session and the prices to 1 and 2, the simplest floats in the range that differ
-in the right direction.
+in the right direction. The diff says that the high of the first bar should be 2 and is 1.
 
 **The fix** is `max` for `first`.
 
@@ -321,13 +357,13 @@ in the right direction.
 q)day:2024.01.02D09:30; close:2024.01.02D16:00
 q)trades:.qc.tabr[1 50] `time`px!(.qc.mono[.qc.ts[day;close]; .qc.int (0;"j"$0D00:01)]; .qc.flt 1 100)
 q)bars:{select o:first px, h:max px, l:min px, c:last px by 0D00:01 xbar time from x}
-q).qc.check[trades; {b:0!bars x; mx:0!select mx:max px by 0D00:01 xbar time from x; all b[`h]>=mx`mx}];
+q).qc.check[trades; {b:0!bars x; mx:0!select mx:max px by 0D00:01 xbar time from x; .qc.eq[mx`mx; b`h]}];
 ok 100 tests (seed 7)
 ```
 
 A rule that needs no oracle at all would have caught the same bug: in every bar the high is at least the open
 and the close, and the low at most. Rules of that kind, true of every right answer, are cheap to write and worth
-keeping beside the oracle:
+keeping beside the oracle. They are weaker than it, since a high that is too high would pass this one:
 
 ```q
 q)day:2024.01.02D09:30; close:2024.01.02D16:00
@@ -342,3 +378,77 @@ x:
   2024.01.02D09:30:00.000000000 2
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 757503000000000000 0 24 16777216 1 0 0 0 2 0]
 ```
+
+## A sorted vector and its attribute
+
+**The rule.** Code that works on sorted data has two things to get right: the answer, and the `s#` attribute that
+lets q search the result quickly. Losing the attribute breaks nothing that a test of values would notice. The
+answers stay right and the queries get slow.
+
+**The generator.** `.qc.atr[a] g` draws from `g` and gives the value the attribute `a`, one of `s`, `u`, `p` and
+`g`. It makes the value fit first: for `s` and `p` it sorts, and for `u` it removes repeats. So a function that
+requires sorted input can be given nothing else.
+
+```q
+q)ts:.qc.atr[`s] .qc.lst[1 10] .qc.int 0 20
+q).qc.draw ts
+`s#0 0 1 1 2 2 6 8 16
+q).qc.minimal ts
+`s#,0
+q)at:{[ts;t] ts binr t}
+q).qc.check[(ts;.qc.int 0 20); {[ts;t] .qc.eq[-1+sum ts<=t; at[ts;t]]}];
+FAIL falsified after 1 tests, 1 shrinks (7 attempts, seed 7)
+ts: `s#,0
+t: 1
+qc.eq
+path why   a b
+--------------
+     value 0 1
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 1]
+```
+
+`at[ts;t]` is meant to be the index of the last item of `ts` at or before `t`. The oracle counts the items at or
+before `t` and takes one off. The bug is `binr` where `bin` was meant.
+
+**The report.** The times are the single item 0 and `t` is 1. The last item at or before 1 is at index 0, and
+`binr` says 1: it looks for the first item at or *after* `t`. With `t` equal to the item the two agree, so the
+counterexample has `t` one more than it.
+
+**The fix** is `bin`, and then a second function, which puts a time into the vector where it belongs:
+
+```q
+q)ts:.qc.atr[`s] .qc.lst[1 10] .qc.int 0 20
+q)at:{[ts;t] ts bin t}
+q).qc.check[(ts;.qc.int 0 20); {[ts;t] .qc.eq[-1+sum ts<=t; at[ts;t]]}];
+ok 100 tests (seed 7)
+q)ins:{[ts;t] (ts where ts<=t),t,ts where ts>t}
+q).qc.check[(ts;.qc.int 0 20); {[ts;t] ins[ts;t]~asc ts,t}];
+ok 100 tests (seed 7)
+q).qc.check[(ts;.qc.int 0 20); {[ts;t] .qc.eq[`s; attr ins[ts;t]]}];
+FAIL falsified after 0 tests, 0 shrinks (4 attempts, seed 7)
+ts: `s#,0
+t: 0
+qc.eq
+path why   a b
+--------------
+     value s
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 0]
+```
+
+The values are right: the second check passes. The third says that the result still has the attribute, and it
+fails on the first example. `~` does not look at attributes, so the rule about values could never have seen
+this. The pieces that `ins` joins are sorted, and their join has no attribute, because q does not check that a
+join of sorted vectors is sorted.
+
+**The fix** is to say so, with `` `s# ``, which checks the order as it sets the attribute:
+
+```q
+q)ts:.qc.atr[`s] .qc.lst[1 10] .qc.int 0 20
+q)ins:{[ts;t] `s#(ts where ts<=t),t,ts where ts>t}
+q).qc.check[(ts;.qc.int 0 20); {[ts;t] r:ins[ts;t]; (r~asc ts,t) and `s=attr r}];
+ok 100 tests (seed 7)
+```
+
+The same two rules fit a table with a sorted or a parted column. `.qc.schema` reads the attributes of a sample
+table, so a generated table with rows carries them as the sample does. The empty table carries none, and it is
+the first example a check tries, so a rule that says "the result keeps the attribute" has to allow for it.

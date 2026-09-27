@@ -1,5 +1,5 @@
 / q examples/tree.q — recursive data with .qc.rec. Run it from the repository root; EXAMPLES.md ("Trees") talks
-/ through the output.
+/ through the first two parts of the output, and "What the examples looked like" explains the third.
 \l qc.q
 .qc.cfg[`db]:`                                   / no failure database: every run of this script searches afresh
 

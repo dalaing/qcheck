@@ -6,11 +6,12 @@ piece at a time and tested with qcheck as it was written. There are five pieces,
 machine over the whole.
 
 It is told in the order it happened, wrong turns included. Several of the failures below are mistakes in the
-tests and not in the system, and one of the longest stretches ends with the discovery that the test had been
-unable to find anything. That is what using a property-based testing library is like, and it is more use to see
+tests and not in the system, and one of the longest stretches ends with the discovery that the test had passed
+a system known to be broken. That is what using a property-based testing library is like, and it is more use to see
 it than to see a tidy result.
 
-You need q and the first two sections of `README.md`. Nothing here depends on knowing the library well.
+You need q and `README.md`, its section on state machines included. Nothing here depends on knowing the library
+well.
 
 **The code.** Every change made along the way is kept as a file under `examples/mdp/steps/`, numbered in the
 order of the changes: `01_ref.q` is reference data as first written and `02_ref.q` as corrected. The versions
@@ -240,7 +241,8 @@ lambda in q does not see the locals of the function around it, so `out,:` made a
 appended to that, and `replay0` returned its own `out`, still empty.
 
 The smallest stream that has a trade in it found a bug in six lines of test code. The replay becomes a fold,
-which passes the enriched trades along instead of reaching for them:
+which passes the enriched trades along instead of reaching for them. (It also sets a sequence number back to 0,
+which is for what comes two sections on.)
 
 ```q
 / examples/mdp/walk.q
@@ -489,8 +491,9 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 Both fail on the empty fill log, before a single fill has been booked.
 
 The first is the test's mistake. `why` is `type`, 7 against 99: one side is a vector of quantities and the other
-is a dict from symbol to quantity, which is what `exec … by` gives. With no fills they cannot be equal, and with
-fills they could only have been compared by luck. Both sides become dicts, in the order of their keys.
+is a dict from symbol to quantity, which is what `exec … by` gives. A vector is never a dict, so this rule
+could not have passed on any fill log, and the empty one was only the first it was tried on. Both sides become
+dicts, in the order of their keys.
 
 The second is the piece's, and the message is the whole report: `inst`. The function that values the open
 positions names `inst` inside a q-SQL expression:
@@ -502,7 +505,8 @@ unreal:{[mk] exec sum inst[sym;`mult]*qty*(mk sym)-cost from pos}
 
 It is defined under `\d .mdp`, where the rest of the body would find `.mdp.inst` by that name. The expressions
 inside q-SQL do not: they look in the root, where there is no `inst`. (The table after `from` is found all the
-same, which is what makes this easy to miss.) The corrected version names its globals in full.
+same, which is what makes this easy to miss.) The corrected version names its globals in full. It also looks
+the multipliers up in a dict, because a keyed table indexed by a list of keys and a column is a `length` error.
 
 ### Three rules, one cause
 
@@ -644,8 +648,9 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 75750300000000000
 ```
 
 The empty day again, and still not a row in sight. The answers from disk have enumerated symbols (type 20)
-where the answers from memory have plain ones (11). They look the same at the console. They are different to
-`~`, and to a client that joins an answer to a table of its own. The queries promise one shape for any date, so
+where the answers from memory have plain ones (11). They look the same at the console and they join the same.
+They are different to `~` and to `type`, and so to any caller, or test, that compares an answer from disk with
+one from memory. The queries promise one shape for any date, so
 step 13 has the disk branch return the shape that memory returns:
 
 ```q
@@ -679,8 +684,8 @@ input is tried first and it is more often enough than one would think.
 
 ### Where things stood
 
-Eight bugs in five pieces, every one of them shown on an input that can be read at a glance, and nearly as many
-mistakes in the tests. Every rule so far has been about one piece alone.
+Eight bugs in five pieces, seven of them shown on an input that can be read at a glance and one found before
+anything was run, and four mistakes in the tests. Every rule so far has been about one piece alone.
 
 ## The assembly
 
@@ -789,7 +794,7 @@ reached:{[tr] c:tr`cmd;
   1b}
 ```
 
-Four of the five were reached, in between an eighth and a half of the runs. One label is missing from the table
+Four of the five were reached, in between a tenth and a half of the runs, give or take. One label is missing from the table
 because no trace ever had it: `late_timed_yesterday`. It cannot happen. The clock starts at the open, a late
 trade reaches thirty minutes back, and the close moves the clock to the *next* open, so a late trade is always
 timed today. A late trade for a day already closed is the case most likely to go wrong, and the machine as built
@@ -803,8 +808,8 @@ So the machine was given more to do: corrections, and late trades that fall on a
 ## Corrections
 
 Two operations that a real feed needs. `bust[id]` removes a trade by its sequence number and recomputes the bar
-of its minute from what is left. A trade timed on a day already closed goes into that day's partition. Both go
-through `amend`, which reads the closed day's trades back, changes them, recomputes the day's bars, writes both
+of its minute from what is left. A trade timed on a day already closed goes into that day's partition. On a day
+already closed, both go through `amend`, which reads the closed day's trades back, changes them, recomputes the day's bars, writes both
 again and maps the HDB again. The machine gains a `bust` command, and its late trades may now be timed on the
 day before.
 
@@ -937,7 +942,8 @@ But the book bought at 1 and sold at 2. It made 1, and the system says it made n
 invariant, and the part of it that failed is the balance of the book from piece 4. There is no diff because that
 part is a single boolean.
 
-Every piece is right on its own. Positions realise PnL correctly on every fill log. Renames resolve correctly.
+Every piece is right on its own. Positions realise PnL correctly on every fill log. Renames to a fresh name,
+which are the ones the machine makes, resolve correctly.
 The close writes and clears correctly. The merge is a *new* operation, which exists only because renames and
 positions and the day boundary meet, and as written it is right when the two positions point the same way and
 wrong when they do not. An opposite position under the new name is a partial close, and a close realises PnL.
@@ -982,8 +988,8 @@ path           why   a b
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
 ```
 
-With the merge fixed the machine ran further and stopped on enrichment. A quote for `A` on the second day. A
-rename of `A` to `N0`, in effect from the third. On the third day, a trade under the old name `A`. The system
+With the merge fixed the machine ran further and stopped on enrichment. On the second day, a rename of `A` to
+`N0`, in effect from the third, and then a quote for `A`. On the third day, a trade under the old name `A`. The system
 stores it as `N0` and enriches it from the cache, whose entry for `A` was rolled into `N0` at the close, as the
 contract says. The oracle's batch join went by the names the events were stored under, found no quote for `N0`,
 and said null.
@@ -996,8 +1002,13 @@ quotes under that day's names.
 It happened once more. Run with seeds taken from the clock, as a CI run would be, the machine stopped on a late
 trade. A quote under `A`; a rename of `A` to `N0` from tomorrow; the close; a late trade under `A`, timed
 yesterday. The system enriched it with the names in force when it *arrived*. The oracle used the names of the
-day the trade was *timed*. For a trade that arrives on its own day the two are the same, which is why three
-hundred runs at three seeds had agreed. The model now records the day each trade arrived.
+day the trade was *timed*. For a trade that arrives on its own day the two are the same, which is why the runs
+at seed 7 had agreed. The model now records the day each trade arrived.
+
+The same run failed a rule of piece 1 as well, the one that says rounding moves a price by no more than half a
+tick. At a price of 117.625 the distance came out a hair over half a tick, as it will with floats. The rule in
+`props.q` allows `1e-9`, and so does the rule that a round trip realises nothing. A comparison of floats that
+passed at one seed had simply not yet met the price that breaks it.
 
 A disagreement between the system and the oracle is a question, and the answer is not always that the system
 is wrong. Both of these were cases that the contract, as first written down, had not covered. Finding the
@@ -1015,7 +1026,7 @@ them is a *wrong answer*, which is why no rule that compares answers could see t
   already fooled once.
 
 The generators only ever drew names that exist and times that are not in the future, so the machine never asked
-these questions. The system now refuses each of them:
+these questions. The system now refuses the first three, and asks the HDB which days it holds:
 
 ```q
 q)system"l examples/mdp/steps/load_pieces.q"
@@ -1040,8 +1051,8 @@ nothing that the weaker one had missed, which is what one hopes for and cannot k
 
 ## The finished suite
 
-`examples/mdp/run.q` runs the sixteen rules that survived and the machine, three hundred tests each, with seeds
-from the clock, and exits with the number of failures:
+`examples/mdp/run.q` runs sixteen of the rules above (the sanity check on the bars is left out) and the machine,
+three hundred tests each, with seeds from the clock, and exits with the number of failures:
 
 ```
 $ q examples/mdp/run.q
@@ -1108,9 +1119,9 @@ everything.
 **The simplest input is the diagnosis.** A fill log of one row, two trades in one minute, a quote and a trade a
 nanosecond apart, four commands. Every time, reading the counterexample was most of understanding the bug.
 
-**Properties over a piece find most of the bugs, cheaply.** Eight of the twelve fell to a rule about one piece,
-six of them on an input of one or two rows and two on an empty one. When there are two ways to compute
-something, say that they agree.
+**Properties over a piece find most of the bugs, cheaply.** Eight of the twelve were found in a single piece:
+one while writing a generator, and seven by a rule, four of those on an empty input and three on an input of one
+or two rows. When there are two ways to compute something, say that they agree.
 
 **The state machine finds what lives between the pieces.** The bug that mattered most could not have been found
 by a rule about any piece, because it was in an operation that did not exist until three pieces met. It was

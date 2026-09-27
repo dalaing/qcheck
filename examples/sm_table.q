@@ -20,7 +20,8 @@ cmds:([cmd:`push`pop]
 
 / .qc.sm[h] cmds is a generator: drawing from it runs one sequence of commands. h holds the model's first value
 / and init, which empties the real stack before every sequence. The postconditions are the test, so the property
-/ given to check is :: and the report is the trace: the shortest sequence that makes pop answer wrongly.
+/ given to check is :: and the report is the trace: a short sequence that makes pop answer wrongly, nearly always
+/ the shortest there is (three pushes and a pop).
 -1 "a stack in a table, checked against a list (pop is wrong once three items are stacked):";
 .qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
 exit 0

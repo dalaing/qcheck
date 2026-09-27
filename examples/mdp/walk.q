@@ -1,5 +1,5 @@
 / examples/mdp/walk.q — what the sessions of WALKTHROUGH.md load beside the steps: the code that feeds the pipeline
-/ and asks it questions, and the longer properties. WALKTHROUGH.md shows each of these where it is first used.
+/ and asks it questions, and the longer properties. WALKTHROUGH.md shows the main ones where they are first used.
 / Load it from the repository root, after qc.q and the steps of the piece under test.
 
 / ---- piece 2: quotes and enrichment ----
@@ -7,7 +7,8 @@
 replay0:{[ev] .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; out:0#.mdp.enrich1 select time,sym,px,qty from ev;
   {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; out,:.mdp.enrich1 enlist `time`sym`px`qty#e]} each ev;
   out}
-/ the same as a fold: the enriched trades so far are passed along, not reached for
+/ the same as a fold: the enriched trades so far are passed along, not reached for (it also sets the feed's
+/ sequence number back to 0, which the steps from 04 on have)
 replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache;
   {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
 / the rule: enriching each trade as it arrives (rp replays the stream) agrees with enriching them all afterwards

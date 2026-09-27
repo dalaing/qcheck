@@ -11,9 +11,9 @@ x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
-It is one file with no dependencies. Shrinking is built in, so a generator you write needs no shrinker written
-for it. A failure is reported with its simplest input, a diff where two values were compared, and a line that
-reproduces it. Systems with state are tested as state machines.
+It is one file with no dependencies. A failure is reported with its simplest input, a diff where two values
+were compared, and a line that reproduces it. Cutting an input down needs nothing written by you, whatever the
+inputs are. A system that keeps state, such as a table that `upd` appends to, is tested with sequences of calls.
 
 ## What property-based testing is
 
@@ -26,9 +26,9 @@ A property-based test states a rule and leaves the library to look for an input 
 - a **property**, a function of one such input that returns `1b` when the rule holds: `{x~asc x}` is "the list
   is already sorted".
 
-`.qc.check[g;prop]` draws *examples* from the generator `g`, the simplest first and then random ones that grow,
-and runs the property on each; one run is a *test*. A hundred passing tests print `ok 100 tests`. The first failing test
-ends the run, and the library then *shrinks* the example that failed: it tries shorter lists and smaller numbers,
+`.qc.check[g;prop]` draws *examples* from the generator `g`, the simplest ones first and then random ones that
+grow, and calls the property on each; one call is a *test*. A hundred passing tests print a line that begins
+`ok 100 tests`. The first failing test ends the run, and the library then *shrinks* the example that failed: it tries shorter lists and smaller numbers,
 keeping every change that still fails, until nothing simpler does. What it reports is that *counterexample*.
 
 The rule in the transcript above is false on purpose, so that its report can be read a piece at a time:
@@ -36,7 +36,7 @@ The rule in the transcript above is false on purpose, so that its report can be 
 | in the report | what it says |
 |---|---|
 | `falsified after 5 tests` | five examples passed and the next one broke the rule |
-| `8 shrinks (36 attempts` | the shrinker tried 36 simpler inputs; 8 of them still failed, each simpler than the last |
+| `8 shrinks (36 attempts` | the shrinker tried 36 simpler candidates; 8 of them still failed, each simpler than the last |
 | `x: 1 0` | the counterexample: no unsorted list is shorter, and none of this length has smaller items |
 | `seed 7` | the seed of the run: the same seed draws the same examples |
 | `rerun:` | `.qc.again[]` tests this counterexample again, which is how you see that a fix worked; in the longer form, `gen` and `prop` stand for the generator and the property you gave, and the numbers reproduce the counterexample |
@@ -104,18 +104,18 @@ itself.
 ```q
 .qc.int -100 100                       / a long; shrinks toward 0
 .qc.int 1 1000 1                       / lo hi origin: shrinks toward 1
-.qc.int {0,x}                          / a range may be a function of size (0..100 over the run)
+.qc.int {0,x}                          / a range may be a function of the size, which grows over a run
 .qc.list .qc.int 0 9                   / a list; .qc.lst[3 5] g for a length range
 (.qc.int 0 9; .qc.sym)                 / a pair
 `name`age!(.qc.sym; .qc.int 0 120)     / a record: named inputs in the report
 '[neg; .qc.int 0 9]                    / a function of what a generator draws: compose them
 {n:.qc.draw .qc.int 1 9; .qc.draw .qc.lst[n,n] .qc.sym}   / a generator of your own is a function that draws
 .qc.one (.qc.int 0 9; .qc.sym)         / alternatives; .qc.freq[3 1] gs weights them
-.qc.such[{x>0}] .qc.int -9 9           / a filter (bounded retries, then a discard)
-.qc.t"j"                               / any atom type's full domain, nulls and infinities included
-.qc.t"jf"                              / a pair of them; .qc.tf"j" the finite domain, no null or infinity
+.qc.such[{x>0}] .qc.int -9 9           / a filter: it draws again until the condition holds
+.qc.t"j"                               / an atom of any type, drawn widely, nulls and infinities included
+.qc.t"jf"                              / a pair of them; .qc.tf"j" leaves out the null and the infinities
 .qc.ts[2024.01.02D09:30;2024.01.02D16:00] / a timestamp in a session; .qc.dates[from;to] a date
-.qc.val                                 / any q value at all: atoms, lists, dicts, tables (for serialisation round trips)
+.qc.val                                 / an arbitrary q value: atoms of every type, lists, dicts, tables
 .qc.flt 0 1                            / a float in a range; .qc.dbl is any finite double
 .qc.str                                / a string; .qc.sym a symbol over a bounded alphabet
 .qc.vec[0 5]"d"                        / a typed vector, here of dates
@@ -123,14 +123,14 @@ itself.
 .qc.tab `t`k`v!(.qc.mono[.qc.int 0 9;.qc.int 1 9]; .qc.uniq .qc.elem `a`b`c; .qc.dep {[r] .qc.int (r`t;99)})   / a sorted column, distinct keys, a column that sees the row
 .qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations
 .qc.atr[`s] .qc.list .qc.int 0 9         / a sorted vector carrying s#
-.qc.bulk[0 99;0 1000000]                 / a long vector of up to a million values in one block; .qc.btab[nr] cols a table of them
+.qc.bulk[0 99;0 1000000]                 / a long vector drawn as one block, for large data; .qc.btab[nr] cols a table of them
 .qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
 ```
 
 `.qc.draw g` draws a value from a generator, and `.qc.minimal g` gives its simplest value, which is where
-shrinking is heading. Names come in a long and a short form, the short one taking a range or a setting first:
-`list` and `lst`, `tab` and `tabr`, `sym` and `symc`, `check` and `chk`. `EXAMPLES.md` goes through the
-generators a few at a time, and `REFERENCE.md` lists them all.
+shrinking is heading. Many names come in pairs, one of which takes a range or a setting first: `lst`, `tabr`,
+`symc` and `chk`, beside `list`, `tab`, `sym` and `check`. `EXAMPLES.md` goes through the generators a few at a
+time, with what size is and what a filter costs, and `REFERENCE.md` lists them all.
 
 ## Properties
 
@@ -144,12 +144,13 @@ digit:.qc.int 0 9; prop:{x<10}
 .qc.checks `comm`sorted!((( .qc.int 0 9;.qc.int 0 9);{(x+y)=y+x}); (.qc.list .qc.int 0 9;{x~asc x}))   / a suite
 ```
 
-A property passes if it returns `1b`, a boolean list that is all `1b`, or `::`. Anything else fails it, and so
-does an error, which is reported with its message.
+A property passes if it returns `1b`, a boolean list that is all `1b` (an empty list counts), or `::`. Any other
+value fails it, the long `1` included, and so does an error, which is reported with its message.
 
-A run draws `n` examples, 100 unless you say otherwise. When a generator can produce fewer values than that, the
-run tries every one of them, simplest first, and says so: `ok 2 tests, exhausted` means that both values there
-are passed, which is a proof and not a sample.
+A run draws `n` examples, 100 unless you say otherwise. When a generator has few enough choices to make that
+every input can be tried within `n` tests, the run tries them all, simplest first, and says so:
+`.qc.check[.qc.bool;{1b}]` prints `ok 2 tests, exhausted`. There are two booleans and both passed, which is a
+proof and not a sample.
 
 Inside a property:
 
@@ -159,7 +160,7 @@ Inside a property:
 | `.qc.note x` | adds a value to the report of a failure |
 | ``.qc.classify[`big;x>5]`` | counts the examples for which the condition holds; the report shows the counts |
 | `.qc.collect x` | counts the examples by a value (keep the number of distinct values small) |
-| ``.qc.cover[`big;90;x>5]`` | requires the condition in 90% of examples; the run goes on until it can tell, and fails if not |
+| ``.qc.cover[`big;90;x>5]`` | requires the condition in 90% of examples; the run goes on until it can tell, to at most ten times `n` tests, and fails when it is confident the rate is lower |
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
@@ -177,12 +178,12 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 `.qc.report r` returns the lines, and `.j.j r` is JSON.
 
 Inside another test framework, `.qc.must[g;prop]` returns the result when the property passes and otherwise
-signals the whole report as one error (`'qc: FAIL falsified after 3 tests…`), so k4unit, qspec or a `.Q.trp`
-script sees one failure whose first line is the verdict. `.qc.main d` runs a suite and exits with the number of
-failures, for CI.
+signals the whole report as one error (`'qc: FAIL falsified after 3 tests…`), whose first line is the verdict.
+It is meant for a framework whose tests fail by signalling; it has not been tried inside k4unit, qspec or QUnit.
+`.qc.main d` runs a suite and exits with the number of failures, for CI.
 
-A check sets the seed of the process (`\S`). If your process depends on its own stream of random numbers, pin
-``.qc.cfg[`seed]``.
+A check sets the seed of the process (`\S`), and the state it had before cannot be put back. If your process
+depends on its own stream of random numbers, set `\S` again after a check.
 
 ## State machines
 
@@ -200,7 +201,7 @@ Each call the test may make is a *command*, a row of a keyed table whose columns
 | column | arguments | what it answers |
 |---|---|---|
 | `pre` | model | can this command run now? (no `pop` from an empty stack) |
-| `gen` | model | the generator its input is drawn from; `::` when it takes none |
+| `gen` | model | the generator its input is drawn from; it returns `::` when the command takes none |
 | `run` | input | the output of the real system, called with that input |
 | `post` | model before, input, output | is the output what the model predicts? |
 | `upd` | model before, input, output | the model after the call |
@@ -264,9 +265,9 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 - **`init` must reset everything.** It runs before every example, every shrink attempt and every replay, and a
   failure that depends on state left over from an earlier sequence cannot be replayed. A system in another
   process is reset over its handle (`examples/sm_ipc.q`).
-- **Start with two commands** and add the rest once those pass. A command needs only the columns it uses (the
-  others default to: always, no input, no call, true, model unchanged), and a `w` column weights the choice, so
-  that a `clear` can be rare.
+- **Start with two commands** and add the rest once those pass. The table needs only the columns that some
+  command uses, and a column left out is the default for every command: `pre` always, `gen` no input, `run` no
+  call, `post` true, `upd` the model unchanged. A `w` column weights the choice, so that a `clear` can be rare.
 
 `COOKBOOK.md` has a tickerplant handler tested this way, and `WALKTHROUGH.md` a machine over a whole pipeline.
 
@@ -275,7 +276,7 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 | read | for |
 |---|---|
 | `EXAMPLES.md` | a tour of the library a piece at a time, from drawing one value to testing a system in another process |
-| `COOKBOOK.md` | recipes for kdb+ tasks: an as-of join, an upsert, a splayed table, a tickerplant handler, serialisation, bars; each finds a planted bug and then shows the fix |
+| `COOKBOOK.md` | recipes for kdb+ tasks: an as-of join, an upsert, a splayed table, a tickerplant handler, serialisation, bars, a sorted vector; most find a planted bug and then show the fix |
 | `WALKTHROUGH.md` | the long example: a market data pipeline built in five pieces and tested as it was written, wrong turns included, with a state machine over the whole |
 | `REFERENCE.md` | every public name and every setting, a line each |
 | `examples/` | the scripts that the tour and the cookbook talk through, to run and to change; `examples/mdp/` is the pipeline |

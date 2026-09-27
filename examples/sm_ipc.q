@@ -3,8 +3,9 @@
 \l qc.q
 .qc.cfg[`db]:`                                   / no failure database: every run of this script searches afresh
 
-/ Start a second q on a port picked at random, and wait up to ten seconds for it to listen.
-port:5011+rand 900
+/ Start a second q, on a port taken from this process's id so that two runs at once do not meet (rand would give
+/ the same number in every fresh q), and wait up to ten seconds for it to listen.
+port:5011+.z.i mod 900
 system"q -p ",string[port]," -q </dev/null >/dev/null 2>&1 &"
 h:0; do[100; if[0=h; h:@[hopen;`$":localhost:",string port;0]; if[0=h; system"sleep 0.1"]]]
 if[0=h; -1 "could not start a child q"; exit 1]
