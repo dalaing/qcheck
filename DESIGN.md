@@ -721,7 +721,13 @@ promised and never written). The harness fails a test whose result is not a bool
 top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
 broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
 README.md, EXAMPLES.md, COOKBOOK.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
-(seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
+(seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. What that cannot
+see, so that nobody relies on it: prose claims outside a fence; timing; stderr from stdout (merged); the child's exit
+code; the value of a statement that ends in `;` or is an assignment (silenced — a wrong value can hide behind a
+trailing `;`); a line beginning `\` (skipped, so `q)\l x.q` is a no-op — the transcripts use `system"l …"`); output
+beyond 25×80, compared only up to the `..`; behaviour at any seed but 7; and a fence spelled with a trailing space,
+which is silently not a block. The cost of pinning (C8): a change to what any generator records rewrites every
+transcript that drew from it — about eighty blocks across the five documents at M12. Origin: README snippets verified
 by hand once, and a dispatcher the dogfooding had not reached.
 
 **C19 — `n` is a budget; the run stops when it has learned what it can.** One rule replaced three stopping

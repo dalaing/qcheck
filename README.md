@@ -12,6 +12,18 @@ x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
 
+## Getting started
+
+Copy `qc.q` anywhere and load it: `\l qc.q` from the directory it is in, or `\l /path/to/qc.q`. Nothing else is
+needed. Validated on kdb+ 5.0 on macOS; the measurements in `DESIGN.md` §2 were taken there.
+
+The test suite is `q t/run.q` from the repository root (about two minutes; `QC_FAST=1 q t/run.q` skips the slow
+doctests). It needs `q` on the PATH because the doctests and the examples run child q processes, and the example
+scripts write the failure database to `./.qc/` (gitignored) as any run does. `sh spikes/run.sh` re-runs the design's
+measurements (half a minute).
+
+There is no licence file yet; choose one before publishing the repository.
+
 ## Generators
 
 A generator is a function you call with `[]`; the library's take their configuration first, so supplying it
