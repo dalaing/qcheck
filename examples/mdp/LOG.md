@@ -1101,6 +1101,17 @@ state machine's trace, shrunk, is the reproduction a colleague would want; its `
 that saw the merge. `classify` told me what the runs had actually exercised, which is how run 1's clock design was
 caught and how run 2's budget was set.
 
+**What the machine cannot see.** Its oracle borrows from the system: `enrichb` for the batch enrichment,
+`barsb` for the batch bars, `canon` for names, `round` and the lot sizes from `inst`. A bug in any of those would
+be mirrored on both sides and pass. That is defensible only because the pieces' own properties test each of them
+against something else (the incremental enrichment against the batch, the fold against the select, `canon`
+against its own idempotence) — but those properties run with no renames, no busts and no day boundary. Some
+postconditions are weak too: `fill` asserts nothing (the invariant checks positions after every step, which is
+why it can afford to); `bust` of a closed day's trade checks only that the id is not in memory, which it never
+was, so a broken partition rewrite is caught only by a later `query` — the reason entry 20 needed three hundred
+runs of sixty steps; `trade` compares the bid only; and the invariant covers today, never the disk. The machine
+tests the seams between incremental and batch, live and closed; it does not test the batch definitions themselves.
+
 **What qcheck did not do, and what I changed.** It did not tell me the budget: three-command conjunctions need
 more than a hundred runs of twenty steps, and I learned that from a sabotage, not from a report (entry 20). A
 `cover` requirement on the seams would have. It did not, at first, show the command that raised — an error in
