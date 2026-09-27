@@ -1,6 +1,7 @@
 # qcheck — property-based testing for q
 
-*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
+*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README's earlier
+"4.0 or later" was never verified and is now stated as such); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in

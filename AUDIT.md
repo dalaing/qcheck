@@ -355,3 +355,26 @@ failing when the value is not a table.
    or guarded; `lst`/`sm` cap in floats; say in `unif`'s comment what the full range misses.
 8. [x] **Docs.** Pitfall 28's text; C12's state-machine exception; the `qc.q:47` comment; the `dd` message for
    non-configurable generators; `TX`'s seed.
+
+---
+
+## M7 pass (2026-09-27)
+
+The conventions rerun over the M7 code (`mono`, `uniq`, `dep`, `atr`, `mark`, `cands`, `udraw`, `rowd`, `tabx`,
+`schema`, `schx`, `colg`, and `t/tables.q`):
+- C1 canary on every new generator (contracts c10 over the six registry rows). `schema` is a constructor, as
+  `lin` is; the generator it returns carries the canary (`t/tables.q`).
+- C2 every guard is a cond; the one `and` (`count[at] and count rs`) has independent terms.
+- C5 `t/names.q` green; five keyword collisions were caught while writing (`asc`, `attr`, `like`, `cols`, `vs`)
+  and are recorded in the M7 paragraph.
+- C9 the per-table state (`CS`, `UR`, `US`) is saved before and restored after every table, on the error path
+  through the trap in `tabx`; it is not part of `reset` because it is per table, not per example.
+- C13 rows stay spans; constrained columns draw inside the row span.
+- C14 usage errors for a bad attribute, a non-function `dep`, a key that is not a column, a non-table schema,
+  `p#` with `s#`. Bare errors that remain: none found.
+- C16 `ktab`'s `k` accepts an atom (`(),k`); `atr`'s `a` is an atom by nature.
+- C20 `dep`'s `f` goes through `need`.
+- C21 `cands` uses `wid` for the range width.
+- Pitfall 6 (dict form) the row accumulator behind a `::` seed; pitfall 28 `dct` at `tabr`, `ktab`; pitfall 30
+  `lst`'s seed carries the rows.
+- Not done: `tab`'s empty table stays untyped (documented in §1.3; `schema` is the typed way).

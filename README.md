@@ -1,7 +1,8 @@
 # qcheck
 
 Property-based testing for q/kdb+, with integrated shrinking in the style of Hypothesis, failure reports in
-the style of Hedgehog, and state-machine testing. One file, no dependencies, kdb+ 4.0 or later.
+the style of Hedgehog, and state-machine testing. One file, no dependencies; validated on kdb+ 5.0 (it uses
+`binr`, `.Q.trp`, `.Q.sbt` and `'[;]` composition, so 3.5 or later should work, unverified).
 
 ```q
 q)\l qc.q
