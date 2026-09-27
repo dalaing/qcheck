@@ -3,16 +3,17 @@
 / processes (each ends with exit). loaded by t/run.q
 ex:{[f] system "sh -c 'q examples/",f," -q </dev/null 2>&1; echo EXIT $?'"}      / (a system command that begins with "q " prints instead of returning; sh -c captures)
 code:{"J"$5_last x}
+et:{[nm;r;ok] .t.t[nm;ok]; if[not ok; -1 "  ",/:-8#r];}                          / a failing example shows its last lines: the FAIL line alone says nothing
 r:ex "reverse.q"
-.t.t["examples/reverse.q: exits 0, the involution holds, the two planted properties fail"; (0=code r) and (1=sum r like "ok *") and 2=sum r like "FAIL falsified*"]
+et["examples/reverse.q: exits 0, the involution holds, the two planted properties fail"; r; (0=code r) and (1=sum r like "ok *") and 2=sum r like "FAIL falsified*"]
 r:ex "tree.q"
-.t.t["examples/tree.q: exits 0, leaves=1+nodes and the classify property pass, depth<4 fails"; (0=code r) and (2=sum r like "ok *") and 1=sum r like "FAIL falsified*"]
+et["examples/tree.q: exits 0, leaves=1+nodes and the classify property pass, depth<4 fails"; r; (0=code r) and (2=sum r like "ok *") and 1=sum r like "FAIL falsified*"]
 r:ex "sm_table.q"
-.t.t["examples/sm_table.q: exits 0 and finds the planted pop bug as a postcondition failure"; (0=code r) and (1=sum r like "FAIL falsified*") and 1=sum r like "qc.post"]
+et["examples/sm_table.q: exits 0 and finds the planted pop bug as a postcondition failure"; r; (0=code r) and (1=sum r like "FAIL falsified*") and 1=sum r like "qc.post"]
 r:ex "aj.q"
-.t.t["examples/aj.q: exits 0 and finds the planted as-of-join bug"; (0=code r) and 1=sum r like "FAIL falsified*"]
+et["examples/aj.q: exits 0 and finds the planted as-of-join bug"; r; (0=code r) and 1=sum r like "FAIL falsified*"]
 r:ex "sm_ipc.q"
-$[any r like "could not start a child q*"; -1 "  examples/sm_ipc.q skipped: no child q could be started";
-  .t.t["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; (0=code r) and 1=sum r like "qc.post"]]
+$[any r like "could not start a child q*"; .t.t["examples/sm_ipc.q: skipped, no child q could be started (recorded, not hidden)"; 1b];
+  et["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; r; (0=code r) and 1=sum r like "qc.post"]]
 r:ex "mdp/run.q"
-.t.t["examples/mdp/run.q: exits 0; every property and the state machine pass (LOG.md's final system)"; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*state_machine_60_steps*"]
+et["examples/mdp/run.q: exits 0; every property and the state machine pass (LOG.md's final system)"; r; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*state_machine_60_steps*"]
