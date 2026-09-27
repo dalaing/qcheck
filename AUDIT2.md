@@ -103,12 +103,12 @@ Clean. A bulk span is length plus blocks (`beg`blk`, `qc.q:124,126`) and `pblk` 
 columns draw inside the row span; `dep`'s spec is drawn through `draw`.
 
 ### C14 — the error vocabulary is closed and classified
-- [ ] **break** bare q errors at phase-2 boundaries (each reproduced): `ts`/`dates` given non-temporal bounds
+- [x] **break** bare q errors at phase-2 boundaries (each reproduced): `ts`/`dates` given non-temporal bounds
   (`qc.q:181-182`, `type`); `btab` given a non-char type in a column spec (`:127`, `type`); `atr[`u]` over a vector
   with repeats (`:203`, `u-fail` — `atr` sorts for `s` and `p` but does not make `u` distinct); two `mono` columns
   of different types (`:214-215`, `type`, the C3/pitfall-6 bug above); `uniq` over a generator that draws dicts
   (`:209`, `type`); `colg` on a table-valued column (`:232`, `type`).
-- [ ] **spirit** `qc.q:124,126` — `bulk[0 9;(0W-5;0W)]` reports `qc: range`, which is true only because the cap
+- [x] **spirit** `qc.q:124,126` — `bulk[0 9;(0W-5;0W)]` reports `qc: range`, which is true only because the cap
   arithmetic wrapped (see C21); the message blames the user's range.
 - `qc.inv` is in `FS` (`:289`) and `t/names.q` sees it; `must`'s `qc: FAIL …` is documented. Clean otherwise.
 
@@ -143,7 +143,7 @@ Clean. `dep`'s `f` and `sm`'s `inv` go through `need`; `w` is checked numeric an
 functions with `~`; `colg`'s `f$` is an enumeration, not an application.
 
 ### C21 — arithmetic on choice bounds is done in floats, or guarded
-- [ ] **exposed** `qc.q:124,126` — `nr[1]&:nr[0]+sz*1000` is long arithmetic; near `0W` it wraps and the range
+- [x] **exposed** `qc.q:124,126` — `nr[1]&:nr[0]+sz*1000` is long arithmetic; near `0W` it wraps and the range
   fails as `qc: range` (reproduced). `"j"$("f"$nr 0)+sz*1000` saturates instead.
 - [x] **exposed** `qc.q:64` `unifn` — the same `?[n?2;…]` bug as under C3; the overflow branch it guards is
   right, the guard's result is not usable.
@@ -310,10 +310,10 @@ as `0=n?8`, a boolean.
 
 - [ ] **Pitfall candidates 33–42** are audited in Part 2 above and need writing into `DESIGN.md` §4: each is a q
   fact that bit once and is recorded only in a §3 milestone paragraph, a commit message, or this audit.
-- [ ] `qc.q:200` `mono`'s comment says "adds a delta drawn from g"; a `g` that can go negative makes the column
+- [x] `qc.q:200` `mono`'s comment says "adds a delta drawn from g"; a `g` that can go negative makes the column
   unsorted with no warning (reproduced: `mono[int 0 9;int -9 9]` is unsorted). The design (§1.3) says "sorted by
   construction". Either `mono` clamps the delta at zero, or the design says the delta must be non-negative.
-- [ ] `qc.q:203` `atr[`u]` neither dedupes nor checks; the `u-fail` is q's, not the library's (C14 above).
+- [x] `qc.q:203` `atr[`u]` neither dedupes nor checks; the `u-fail` is q's, not the library's (C14 above).
 - [ ] `t/scale.q:26` test name says "shrinks to two elements 99 and 1 or one of 99..." — its assertion is
   `3>=count`; the name should say what is asserted.
 

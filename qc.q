@@ -121,9 +121,10 @@ list:lst[0 0W]
 
 / bulk[r;nr]: a long vector of a length in nr with values in r, recorded as one block (M8): 1e6 values in
 / milliseconds, and a block shrinks by deleting chunks (pblk) as well as by its values. span = length + block.
-bulk:{[r;nr;d] dd[d;".qc.bulk[r;nr]"]; nr:rng nr; nr[1]&:nr[0]+sz*1000; beg`blk; n:ch[nr;`u]; v:chn[r;n;::]; end[]; v}   / the length is capped at lo+1000*size
+bulk:{[r;nr;d] dd[d;".qc.bulk[r;nr]"]; nr:rng nr; nr[1]&:"j"$("f"$nr 0)+sz*1000; beg`blk; n:ch[nr;`u]; v:chn[r;n;::]; end[]; v}   / the length is capped at lo+1000*size (in floats, C21)
 / btab[nr] cols: a table of blocks with one drawn row count; a column is a range or (type char; range)
-btab:{[nr;cg;d] dd[d;".qc.btab[nr] cols"]; if[not dct cg; '"qc: btab needs a dict of column ranges"]; nr:rng nr; nr[1]&:nr[0]+sz*1000; beg`blk; n:ch[nr;`u];
+btab:{[nr;cg;d] dd[d;".qc.btab[nr] cols"]; if[not dct cg; '"qc: btab needs a dict of column ranges"]; nr:rng nr; nr[1]&:"j"$("f"$nr 0)+sz*1000; beg`blk; n:ch[nr;`u];   / (cap in floats, C21)
+  if[not all {$[0h<>type x; 1b; -10h<>type x 0; 0b; (x 0) in key t]} each value cg; '"qc: btab: a column is a range or (type char; range)"];
   cs:{[n;s] $[0h=type s; (s 0)$chn[s 1;n;::]; chn[s;n;::]]}[n] each value cg; end[]; flip key[cg]!cs}
 / ---- recursion: rec[k;leaf;node] spends the size budget exactly; shape law = fresh-draw weights ------
 conv:{[a;b] {[a;b;r] sum a[til 1+r]*b[r-til 1+r]}[a;b] each til count a}
@@ -178,8 +179,9 @@ tf:tin
 t:tin,key[spcs]!{[sp;g] spc[sp;g]}'[value spcs;tin key spcs]; t["g"]:gid; t["c"]:chr; t["s"]:sym   / (spc'[a;b] would be a projection of the each, not 13 results)
 / ts[from;to], dates[from;to]: one timestamp or date in a window, the start simplest (A26); a monotone series is
 / mono[ts[a;b];int 0 60000000000] in a table, or atr[`s] list ts[a;b]
-ts:{[a;b;d] dd[d;".qc.ts[from;to]"]; "p"$ch[("j"$"p"$a;"j"$"p"$b;"j"$"p"$a);::]}
-dates:{[a;b;d] dd[d;".qc.dates[from;to]"]; "d"$ch[("j"$"d"$a;"j"$"d"$b;"j"$"d"$a);::]}
+tmb:{[a;what] if[not type[a] in -12 -14 -15h; '"qc: ",what," takes timestamps or dates as bounds"]}   / (a datetime casts too)
+ts:{[a;b;d] dd[d;".qc.ts[from;to]"]; tmb[a;"ts"]; tmb[b;"ts"]; "p"$ch[("j"$"p"$a;"j"$"p"$b;"j"$"p"$a);::]}
+dates:{[a;b;d] dd[d;".qc.dates[from;to]"]; tmb[a;"dates"]; tmb[b;"dates"]; "d"$ch[("j"$"d"$a;"j"$"d"$b;"j"$"d"$a);::]}
 / val: an arbitrary q value — rec over the full-domain zoo with list, dict, table and keyed-table nodes (A27), for
 / properties about serialisation, IPC, formatting and match itself; -9!-8!x round-trips everything it makes.
 / Children that are same-type atoms arrive as a typed vector and conforming dicts as a table: both already values.
@@ -197,10 +199,11 @@ vec:{[r;c;d] dd[d;".qc.vec[r] c"]; c$draw lst[r] t c}            / typed even wh
 / (an elem, or an int with a small constant range) by indexing the values not yet used, one choice and no retries,
 / with the row count capped by the set (A19); otherwise by retrying g and discarding when tries run out.
 / dep f: f receives the row so far (a dict of the columns before it, in column order) and returns a spec.
+/ The delta must be non-negative: a negative one would break the promise in the name, so it is a usage error.
 mono:{[b;g;d] dd[d;".qc.mono[base;delta]"]; draw b}
 uniq:{[g;d] dd[d;".qc.uniq g"]; draw g}
 dep:{[f;d] dd[d;".qc.dep f"]; need[f;"dep's f"]; draw f (0#`)!()}
-atr:{[a;g;d] dd[d;".qc.atr[a] g"]; if[not a in `s`u`p`g; '"qc: atr takes one of `s`u`p`g"]; v:draw g; a#$[a in `s`p; asc v; v]}   / s and p need sorted input (A23)
+atr:{[a;g;d] dd[d;".qc.atr[a] g"]; if[not a in `s`u`p`g; '"qc: atr takes one of `s`u`p`g"]; v:draw g; a#$[a in `s`p; asc v; a=`u; distinct v; v]}   / s and p need sorted input, u distinct: the generator makes the value fit its attribute (A23)
 mark:{[g] $[104h<>type g; `; (f:first value g)~mono; `mono; f~uniq; `uniq; f~dep; `dep; `]}
 / the finite candidate set of a generator, or :: — an elem's list, an int's constant range of at most 1024 values
 cands:{[g] $[104h<>type g; ::; (f:first value g)~elem; (),value[g] 1; not f~int; ::; type[value[g] 1] within 100 112; ::; 1024<w:wid . 2#r:rng value[g] 1; ::; r[0]+til "j"$w]}
@@ -209,11 +212,12 @@ cands:{[g] $[104h<>type g; ::; (f:first value g)~elem; (),value[g] 1; not f~int;
 CS:(enlist `)!enlist (::); UR:(0#`)!(); US:(0#`)!()
 udraw:{[k;g] $[k in key UR; [rem:UR k; v:rem ch[(0;-1+count rem;0);`u]; UR[k]:rem except v; v];
   [n:0; while[n<cf`tries; v:draw g; if[not any v~/:1_US k; US[k]:US[k],enlist v; :v]; n+:1]; '"qc.discard"]]}   / (match, not in: a dict has no place on in's left; 1_: the seed)
+mdel:{[g] v:draw g; if[v<0; '"qc: mono: the delta must be non-negative"]; v}   / a mono column's step
 / one row: the columns in order, a constrained column with the state and the row so far. The row grows behind a ::
 / seed (a dict amended with one symbol has a typed value list and refuses the next long: pitfall 6). d: via draw
 rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
   while[j<count c; k:c j; g:cg k; a:$[`=ks k; ::; value g];
-    v:$[`mono=ks k; $[k in key CS; CS[k]+draw a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; draw g];
+    v:$[`mono=ks k; $[k in key CS; CS[k]+mdel a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; draw g];
     if[`mono=ks k; CS[k]:v]; r[k]:v; j+:1]; 1_r}
 / the table core: rows through lst; em gives typed empty columns (a schema knows them, a column dict cannot, so
 / tab's empty table is untyped); at (col -> attribute) is applied after the rows, sorting by the s and p columns

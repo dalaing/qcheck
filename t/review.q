@@ -45,4 +45,7 @@ r:.qc.chk[q;.qc.t"j";{$[null x; 1b; x<1000000]}]
 .t.t["C20 checks entries must be (spec;prop) pairs"; ((@[.qc.chks[q];enlist[`p]!enlist {x};{x}]) like "qc: checks*") and (@[.qc.chks[q];enlist[`p]!enlist .qc.int 0 9;{x}]) like "qc: checks*"]
 .t.t["C20 :: is not a function: sized, such and sm hooks refuse it"; ((@[.qc.draw;.qc.sized (::);{x}]) like "qc: sized*") and ((@[.qc.draw;.qc.such[::] .qc.int 0 9;{x}]) like "qc: such*") and (@[.qc.draw;.qc.sm[`m0`init!(0;::)] ([cmd:enlist `a] run:enlist {[a] ::});{x}]) like "qc: init*"]
 .t.t["C20 the :: property is still the 'generation must not fail' property"; (.qc.chk[q;.qc.int 0 9;::])`ok]
+/ AUDIT2 (C14): phase-2 boundaries say qc: too
+.t.t["C14 ts and dates refuse non-temporal bounds; btab refuses a non-char type"; ((@[.qc.draw;.qc.ts[`a;`b];{x}]) like "qc: ts*") and ((@[.qc.draw;.qc.dates[1;2];{x}]) like "qc: dates*") and (@[.qc.draw;.qc.btab[1 1] enlist[`a]!enlist (5;0 9);{x}]) like "qc: btab*"]
+.t.t["C14 mono refuses a negative delta, atr u makes the value distinct"; ((@[.qc.draw;.qc.tabr[3 3] enlist[`t]!enlist .qc.mono[.qc.int 0 9;.qc.int -9 -1];{x}]) like "qc: mono*") and (`u=attr v) and v~distinct v:.qc.draw .qc.atr[`u] .qc.lst[10 10] .qc.int 0 1]
 .qc.cfg[`v]:1

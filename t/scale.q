@@ -33,4 +33,5 @@ r:.qc.chk[q;.qc.btab[0 10000] `k`v!(0 9;0 9);{not any 5<x`v}]
 r:.qc.chk[q;.qc.btab[0 100000] `k`v!(0 9;("d";0 9));{all x[`v]<2000.01.09}]
 .t.t["btab: over up to 1e5 rows, a date bug shrinks to one row at the boundary"; (1=count r[`x]`x) and 2000.01.09=first r[`x][`x;`v]]
 .t.t["btab refuses a non-dict"; (@[.qc.draw;.qc.btab[1 1] 5;{x}]) like "qc: btab*"]
+.t.t["bulk: the length cap does not wrap near 0W (the range stays valid; C21)"; 0W=(.qc.rng[(0W-5;0W)]) 1]
 .qc.cfg[`v]:1
