@@ -50,6 +50,10 @@ simplest value fails its filter discards), and see what a recorded choice vector
 
 ## Properties
 
+A *spec* is anything `.qc.draw` interprets: a generator (a function that draws), a list or dict of specs, or a
+constant. Names come in a long and a short form — `check`/`chk`, `list`/`lst`, `sym`/`symc`, `tab`/`tabr` — where
+the short one takes a range or configuration first.
+
 ```q
 spec:.qc.int 0 9; prop:{x<10}
 .qc.check[spec; prop]                  / a list spec applies prop . x; a dict spec by parameter name; else prop @ x
@@ -82,7 +86,7 @@ path why   a b
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
 
-The result is a dict (`ok why n shrinks attempts seed x err bt notes cover choices hist disc stale`); the
+The result is a dict (`ok why stop n shrinks attempts seed x err bt notes cover choices hist disc stale`); the
 report is data too (`.qc.report r` returns the lines), and `.j.j r` is JSON. Failures are saved under `.qc/`
 and replayed first next time; `.qc.again[]` rechecks the last failure.
 
@@ -127,8 +131,10 @@ the day boundary meet). Every transcript, including the buggy steps, is executed
 ## Files
 
 ```
-qc.q          the library            examples/   reverse.q tree.q sm_table.q sm_ipc.q aj.q
-COOKBOOK.md   recipes for kdb tasks    examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
-DESIGN.md     design, conventions,   t/          q t/run.q runs the tests and prints one table
-              measurements, pitfalls spikes/     sh spikes/run.sh re-runs the design's measurements
+qc.q           the library                          examples/      reverse.q tree.q sm_table.q sm_ipc.q aj.q
+EXAMPLES.md    a tour in verified transcripts       examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
+COOKBOOK.md    recipes for kdb tasks                t/             q t/run.q runs the tests and prints one table (~2 min)
+DESIGN.md      design, conventions,                 tools/         doc_child.q, the child q the doctests run
+               measurements, pitfalls               spikes/        sh spikes/run.sh re-runs the design's measurements
+AUDIT.md AUDIT2.md REVIEW.md   audits of the code   .qc/           the failure database, written by runs, gitignored
 ```
