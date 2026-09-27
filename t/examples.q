@@ -14,3 +14,5 @@ r:ex "aj.q"
 r:ex "sm_ipc.q"
 $[any r like "could not start a child q*"; -1 "  examples/sm_ipc.q skipped: no child q could be started";
   .t.t["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; (0=code r) and 1=sum r like "qc.post"]]
+r:ex "mdp/run.q"
+.t.t["examples/mdp/run.q: exits 0; every property and the state machine pass (LOG.md's final system)"; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*state_machine_60_steps*"]

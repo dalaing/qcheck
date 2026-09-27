@@ -1,7 +1,7 @@
 # qcheck — property-based testing for q
 
 *Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README's earlier
-"4.0 or later" was never verified and is now stated as such); M1–M11 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, recipes in `COOKBOOK.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
+"4.0 or later" was never verified and is now stated as such); M1–M12 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, recipes in `COOKBOOK.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
@@ -546,6 +546,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
 COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
+examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12)
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
 ```
@@ -880,6 +881,23 @@ and JSON over `val`, per-minute bars over `mono` and `ts`. Each recipe's planted
 minimum. Writing them found nothing new in the library; two recipes taught q facts the reader meets anyway (the
 empty table is the smallest witness of enumeration; JSON's smallest non-round-tripping value is a byte).
 
+**M12 — the worked example.** Done: `examples/mdp/` — a market data pipeline (reference data, quotes and
+enrichment, per-minute bars, positions and PnL, end of day to a splayed partition, then corrections and renames)
+built one piece at a time with a property suite per piece, then a state machine over the assembled system with the
+event log as its model and a full recompute as its oracle. Developed honestly and logged as it went in `LOG.md`,
+nothing planted: every step, including the buggy ones, is a file under `steps/`, and every transcript in the log
+is executed against it by `t/doctest.q`. Twelve findings surfaced; eight fell to a property over one piece on a
+one- or two-row example, one to the state machine on a four-step trace (a long under an old name and a short under the
+new one merge at the close into a flat position with no realised PnL: a bug that exists only where renames,
+positions and the day boundary meet, and that no piece's tests could see). What it changed in the library: `tab`'s
+empty table is typed by a probe (M7's limitation, removed); an error in a state machine's `run` or `post` notes the
+trace *including* the step that raised; a model that holds tables is left out of the trace print; `eq` reports
+`keytype` for two empty dicts whose keys differ in type. What it taught about using it: the default budget does
+not find three-command conjunctions (a sabotage showed it: 100×20 missed, 300×60 found and shrank it to three
+steps), `classify` over the trace is how to know what a machine has reached, and the test harness is code (a reset
+that deleted every global, pitfall 43; a generator that could not reach its seam). `run.q` runs the final system's
+properties and machine under `.qc.main` and is run by `t/examples.q`.
+
 ---
 
 ## 4. Pitfalls
@@ -978,6 +996,9 @@ For the implementer:
     empties the directory afterwards leaves the process with a working directory that is gone and tables that
     point at partitions that are gone. Empty the contents, not the directory, and delete the mapped tables
     (entry 19 again).
+45. `f each` (and `f'[xs;a]`) over an *empty* typed list returns a general empty list, `()`, not a typed one: a
+    column mapped that way loses its type on the empty table, and two empty dicts then differ in key type (which
+    `eq` now names). Leave an empty table alone: `$[count t; update c:f'[c] from t; t]` (`LOG.md` entry 21).
 ---
 
 ## 5. Review rounds

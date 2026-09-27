@@ -119,11 +119,16 @@ See `EXAMPLES.md` for a tour in verified transcripts, and `COOKBOOK.md` for reci
 keyed tables, a splayed table read back, a tickerplant handler as a state machine, serialisation over any value,
 per-minute bars — each with a planted bug found and shrunk.
 
+`examples/mdp/LOG.md` is the long form: a market data pipeline built in five pieces, each with its properties as
+it was written, then a state machine over the whole with a full-replay oracle — developed honestly and logged as
+it went, the bugs being whatever surfaced (twelve findings, one of them only visible where renames, positions and
+the day boundary meet). Every transcript, including the buggy steps, is executed by the suite.
+
 ## Files
 
 ```
 qc.q          the library            examples/   reverse.q tree.q sm_table.q sm_ipc.q aj.q
-COOKBOOK.md   recipes for kdb tasks
+COOKBOOK.md   recipes for kdb tasks    examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
 DESIGN.md     design, conventions,   t/          q t/run.q runs the tests and prints one table
               measurements, pitfalls spikes/     sh spikes/run.sh re-runs the design's measurements
 ```
