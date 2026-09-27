@@ -219,14 +219,23 @@ rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
   while[j<count c; k:c j; g:cg k; a:$[`=ks k; ::; value g];
     v:$[`mono=ks k; $[k in key CS; CS[k]+mdel a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; draw g];
     if[`mono=ks k; CS[k]:v]; r[k]:v; j+:1]; 1_r}
-/ the table core: rows through lst; em gives typed empty columns (a schema knows them, a column dict cannot, so
-/ tab's empty table is untyped); at (col -> attribute) is applied after the rows, sorting by the s and p columns
+/ probe g: its minimal value, drawn outside the example (choices, spans, cursor and mode saved and restored), so a
+/ table with no rows can still type its columns from what they would have drawn. A generator that cannot give a
+/ minimal value (a dep over an empty row, a filter) leaves its column untyped.
+probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
+unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11;}   / what probe saved
+empties:{[xs] {[v] $[(::)~v; (); 0>type v; 0#enlist v; ()]} each xs}      / each probed value: an atom's typed empty (0# of a symbol atom is nyi; of a 1-vector it is fine), else general. (xs, not vs: vs is a keyword)
+emtab:{[cg;p] key[cg]!$[(::)~p; count[cg]#enlist (); empties value p]}     / typed empties from a probed row, or untyped when the probe failed
+/ the table core: rows through lst; em gives typed empty columns (a schema knows them; a column dict probes them, so
+/ tab's empty table is typed where a minimal draw is possible); at (col -> attribute) is applied after the rows,
+/ sorting by the p then s columns
 tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
-  $[all `=value ks; rs:draw lst[r] cg;
+  $[all `=value ks; [if[(::)~em; em:emtab[cg;probe cg]]; rs:draw lst[r] cg];   / the probe is one minimal row: a dep sees the columns before it
     [s0:(CS;UR;US); CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!(); uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
      if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
+     if[(::)~em; p:probe rowd[cg;ks]; if[(::)~p; p:key[cg]!{[ks;k;g] $[`=ks k; probe g; `dep=ks k; ::; probe value[g] 1]}[ks]'[key cg;value cg]]; em:emtab[cg;p]];   / a row whose dep fails: type the other columns alone
      rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] CS::s0 0; UR::s0 1; US::s0 2; 'e}[s0]]; CS::s0 0; UR::s0 1; US::s0 2]];
-  tb:$[count rs; flip key[cg]!flip value each rs; (::)~em; flip key[cg]!count[cg]#enlist (); flip em];
+  tb:$[count rs; flip key[cg]!flip value each rs; flip em];
   if[count[at] and count rs; tb:((where at=`p),where at=`s) xasc tb; tb:{[at;tb;c] @[tb;c;(at c)#]}[at]/[tb;key at]]; tb}   / parted columns sort first; an empty table carries none, as 0# of a table drops them
 tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; tabx[r;cg;::;(0#`)!`symbol$()]}
 tab:tabr[0 0W]

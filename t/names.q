@@ -22,6 +22,8 @@ loc1:{[l] if[0=count l; :()]; cont:l like " *"; is:l ss ":"; is:is where (is>0)&
   raze {[l;cont;i] pre:i#l; $[not cont or "{" in pre; (); count[nm:ident pre]; enlist `$nm; ()]}[l;cont] each is}
 locs:distinct raze loc1 each code
 .t.t["no lambda parameter shadows an engine global"; 0=count pars inter G]
+.t.t["no lambda parameter or local is a reserved word (q accepts one, and the body then sees the keyword: vs, from, cols, like)"; 0=count (pars,locs) inter .Q.res,key .q]
+if[count (pars,locs) inter .Q.res,key .q; -1 "  reserved as names: ",.Q.s1 (pars,locs) inter .Q.res,key .q]
 ALLOW:enlist `label                                                         / a q-sql column name in covt's table literal, not a local
 .t.t["no lambda local shadows an engine global"; 0=count (locs inter G) except ALLOW]
 if[count pars inter G; -1 "  params: ",.Q.s1 pars inter G]; if[count (locs inter G) except ALLOW; -1 "  locals: ",.Q.s1 (locs inter G) except ALLOW]

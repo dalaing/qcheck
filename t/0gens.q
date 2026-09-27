@@ -38,7 +38,7 @@
   (`symc;.qc.symc["z";1 2];`z;{x in `z`zz};1b;1b);
   (`vecj;.qc.vec[0 5]"j";`long$();{7h=type x};1b;1b);
   (`vecs;.qc.vec[1 3]"s";enlist `;{11h=type x};1b;1b);
-  (`tab;.qc.tab `a`b!(.qc.int 0 9;.qc.sym);flip `a`b!(();());{98h=type x};1b;1b);
+  (`tab;.qc.tab `a`b!(.qc.int 0 9;.qc.sym);flip `a`b!(`long$();`symbol$());{98h=type x};1b;1b);
   (`tabr;.qc.tabr[2 2] `a`b!(.qc.int 0 9;.qc.bool);([]a:0 0;b:00b);{(98h=type x) and 2=count x};1b;1b);
   (`ktab;.qc.ktab[`a;1 1] `a`b!(.qc.int 0 9;.qc.bool);([a:enlist 0]b:enlist 0b);{99h=type x};1b;1b);
   (`sm;.qc.sm[enlist[`m0]!enlist 0] .g.cm;.qc.smt;{98h=type x};1b;1b);
@@ -46,7 +46,7 @@
   (`uniq;.qc.uniq .qc.int 0 9;0;{x within 0 9};1b;1b);
   (`dep;.qc.dep {[r] .qc.int 0 9};0;{x within 0 9};1b;1b);
   (`atr;.qc.atr[`s] .qc.list .qc.int 0 9;();{(x~()) or 7h=type x};0b;1b);
-  (`tabc;.qc.tab `t`k`a!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.uniq .qc.elem `a`b`c;.qc.dep {[r] .qc.int (0;r`t)});flip `t`k`a!(();();());{98h=type x};1b;1b);
+  (`tabc;.qc.tab `t`k`a!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.uniq .qc.elem `a`b`c;.qc.dep {[r] .qc.int (0;r`t)});flip `t`k`a!(`long$();`symbol$();`long$());{98h=type x};1b;1b);
   (`schema;.qc.schema ([]a:1 2;b:`x`y);([]a:`long$();b:`symbol$());{98h=type x};1b;1b);
   (`bulk;.qc.bulk[0 99;0 1000];`long$();{(7h=type x) and all x within 0 99};1b;1b);
   (`tstamp;.qc.ts[2024.01.01;2024.12.31];2024.01.01D00:00:00.000000000;{x within 2024.01.01D0 2024.12.31D0};1b;1b);
