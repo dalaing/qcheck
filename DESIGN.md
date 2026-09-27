@@ -112,7 +112,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.ch[r;w]` | **the primitive**: a long in range `r` = `lo hi o`; `w` is a fresh-draw distribution hint |
 | `.qc.int r` | long in range; no nulls or infinities |
 | `.qc.bool`, `.qc.bit p` | boolean; `bit p` draws `1b` with probability `p` on fresh draws; origin `0b` |
-| `.qc.flt r` | float in `[lo;hi]`, layout `[sign; k; m]` = `±m/2^k`; 0 (or the nearest bound) is simplest, integers before halves before quarters; `.qc.dbl` is any finite double, `[sign; e; m]` = `±m·2^e` |
+| `.qc.flt r` | float in `[lo;hi]`, layout `[sign; k; m]` = `±m/2^k`; 0 (or the nearest bound) is simplest, integers before halves before quarters; `.qc.dbl` is any finite double, `[sign; e; m]` = `±m·2^e`; `.qc.dble` the same over single-precision exponents and mantissas (values a float32 column can hold) |
 | `.qc.chr`, `.qc.chrc s` | a char from `.qc.AZ` (letters, digits, space; origin `"a"`), or from alphabet `s` |
 | `.qc.str`, `.qc.strc[s;r]` | a string (typed even when empty), alphabet `s`, length range `r` |
 | `.qc.sym`, `.qc.symc[s;r]` | a symbol over a **bounded** alphabet: default `"abcd"`, lengths 0–3, ≤ 85 symbols, the null symbol simplest |
