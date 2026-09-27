@@ -119,7 +119,7 @@ system before every example and every replay, so the system can live in another 
 Every transcript in this file and in `EXAMPLES.md` is executed by the test suite (in a session with
 `.qc.cfg[`seed]:7i`) and must print exactly what is shown.
 
-See `EXAMPLES.md` for a tour in verified transcripts, and `COOKBOOK.md` for recipes: an as-of join, upsert on
+`REFERENCE.md` lists every public name in one line each. See `EXAMPLES.md` for a tour in verified transcripts, and `COOKBOOK.md` for recipes: an as-of join, upsert on
 keyed tables, a splayed table read back, a tickerplant handler as a state machine, serialisation over any value,
 per-minute bars — each with a planted bug found and shrunk.
 
@@ -132,7 +132,8 @@ the day boundary meet). Every transcript, including the buggy steps, is executed
 
 ```
 qc.q           the library                          examples/      reverse.q tree.q sm_table.q sm_ipc.q aj.q
-EXAMPLES.md    a tour in verified transcripts       examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
+EXAMPLES.md    a tour in verified transcripts
+REFERENCE.md   every public name, one line each     examples/mdp/  a pipeline built in pieces; its log LOG.md; q examples/mdp/run.q
 COOKBOOK.md    recipes for kdb tasks                t/             q t/run.q runs the tests and prints one table (~2 min; QC_FAST=1 skips the slow doctests)
 DESIGN.md      design, conventions,                 tools/         doc_child.q, the child q the doctests run
                measurements, pitfalls               spikes/        sh spikes/run.sh re-runs the design's measurements

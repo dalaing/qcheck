@@ -550,6 +550,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
+REFERENCE.md    every public name, one line each; t/docs.q checks it against qc.q both ways
 COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
 examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12)
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
