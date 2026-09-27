@@ -1,9 +1,7 @@
 / mdp piece 4: positions and PnL. step 09: unreal names its globals in full (q-sql inside a namespaced lambda does
 / not resolve them to the namespace) and looks the multipliers up as a dictionary (a keyed table indexed by a list
 / of keys and a column is a length error)
-/ pos: per sym the signed quantity, the average cost of the open position, and the realised PnL so far. A fill
-/ that adds to a position averages its cost in; a fill that reduces it realises (px-cost)*closed*mult and keeps the
-/ cost; a fill that flips it realises the whole old position and opens the remainder at px.
+/ (the piece is described at the top of 08_pos.q)
 \d .mdp
 pos:([sym:`symbol$()] qty:`long$(); cost:`float$(); real:`float$())
 sgn:{$[x>0; 1; x<0; -1; 0]}

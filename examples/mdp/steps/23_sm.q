@@ -1,11 +1,7 @@
 / mdp: the state machine, run 2 with renames. step 23: the oracle enriches a day's trades from the instrument's quotes
 / under that day's names, whatever name they arrived under — step 21 joined by the stored names, and disagreed with
 / the cache, which follows the rename as the contract says. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.
-/ Three instruments, a clock that starts at the open of day0 and moves with each quote and trade, and a model
-/ that is the event log itself: quotes and trades in arrival order with the feed's sequence number, and the fills.
-/ The oracle recomputes everything from the log — the trades of a day are those whose time falls on it, enriched
-/ by the batch join, barred by the batch select; positions are the signed sum of the fills — and the invariant
-/ compares the system to it after every step. query asks the same three questions of the system and the oracle.
+/ (the piece is described at the top of 15_sm.q)
 \d .mdp
 syms:`A`B`C
 inst0:([sym:`A`B`C] tick:0.01 0.05 1f; lot:1 10 100; mult:1 10 50)

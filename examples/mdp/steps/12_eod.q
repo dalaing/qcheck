@@ -1,8 +1,5 @@
 / mdp piece 5: end of day. step 12: the vwap over the HDB is a select (exec over a partitioned table is nyi). Needs pieces 2 and 3 loaded (06_quotes.q, 07_bars.q).
-/ The day's enriched trades are kept; at the close the day's trades, quotes and bars are written to a date partition
-/ of the HDB (sorted by sym, `p#, enumerated), the day tables are cleared, the HDB is remapped and the day advances.
-/ The queries answer for any date: today's from memory, an earlier day's from disk, in one shape.
-/ Written in the root namespace, naming .mdp.* in full, because the HDB's tables (trade, quote, bar) live in the root.
+/ (the piece is described at the top of 11_eod.q)
 .mdp.trade:([]seq:`long$(); time:`timestamp$(); sym:`symbol$(); px:`float$(); qty:`long$(); bid:`float$(); ask:`float$())
 .mdp.ontrade:{[t] e:.mdp.enrich1 t; .mdp.trade,:e; .mdp.onbar e; e}
 .mdp.today:2024.01.02

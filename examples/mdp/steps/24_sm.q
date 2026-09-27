@@ -2,11 +2,7 @@
 / the names of the day the trade *arrived* — the names the cache had when it enriched — so the model's trades carry
 / their arrival day. Step 23 used the names of the trade's own day, which is wrong for a late trade arriving after a
 / rename; step 21 used the stored names. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.
-/ Three instruments, a clock that starts at the open of day0 and moves with each quote and trade, and a model
-/ that is the event log itself: quotes and trades in arrival order with the feed's sequence number, and the fills.
-/ The oracle recomputes everything from the log — the trades of a day are those whose time falls on it, enriched
-/ by the batch join, barred by the batch select; positions are the signed sum of the fills — and the invariant
-/ compares the system to it after every step. query asks the same three questions of the system and the oracle.
+/ (the piece is described at the top of 15_sm.q)
 \d .mdp
 syms:`A`B`C
 inst0:([sym:`A`B`C] tick:0.01 0.05 1f; lot:1 10 100; mult:1 10 50)
