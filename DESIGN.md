@@ -304,6 +304,15 @@ Every field is always present and typed the same way: absent
 composites are empty (`disc` an empty dict, `cover` an empty table, `notes` an empty list, `err` an empty
 string); only `x` is `::` when there is no counterexample (C4).
 
+**Inside another framework, and as a script (M9).** `.qc.must[spec;prop]` (`.qc.mustc[cfg;spec;prop]` with a
+config) runs the check quietly, returns the result on ok, and otherwise signals the whole report as one error
+string — `qc: FAIL falsified after 3 tests, …` on the first line, the counterexample and rerun line after it — so a
+property can sit inside k4unit, qspec or a `.Q.trp` script and be one failing assertion (A24: the text survives
+`@`, `.Q.trp` and IPC intact). `.qc.main d` runs a suite dict, prints its table and exits with the number of
+failures, the shape of a CI script. The result dict is machine-readable as it is: `.j.j r` serialises every
+outcome and `.j.k` reads it back (A25; symbols become strings, `::` null, the int seed a float, a function its
+source). `checks` returns an `ms` column per property and prints the table without it, so transcripts stay exact.
+
 Seeds are 32-bit ints, because that is what `\S` takes and `system"S"` returns (A3): `cfg`seed` of `0N`
 becomes `"i"$1+.z.p mod 2147483646`, never 0, and is printed and accepted as an int.
 
@@ -630,7 +639,7 @@ bit behind, and a tree that ended at the size cap without a stop.
 during generation, invalid candidates during shrinking), failure signals (`qc.<stem>` optionally followed by
 detail, stems `qc.eq qc.post qc.run` in `FS`; a falsification wherever raised, even while a spec is being
 drawn, and they shrink like one), and usage errors (`qc: …`, colon and space: canary, range, config, bad
-property result). A new engine signal goes in `ENG`; a new failure stem goes in `FS`; `t/names.q` scans the
+property result; and `must`'s `qc: FAIL …`, the library telling the caller that the property failed). A new engine signal goes in `ENG`; a new failure stem goes in `FS`; `t/names.q` scans the
 source for `'"qc.` literals to enforce both. Origin: a `qc.*` prefix test that classified `qc.eq` as an engine signal and silently
 disabled shrinking for every `eq` property.
 
@@ -817,6 +826,11 @@ needs the chunk removed from every block, or the columns misalign and the minimu
 transcript, 12 rows where one would do); and `blk` was already a name in the shrinker — a collision the
 `t/names.q` scan cannot see because both are in `.qc` (the generator is `bulk`).
 
+**M9 — integration.** Done: `must`/`mustc` (the report as one signal, A24), `main` (exit code = failures), the
+`ms` column in `checks` (returned, not printed), `.j.j` documented as the machine-readable form (A25), and the
+`\S` reseed as pitfall 32. `t/integ.q`: the signal's first line is the verdict for falsified, gave-up and
+coverage outcomes; every outcome round-trips through `.j.j`/`.j.k`; `main`'s exit codes checked in a child q.
+
 ---
 
 ## 4. Pitfalls
@@ -883,6 +897,9 @@ For the implementer:
     `::` seed and the seed dropped at the end: atoms still collapse to a typed vector, conforming dicts to a
     table, and anything else stays general (`lst`, `sub`, `subb`; found by A27, whose node function must also
     accept children that arrive as a table).
+32. `.qc.chk` reseeds the process RNG with `\S` (a random seed unless `cfg`seed` is pinned), and q cannot save or
+    restore an RNG *state*, only reseed. A process whose own `rand` stream matters — a simulation, a sampler —
+    should pin `cfg`seed` or expect its stream to move after every check.
 31. `in` and `?` compare within one type: `.Q.t?"j"` is a long and `type x` a short, so
     `(neg .Q.t?c) in type each xs` is a type error where `=` would have coerced; cast one side.
 

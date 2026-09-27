@@ -389,3 +389,14 @@ Over `chn`, `freshn`, `unifn`, `mixn`, `bulk`, `btab`, `pblk`, `nch` and `t/scal
   `unif`; `mixn` adds the magnitude in floats and saturates.
 - Pitfall 7 vectorised: `n?k` for k>0 only (the width check); `n?1f` for floats.
 - Not done: a bulk column with a float or symbol type (M8 covers types reachable by casting a long range).
+
+## M9 pass (2026-09-27)
+
+Over `mustc`, `must`, `main`, the `ms` column and `t/integ.q`:
+- C1/C16 n/a (no generators). C2 conds. C5 green (`must`, `main`, `mustc` are free names). C9 `mustc` runs
+  through `chk`, so `tidy` restores everything on the way out, including on the signal path (tested).
+- C14 the new error is spelled `qc: FAIL …` and the design says why. C20 `main` applies nothing itself; `checks`
+  validates the pairs.
+- Pitfall 32 (`\S`) recorded. Pitfall 13: `main` calls `exit`, so it is tested in a child q, never loaded.
+- Not done: `ms` is not printed (transcripts must stay exact); a `--json` style output for `main` is left to the
+  caller (`.j.j` on the table).

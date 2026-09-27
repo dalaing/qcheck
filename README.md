@@ -81,8 +81,14 @@ rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 1 0 0]
 ```
 
 The result is a dict (`ok why n shrinks attempts seed x err bt notes cover choices hist disc stale`); the
-report is data too (`.qc.report r` returns the lines). Failures are saved under `.qc/` and replayed first
-next time; `.qc.again[]` rechecks the last failure.
+report is data too (`.qc.report r` returns the lines), and `.j.j r` is JSON. Failures are saved under `.qc/`
+and replayed first next time; `.qc.again[]` rechecks the last failure.
+
+Inside another test framework, `.qc.must[spec;prop]` returns the result on success and signals the whole report
+otherwise (`'qc: FAIL falsified after 3 tests…`), so k4unit, qspec or a `.Q.trp` script sees one error whose
+first line is the verdict. `.qc.main d` runs a suite dict and exits with the number of failures, for CI; the
+table `.qc.checks` returns carries an `ms` column. A check reseeds the process RNG (`\S`): pin `.qc.cfg[`seed]`
+if your process depends on its own `rand` stream.
 
 ## State machines
 

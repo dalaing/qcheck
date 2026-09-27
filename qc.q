@@ -341,9 +341,16 @@ check:chk[::]
 lf:`spec`prop`choices!(::;::;`long$())               / the last failure; again[] rechecks it
 again:{recheck[lf`spec;lf`prop;lf`choices]}
 / a suite: dict of name -> (spec;prop); one report per failure, one row per property
-chks:{[c;d] if[$[not dct d; 1b; not all 2=count each value d]; '"qc: checks takes a dict of name -> (spec;prop)"]; r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed)}[c]'[key d;value d];
-  tb:flip `name`ok`why`stop`n`shrinks`seed!flip r; if[0<conf[c]`v; show tb]; tb}
+chks:{[c;d] if[$[not dct d; 1b; not all 2=count each value d]; '"qc: checks takes a dict of name -> (spec;prop)"];
+  r:{[c;n;sp] if[0<conf[c]`v; -1 "--- ",string n]; t0:.z.p; o:chk[c;sp 0;sp 1]; (n;o`ok;o`why;o`stop;o`n;o`shrinks;o`seed;"j"$(.z.p-t0)%1000000)}[c]'[key d;value d];
+  tb:flip `name`ok`why`stop`n`shrinks`seed`ms!flip r; if[0<conf[c]`v; show delete ms from tb]; tb}   / ms is data (timings are not for transcripts)
 checks:chks[::]
+/ ---- integration (M9): a property inside another framework, a suite as a script --------------------------
+/ must: check quietly and signal the whole report on anything but ok, so k4unit, qspec or a .Q.trp script sees one
+/ error whose first line is the verdict (A24). The spelling "qc: FAIL …" keeps the error vocabulary (C14).
+mustc:{[c;spec;prop] c:conf c; c[`v]:0; r:chk[c;spec;prop]; if[not r`ok; '"qc: ","\n" sv report r]; r}
+must:mustc[::]
+main:{[d] r:checks d; exit "i"$sum not r`ok}                  / a suite as a CI script: prints the table, exits with the failure count
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded
 recheck:{[spec;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[spec;prop];p;{tidy[]; 'x}]; tidy[]; r}
 recheck1:{[spec;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;prop]; run::0b;
