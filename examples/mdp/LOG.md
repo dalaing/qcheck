@@ -517,3 +517,236 @@ the first row was ever written. Nothing was found in the writing itself.
 With the pieces in hand: piece 1 one bug, piece 2 three, piece 3 none, piece 4 two, piece 5 two — eight in the
 pieces, six in my test code or the library, every one caught by a minimal example a person can read at a glance.
 Now the assembly, and the state machine over it.
+
+## The assembly
+
+### Entry 17: one entry point, a state machine, and the first thing it found
+
+`upd[table;rows]` routes quotes, trades and fills to the pieces (step 14): trades are rounded to the tick on the
+way in, enriched, kept and barred. The machine (step 15) runs three instruments through six commands — `quote`,
+`trade`, a `late` trade timed up to thirty minutes back, `fill`, `eod`, `query` — weighted towards quotes and
+trades, over a clock that starts at the open and moves with each quote and trade. Its model is the event log
+itself: quotes and trades in arrival order with the feed's sequence number, and the fills. The oracle recomputes
+from the log — the trades of a day are the ones timed on it, enriched by the batch join, barred by the batch
+select, positions the signed sum of the fills — and the invariant compares the system to it after every step:
+positions, today's bars, the quote cache, and the balance-sheet identity of piece 4. `query` asks the same three
+questions of the system and of the oracle, for any day so far.
+
+Three slips in the machine itself came first, none worth a transcript: a parameter named `vs` (a keyword, again),
+a lookup into an unkeyed table by a key, and a model that numbered events from one where the feed's stamp counts
+from zero. Then the first run that reached the system:
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/14_upd.q"
+q)system"l examples/mdp/steps/15_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+FAIL falsified after 4 tests, 4 shrinks (17 attempts, seed 7)
+qc.run round
+step cmd   arg                                   res model ok
+-------------------------------------------------------------
+0    trade 2024.01.02D09:30:00.000000000 `A 1f 1 ::  ::    0 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 757503000000000000 0 0 0 1 1]
+```
+
+The one line of q-SQL in the assembly — `update px:round'[sym;px]` — could not see `round`, the same lesson as
+entry 11 (pitfall 26: names inside a q-SQL expression resolve in the root, not the lambda's namespace). Step 16
+writes it in full. The trace above is one row long because of a change to qcheck made on the spot: an error in
+`run` or `post` used to note the trace *before* the failing step, so the command that raised, and its argument,
+were the one thing the report did not show. The noted trace now ends with that step, marked not ok.
+
+### Entry 18: run 1 — the machine passes, and what it did and did not reach
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/15_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+ok 100 tests (seed 7)
+```
+
+Nothing. Before believing it I asked what the runs had actually exercised, with a property that labels each trace
+by the seams I had in mind: a close; a late trade; a query of a past day, answered from disk; the first trade of a
+new day arriving before that day's first quote, so that the cache carries yesterday's quote across the close; a
+late trade after a close.
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/15_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`eod;`eod in c]; .qc.classify[`late;`late in c]; .qc.classify[`query_of_a_past_day; any {[r] $[`query=r`cmd; r[`arg][0]<r[`model]`day; 0b]} each tr]; .qc.classify[`late_timed_yesterday; any {[r] $[`late=r`cmd; ("d"$r[`arg]0)<r[`model]`day; 0b]} each tr]; .qc.classify[`late_after_eod; any (c=`late) and 0<sums c=`eod]; .qc.classify[`first_trade_of_a_day_before_its_first_quote; any (c=`trade) and (0<sums c=`eod) and 0=sums (c=`quote) and 0<sums c=`eod]; 1b}
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; seams];
+ok 100 tests (seed 7)
+label                                       n  pct req lo       hi       ok b..
+-----------------------------------------------------------------------------..
+eod                                         52 52      42.31641 61.53562 1  #..
+late                                        38 38      29.09745 47.79043 1  #..
+query_of_a_past_day                         15 15      9.305903 23.28373 1  #..
+first_trade_of_a_day_before_its_first_quote 20 20      13.33659 28.8831  1  #..
+late_after_eod                              12 12      6.999337 19.81227 1  #..
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/15_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`eod;`eod in c]; .qc.classify[`late;`late in c]; .qc.classify[`query_of_a_past_day; any {[r] $[`query=r`cmd; r[`arg][0]<r[`model]`day; 0b]} each tr]; .qc.classify[`late_timed_yesterday; any {[r] $[`late=r`cmd; ("d"$r[`arg]0)<r[`model]`day; 0b]} each tr]; .qc.classify[`late_after_eod; any (c=`late) and 0<sums c=`eod]; .qc.classify[`first_trade_of_a_day_before_its_first_quote; any (c=`trade) and (0<sums c=`eod) and 0=sums (c=`quote) and 0<sums c=`eod]; 1b}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
+ok 300 tests (seed 7)
+label                                       n   pct      req lo       hi     ..
+-----------------------------------------------------------------------------..
+late                                        186 62           56.38834 67.3082..
+eod                                         184 61.33333     55.71235 66.6677..
+query_of_a_past_day                         111 37           31.73308 42.5956..
+first_trade_of_a_day_before_its_first_quote 96  32           26.97745 37.4777..
+late_after_eod                              110 36.66667     31.41406 42.2564..
+```
+
+Every seam I could name was reached, at twenty steps and at sixty, and the oracle agreed with the system at each.
+One label is missing from both tables: `late_timed_yesterday` never came up, because it cannot — the clock
+starts at the open, `late` reaches thirty minutes back, and the close moves the clock to the next day's open.
+The generator's design decided what the machine could find. Run 1's verdict: the pieces' properties had already
+caught the bugs in the pieces, the assembly's one bug was a name, and the seams the clock could reach hold. So,
+as agreed, run 2 adds scope: corrections, and late trades that fall on a day already closed.
+
+### Entry 19: run 2 — corrections, and two lessons about resetting a test system
+
+Step 17 adds the two operations a real feed needs: `bust[id]` removes a trade by the feed's sequence number,
+recomputing the bar of its minute from what is left; and a trade timed on a day already closed goes into that
+day's partition. Both go through `amend[d;f]`, which reads the closed day's trades back, applies `f`, recomputes
+the day's bars, rewrites both splays and remaps the HDB. The machine (step 18) gains a `bust` command over the
+trades the model still has, and its `late` trade may be timed eighteen hours back, so one reported in the morning
+falls on the day before. The model keeps the busted ids and the oracle leaves them out.
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/18_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+FAIL falsified after 13 tests, 6 shrinks (20 attempts, seed 7)
+qc.run ./2024.01.02/trade/seq. OS reports: No such file or directory
+step cmd  arg                                   res model ok
+------------------------------------------------------------
+0    late 2024.01.01D15:30:00.000000000 `A 1f 1 ::  ::    0 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 757438200000000000 0 0 0 1 1]
+```
+
+The first step of a run, a trade timed on the day before the system started, and the HDB read fails on a file that
+is not there. The partition it names was written by the *previous* example: the machine's reset emptied the HDB
+directory but left the process's mapped tables pointing at the partitions it had removed, and the system's test
+for "is there a closed day on disk" — is `trade` defined in the root — was satisfied by a stale map. A test that
+resets a mapped HDB must unmap it. Doing that produced the second lesson, which cost more time than the first:
+`![`.;();0b;`trade`quote`bar inter key `.]` — and when none of the three is defined, the name list is empty, and
+a functional delete with no names deletes *everything* in the namespace. Every global the transcript had defined
+vanished, silently, on the first example of every run. Pitfall 43. The reset in step 19 is guarded.
+
+Step 19 also retargets the late trade. Eighteen hours back from the first day's open is the day before the system
+started, which nothing ever queries; the label `late_timed_on_an_earlier_day` was high but most of those shots
+were wasted. A late trade is now one reported for yesterday, timed anywhere in yesterday's session, and only once
+there is a yesterday.
+
+### Entry 20: run 2 passes — and a check that the machine could have seen anything
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/19_sm.q"
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+ok 100 tests (seed 7)
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/19_sm.q"
+q)seams:{[tr] c:tr`cmd; .qc.classify[`late_timed_on_an_earlier_day; any {[r] $[`late=r`cmd; ("d"$r[`arg]0)<r[`model]`day; 0b]} each tr]; .qc.classify[`bust_of_a_past_day; any {[r] $[`bust=r`cmd; ("d"$first exec time from r[`model][`t] where seq=r`arg)<r[`model]`day; 0b]} each tr]; .qc.classify[`query_of_a_day_with_a_bust_in_it; any {[r] $[`query=r`cmd; (r[`arg][0]) in "d"$exec time from r[`model][`t] where seq in r[`model]`bust; 0b]} each tr]; .qc.classify[`query_of_a_past_day; any {[r] $[`query=r`cmd; (r[`arg][0])<r[`model]`day; 0b]} each tr]; 1b}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
+ok 300 tests (seed 7)
+label                            n   pct      req lo       hi       ok bar    
+------------------------------------------------------------------------------
+late_timed_on_an_earlier_day     109 36.33333     31.09531 41.91694 1  #######
+query_of_a_past_day              114 38           32.69178 43.61166 1  #######
+query_of_a_day_with_a_bust_in_it 97  32.33333     27.29245 37.82095 1  ###### 
+bust_of_a_past_day               73  24.33333     19.82208 29.49362 1  ####   
+```
+
+The system passes with corrections and late days in play, and the seams are exercised: a late trade for a closed
+day in a third of the runs, a bust of a closed day's trade in a quarter, queries of days that had a bust in them.
+A passing machine is only as good as its oracle, so I broke the system four ways and ran the machine each time:
+`rebar` doing nothing after a bust (caught: `qc.inv`, a trade and its bust, two steps); a late trade kept in
+memory instead of its day (caught, one step); the close clearing the quote cache (caught: a quote and a close);
+and `amend` rewriting the day's trades but not its bars:
+
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/19_sm.q"
+q).mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; system"l ",1_string .mdp.hdb;}
+q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
+ok 100 tests (seed 7)
+```
+```q
+q)system"l examples/mdp/steps/02_ref.q"
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/10_pos.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/16_upd.q"
+q)system"l examples/mdp/steps/17_amend.q"
+q)system"l examples/mdp/steps/19_sm.q"
+q).mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; system"l ",1_string .mdp.hdb;}
+q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
+FAIL falsified after 146 tests, 21 shrinks (97 attempts, seed 7)
+qc.post qc.eq
+path why   a b
+--------------
+bars count 0 1
+0:
+  step cmd   arg                                     res                                                                                                                                                                                                                             ok
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  0    eod   ::                                      ::                                                                                                                                                                                                                              1 
+  1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) +`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.000000000;,`A;,1f;,1;,0n;,0n)                                                                                                                                            1 
+  2    query (2024.01.02;`A;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`s#`timestamp$();`float$();`float$();`float$();`float$();`long$();`long$());1f;+`seq`time`sym`px`qty`bid`ask!(`s#,0;,2024.01.02D09:30:00.000000000;,`A;,1f;,1;,0n;,0n)) 0 
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
+```
+
+Missed at a hundred runs of up to twenty steps; found at three hundred of up to sixty, and shrunk to the three
+steps that are the bug: close the day, report a trade for it, ask for its bars. The sabotage needs three
+particular commands in order with matching arguments, and at the default budget the machine simply did not roll
+them. The lesson is about budget, not about the oracle: a machine over a system with days in it wants more steps
+and more runs than a stack does, and a `cover` requirement on the seams would have said so before I asked.
+

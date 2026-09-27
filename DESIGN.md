@@ -971,6 +971,13 @@ For the implementer:
 41. `x,:y` on an undefined global defines it at top level, silently; a later `x:…` replaces it and the appended
     values are gone (`t/outcomes.q`, the first version of the C9 regression test). Define before appending.
 42. `?[c;a;b]` needs a boolean `c`; `n?2` gives longs and raises `type`. `n?01b`, or a comparison.
+43. A functional delete with an empty name list — `![`.;();0b;`symbol$()]` — deletes *every* global in the
+    namespace, silently. The list is empty whenever an `inter` finds nothing, so guard it with `if[count k; …]`
+    (found resetting the market data example's HDB: `examples/mdp/LOG.md` entry 19).
+44. `\l dir` makes `dir` the working directory as well as loading it, and maps its tables in the root; a test that
+    empties the directory afterwards leaves the process with a working directory that is gone and tables that
+    point at partitions that are gone. Empty the contents, not the directory, and delete the mapped tables
+    (entry 19 again).
 ---
 
 ## 5. Review rounds
