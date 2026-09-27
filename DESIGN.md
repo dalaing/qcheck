@@ -1,14 +1,14 @@
 # qcheck — property-based testing for q
 
-*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README's earlier
-"4.0 or later" was never verified and is now stated as such); M1–M12 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, recipes in `COOKBOOK.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
+*Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README says
+3.5 or later should work and that this is unverified); M1–M12 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, a tour in `EXAMPLES.md`, recipes in `COOKBOOK.md`, a worked example with its log in `examples/mdp/`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
 the shape a seasoned q programmer expects: a handful of primitives, data over objects, tables for anything with
 structure, composition through the verbs q already has.
 
-Contents: 1 Design · 2 Assumptions and validation log · 3 Implementation plan · 4 Pitfalls.
+Contents: 1 Design · 2 Assumptions and validation log · 3 Implementation plan · 4 Pitfalls · 5 Review rounds.
 
 ---
 
@@ -119,7 +119,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.t c` | **dict** type-char → generator of that atom type's *full* domain: `.qc.spc[specials] g` wraps a normal generator in the uniform layout `[kind; special; value]` (C12); `.qc.t"j"`, `.qc.t"p"`, `.qc.t"jf"` (a pair); origin is `c$0`; `.qc.gid` for guids |
 | `.qc.list g`, `.qc.lst[r] g` | variable-length list of `g`, length range `r` (default `0 0W`, capped by size); homogeneous atoms become a typed vector automatically |
 | `.qc.vec[r] c` | typed vector of `.qc.t c`, typed even when empty |
-| `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. An empty draw has untyped columns (no row was drawn to learn them); use `tabr[1 0W]` when a typed empty table matters |
+| `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. an empty draw's columns are typed from a probe of one minimal row (M7's limitation, removed at M12) |
 | `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g`, which must be non-negative — a negative delta is a usage error, never a quietly unsorted column (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
@@ -240,8 +240,9 @@ forever: 1e5 unbounded symbols cost 5.4 MB that is never reclaimed (A11).
 of per-table state — the previous value of each `mono` column, the candidates not yet used and the values used so
 far of each `uniq` column — saved and restored around the table so tables nest. Rows remain spans (C13); the
 constraints live in the choices, which is why they hold on every shrink candidate (A18, A19, A20). `ktab` sends
-its key columns through `uniq`, so keys are distinct. An empty `tab` has untyped columns because a column dict
-cannot say what it would have drawn; `schema` knows, from `0#` of the sample. A `uniq` over a generator whose
+its key columns through `uniq`, so keys are distinct. An empty `tab` has typed columns: `tab` probes one minimal
+row of its column generators outside the example (`probe`, C22's state saved and restored) and types the empty
+columns from what they would have drawn; `schema` knows from `0#` of the sample. A `uniq` over a generator whose
 space is smaller than the rows discards (`sym` has 85 values; a `u#` column with 100 rows cannot be drawn).
 
 ### 1.4 Properties and the runner
@@ -319,9 +320,12 @@ source). `checks` returns an `ms` column per property and prints the table witho
 Seeds are 32-bit ints, because that is what `\S` takes and `system"S"` returns (A3): `cfg`seed` of `0N`
 becomes `"i"$1+.z.p mod 2147483646`, never 0, and is printed and accepted as an int.
 
-Defaults in `.qc.cfg`: `n` 100 · `seed` `0N` · `sz` 100 · `shrinks` 2000 · `disc` 10 · `tries` 50 (filter
-retries) · `depth` 200 · `choices` 8192 · `same` 1b (a shrink must reproduce the same error text) ·
-`db` `` `:.qc `` · `v` 1.
+Defaults in `.qc.cfg`: `n` 100 (tests) · `nmax` `0N` (the cap when coverage extends a run; `0N` is 10×`n`) ·
+`seed` `0N` (from the clock) · `sz` 100 · `shrinks` 2000 · `disc` 10 (discards per test before giving up) ·
+`tries` 50 (filter retries) · `depth` 200 · `choices` 8192 · `same` 1b (a shrink must reproduce the same error
+text) · `clamp` 1b (an out-of-range replayed choice is clamped, not rejected) · `db` `` `:.qc `` · `name` `` ` ``
+(the label `checks` prints) · `rows` 20 (rows of a table shown in a report) · `v` 1 (verbosity: 0 silent, 2 adds
+the backtrace).
 
 ### 1.5 Shrinking
 
@@ -541,13 +545,15 @@ spikes/         one script per validated assumption; sh spikes/run.sh runs them 
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
-                doctest (every q) transcript in README, EXAMPLES and this file), docs (names in docs exist),
+                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, this file and examples/mdp/LOG.md), docs (names in docs exist),
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
 COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
 examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12)
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
+AUDIT.md AUDIT2.md REVIEW.md   closed audits and the review after M12, each with its checklist (§5)
+.qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
 examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
 ```
 
@@ -709,7 +715,7 @@ promised and never written). The harness fails a test whose result is not a bool
 `all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
 top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
 broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
-README.md, EXAMPLES.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
+README.md, EXAMPLES.md, COOKBOOK.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
 (seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
 by hand once, and a dispatcher the dogfooding had not reached.
 
