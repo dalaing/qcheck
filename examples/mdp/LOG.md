@@ -97,3 +97,162 @@ ok 100 tests (seed 7)
 
 Two properties: `canon` is idempotent, and it returns either the name itself or a name some effective rename
 maps to. Both pass. Piece 1 tally: one bug (the cycle), found by writing the generator rather than by running it.
+
+## Piece 2 — quotes and enrichment
+
+### Entry 4: a quote cache, and two ways to enrich a trade
+
+Quotes arrive; the piece keeps the day's quotes and the last quote per symbol. A trade is enriched with the
+prevailing quote two ways: as it arrives, from the cache (`enrich1`), or afterwards in a batch, as of its time,
+with `aj` over the day's quotes (`enrichb`). The property: over a day of interleaved quotes and trades in time
+order, the two agree. The generator is one table of events — `mono` timestamps up to ten seconds apart, a kind,
+a symbol from the instruments, a quote whose ask is drawn from its bid (`dep`), a trade — and the property
+replays it in order, feeding quotes to the cache and enriching trades as they come.
+
+The first run failed on the empty day, and not for a reason in the piece:
+
+```
+FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+x:
+  time kind sym bid ask px qty
+  ----------------------------
+qc.eq
+path why  a b
+-------------
+bid  type 9 0
+ask  type 9 0
+```
+
+The minimal example is a stream with no events. Enriching no trades from the cache gives float `bid` and `ask`
+columns; `aj` over a quote table with no rows gives general ones — because the generated empty table had general
+columns. That was qcheck's doing: `tab`'s empty table was untyped (its design said so, as a limitation), and the
+minimal example is *always* the empty table, so every property over a generated table met it first. I fixed the
+library rather than the property: `tab` now probes one minimal row of its column generators, outside the example,
+and types its empty columns from what they would have drawn (commit `a9ea097`; the report above is quoted, not
+executed, because the library that produced it is gone). A dependent column sees the columns before it in the
+probe, which is what let `ask` come out typed. Found on the way, in the fix itself: a parameter named `vs` — a
+keyword — made an `each` apply to the operator instead of the list; `t/names.q` now refuses reserved words as
+parameters, which it had never checked.
+
+### Entry 5: a bug in my replay, not in the piece
+
+With typed empties the empty day passes and the property finds this:
+
+```q
+q)system"l examples/mdp/steps/03_quotes.q"
+q)system"l examples/mdp/steps/03_gen.q"
+q)5#.qc.draw .mdp.g.stream
+time                          kind  sym bid      ask      px       qty
+----------------------------------------------------------------------
+2024.01.02D09:30:00.008208256 quote ACC 10       54.78843 45.52337 100
+2024.01.02D09:30:00.008213338 trade ACC 24.90625 32.5991  73.05742 10 
+2024.01.02D09:30:01.038894268 quote ABC 68.21192 97.08473 13.25    10 
+2024.01.02D09:30:01.039131004 quote ACC 43.85249 65.85082 17.74133 1  
+2024.01.02D09:30:01.125495236 trade ACC 60.82281 68.5     91.41703 1  
+q)replay:{[ev] .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; out:0#.mdp.enrich1 select time,sym,px,qty from ev; {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; out,:.mdp.enrich1 enlist `time`sym`px`qty#e]} each ev; out}
+q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select time,sym,px,qty from x where kind=`trade; select time,sym,bid,ask from x where kind=`quote]; .qc.eq[inc;bat]}];
+FAIL falsified after 2 tests, 11 shrinks (63 attempts, seed 7)
+x:
+  time                          kind  sym bid ask px qty
+  ------------------------------------------------------
+  2024.01.02D09:30:00.000000000 trade A   1   1   1  1  
+qc.eq
+path why   a b
+--------------
+     count 0 1
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 0]
+```
+
+One trade, no quotes: the incremental side has no rows at all. The piece is fine; my `replay` is not. `out,:…`
+inside the inner lambda does not reach `replay`'s local `out` (a lambda does not see the enclosing function's
+locals), so it created a global `out` and appended to that, and `replay` returned its own, empty, `out`. Two
+pitfalls in one line, found by the smallest stream that has a trade. The replay becomes a fold.
+
+### Entry 6: the tie
+
+```q
+q)system"l examples/mdp/steps/03_quotes.q"
+q)system"l examples/mdp/steps/03_gen.q"
+q)replay:{[ev] .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
+q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select time,sym,px,qty from x where kind=`trade; select time,sym,bid,ask from x where kind=`quote]; .qc.eq[inc;bat]}];
+FAIL falsified after 19 tests, 19 shrinks (90 attempts, seed 7)
+x:
+  time                          kind  sym bid ask px qty
+  ------------------------------------------------------
+  2024.01.02D09:30:00.000000000 trade A   1   1   1  1  
+  2024.01.02D09:30:00.000000000 quote A   1   1   1  1  
+qc.eq
+path   why   a b
+----------------
+`bid 0 value   1
+`ask 0 value   1
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 1 0 0 0 1 0 0 1 0 0 1 0 1 0 0 0 0 0 1 0 0 1 0 0 1 0 0]
+```
+
+A trade and a quote at the same timestamp, the trade first. As it arrived, the trade saw no quote; the batch `aj`,
+which is inclusive on time, gives it the quote that arrived a moment later. This is the as-of tie every kdb shop
+meets: time alone does not say what was known when. The piece's answer, step 04: the feed stamps every event with
+a sequence number as it arrives, and the batch join is as-of the sequence, not the time.
+
+### Entry 7: two more things the batch join taught me
+
+```q
+q)system"l examples/mdp/steps/04_quotes.q"
+q)system"l examples/mdp/steps/04_gen.q"
+q)replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
+q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select seq,time,sym,px,qty from inc; .mdp.quote]; .qc.eq[inc;bat]}];
+FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+x:
+  time kind sym bid ask px qty
+  ----------------------------
+qc.eq
+path why   a                           b                          
+------------------------------------------------------------------
+     order time sym px qty seq bid ask seq time sym px qty bid ask
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0]
+q).qc.check[.mdp.g.stream; {inc:replay x; all (inc[`bid]<=inc`ask) or null inc`bid}];
+ok 100 tests (seed 7)
+```
+
+Same rows, different column order: `stamp` appended `seq` where the tables declare it first. `.qc.eq`'s `order`
+row is that diagnosis. Step 05 puts `seq` first.
+
+```q
+q)system"l examples/mdp/steps/05_quotes.q"
+q)system"l examples/mdp/steps/04_gen.q"
+q)replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
+q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select seq,time,sym,px,qty from inc; .mdp.quote]; .qc.eq[inc;bat]}];
+FAIL falsified after 6 tests, 37 shrinks (124 attempts, seed 7)
+x:
+  time                          kind  sym bid ask px qty
+  ------------------------------------------------------
+  2024.01.02D09:30:00.000000000 quote A   1   1   1  1  
+  2024.01.02D09:30:00.000000001 trade A   1   1   1  1  
+qc.eq
+path    why   a                             b                            
+-------------------------------------------------------------------------
+`time 0 value 2024.01.02D09:30:00.000000001 2024.01.02D09:30:00.000000000
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 1 757503000000000000 0 0 0 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 1 0 0 1 0 0 1 0 0]
+q).qc.check[.mdp.g.stream; {inc:replay x; all (inc[`bid]<=inc`ask) or null inc`bid}];
+ok 100 tests (seed 7)
+```
+
+The enriched trade carries the *quote's* time. `aj` brings every right-hand column across, and the quote table
+has a `time` too; joining on `seq` no longer protected it. The minimum says it in one nanosecond. Step 06 joins
+only the columns the enrichment is for.
+
+### Entry 8: piece 2 passes
+
+```q
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/04_gen.q"
+q)replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
+q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select seq,time,sym,px,qty from inc; .mdp.quote]; .qc.eq[inc;bat]}];
+ok 100 tests (seed 7)
+q).qc.check[.mdp.g.stream; {inc:replay x; all (inc[`bid]<=inc`ask) or null inc`bid}];
+ok 100 tests (seed 7)
+```
+
+Piece 2 tally: one library limitation (untyped empty tables, fixed in the library), one bug in my test code
+(a lambda's locals), and three in the piece — the tie, the column order, the column clash — each found by the
+smallest possible stream, each a thing a kdb programmer has met before and will meet again.
