@@ -241,4 +241,5 @@ rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 0 1 0 0 1 0 1 1 1]
 q).qc.chk[`n`seed!(20;3i); .qc.int 0 9; {x<10}];
 ok 10 tests, exhausted (seed 3)
 q)key .qc.cfg
+`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v
 ```
