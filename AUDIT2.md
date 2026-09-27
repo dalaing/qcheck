@@ -323,13 +323,13 @@ as `0=n?8`, a boolean.
 
 ## Part 4 — Suggested order for the cleanup pass
 
-1. [ ] **Bugs.** `CS` seeded like `rowd`'s row (`qc.q:207,220`); `colg`'s enumeration test `tc within 20 76h`;
+1. [x] **Bugs.** `CS` seeded like `rowd`'s row (`qc.q:207,220`); `colg`'s enumeration test `tc within 20 76h`;
    `unifn`'s condition a boolean (`0=n?2` or `n?01b`); `US` grows behind a `::` seed or holds `-8!` keys; the two
    `t/outcomes.q` calls moved after the definition (and a look at whether `clean` then still passes).
-2. [ ] **Usage errors (C14).** `qc: …` for non-temporal `ts`/`dates` bounds, a non-char `btab` type, `atr[`u]` on
+2. [x] **Usage errors (C14).** `qc: …` for non-temporal `ts`/`dates` bounds, a non-char `btab` type, `atr[`u]` on
    repeats (or make it distinct), a `bulk`/`btab` length range that wraps.
-3. [ ] **C21.** The `bulk`/`btab` cap in floats.
-4. [ ] **Tests and names.** A duplicate-definition check in `t/names.q`; `from` renamed in `spikes/a26_time.q`; the
+3. [x] **C21.** The `bulk`/`btab` cap in floats.
+4. [x] **Tests and names.** A duplicate-definition check in `t/names.q`; `from` renamed in `spikes/a26_time.q`; the
    three root mirrors renamed; `t/scale.q:26`'s name; a `mix`/`mixn` and `unif`/`unifn` agreement test (C17).
 5. [x] **Design.** C22–C25 from the phase-2 lessons; pitfalls 33–42 as audited in Part 2 (two of them, 41 and 42,
    are the live ones behind the `t/outcomes.q` and `unifn` bugs); `mono`'s non-negative-delta contract stated where
