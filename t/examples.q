@@ -1,8 +1,7 @@
 / C18: the examples run. Each examples/*.q is a demo with a random seed, so only the shape of its outcome is
 / asserted: the process exits 0 and the report says what the script's own prose promises. Run as child
 / processes (each ends with exit). loaded by t/run.q
-ex:{[f] system "sh -c 'q examples/",f," -q </dev/null 2>&1; echo EXIT $?'"}      / (a system command that begins with "q " prints instead of returning; sh -c captures)
-code:{"J"$5_last x}
+ex:{[f] .t.q "q examples/",f," -q"}; code:.t.code
 et:{[nm;r;ok] .t.t[nm;ok]; if[not ok; -1 "  ",/:-8#r];}                          / a failing example shows its last lines: the FAIL line alone says nothing
 r:ex "reverse.q"
 et["examples/reverse.q: exits 0, the involution holds, the two planted properties fail"; r; (0=code r) and (1=sum r like "ok *") and 2=sum r like "FAIL falsified*"]

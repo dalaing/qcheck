@@ -1,6 +1,5 @@
 / C18: the README's and the design's code blocks run. Every ```q block that is not a transcript (no line starting
 / q)) is loaded as a script under a trap; a block that errors fails the test and names its first line.
-.qc.new[]
 .qc.cfg[`v`db`seed]:(0;`;7i)                                / the blocks run their own checks: pinned (C8)
 qbs:{[f] ln:read0 f; fence:where ln like "```*"; b:{[ln;se] ln (1+se 0)+til (se 1)-1+se 0}[ln] each 2 cut fence;
   b where (ln[fence 2*til count b] like "```q") and not any each b like\:"q)*"}

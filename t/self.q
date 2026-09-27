@@ -1,7 +1,4 @@
 / M6 dogfooding: qcheck testing qcheck's pure parts. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 ok:{[spec;prop] (.qc.chk[q;spec;prop])`ok}
 / the shortlex order on keys is a strict total order
 kv:.qc.list .qc.int -9 9                                    / a choice vector; origins 0
@@ -43,4 +40,3 @@ tot:{[f] all {[f;x] `ok~@[{[f;x] f x; `ok}[f];x;{`ERR}]}[f] each zoo}
 .t.t["C3 app by name only for a real dict with matching keys"; (.qc.byname[{[a;b] a};`a`b!1 2]) and not any .qc.byname[{[a;b] a}] each (([a:1 2]b:3 4);`a`c!1 2;1 2;(::))]
 / C10 completeness: the interactive entry points refuse to run inside a run, as chk does
 .t.t["minimal and replay inside a property signal instead of resetting it"; ("qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.minimal .qc.int 0 9}])`err) and "qc: nested check"~(.qc.chk[q;.qc.int 0 9;{.qc.replay[1 2] .qc.int 0 9}])`err]
-.qc.cfg[`v]:1

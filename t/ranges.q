@@ -1,7 +1,4 @@
 / the range grid: generators x range shapes x modes. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 7"                                                                       / fresh draws in modes (C8)
 RS:(0 0;0 1;-1 1;0 9;5 5;-0W 0W;0 0W;-0W 0;0W 0W;-0W -0W;7 9 8;{0,x};{(neg x;x)};.qc.lin[0;1000])
 nmr:.Q.s1
@@ -27,4 +24,3 @@ modes:{[nm;g;r;f;org;ex]
 / invalid ranges say so
 .t.t["invalid ranges signal qc: range"; all {(@[.qc.draw;x;{x}]) like "qc: range*"} each (.qc.int 5 1;.qc.int enlist 5;.qc.int 1 2 3 4;.qc.flt 5 1;.qc.lst[3 1] .qc.bool)]
 .qc.new[]
-.qc.cfg[`v]:1

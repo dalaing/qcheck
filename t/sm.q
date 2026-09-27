@@ -1,7 +1,4 @@
 / M5 state machine tests. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 7"
 / a real system: a counter in a global, with a planted bug (wraps after 3)
 cnt:0; ni:0                                                   / (not N: .qc.N is the notes)
@@ -63,7 +60,6 @@ tr:.qc.draw .qc.sm[`m0`steps!(0;200 200)] cm6
 system"S 3"
 .t.t["C11 sm replays across sizes"; {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} .qc.sm[h] cm2]
 .t.sz 100
-.qc.cfg[`v]:1
 / C9: fini runs on every way out of a run, including the harness's own errors and an exhausted strict replay
 fc:0; hf:`m0`fini!(0;{fc+:1})
 .t.e[.qc.draw;.qc.sm[hf] ([cmd:enlist `a] pre:enlist {[m] '"prebang"})]

@@ -1,7 +1,5 @@
 / generator contracts: every contract over every registry row (t/0gens.q). loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;5;7;`)
+q[`n]:5                                                                            / five tests per contract check
 system"S 7"                                                                       / fresh draws below are pinned too (C8)
 sizes:0 1 2 5 30 100
 at:{[s;f;a] .t.sz s; r:@[f;a;{[e] .t.sz 100; 'e}]; .t.sz 100; r}                  / run f a at size s
@@ -32,4 +30,3 @@ c11:{[g] (.qc.chk[q;::;{[g;x] n0:count .qc.C; .qc.draw g; count[.qc.C]>=n0}[g]])
   .t.t[nm,": a draw inside a property joins the example"; c11 g];
   } each .g.T
 .qc.new[]
-.qc.cfg[`v]:1

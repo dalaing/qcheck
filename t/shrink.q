@@ -1,7 +1,4 @@
 / M2 shrinker tests. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)                            / quiet, pinned seed, no db
 ints:.qc.list .qc.int 0 99
 r:.qc.chk[q;ints;{x~asc x}]
 .t.t["sorted: minimal counterexample is 1 0"; (1 0~r[`x]`x) and (r`shrinks)>0]
@@ -52,12 +49,11 @@ r:.qc.chk[q;{[d] n:.qc.draw .qc.int 0 99; $[n>20; '"gen boom"; n]};{1b}]
 r:.qc.chk[q;.qc.list .qc.such[{x>0}] .qc.int -9 9;{x~asc x}]
 .t.t["filtered elements: minimal is 2 1"; 2 1~r[`x]`x]
 / the failure database
-d:`$":",getenv[`TMPDIR],"qcdb_",string .z.i; qd:q,`db`name!(d;`t1)
+d:.t.tmp "qcdb"; qd:q,`db`name!(d;`t1)
 r1:.qc.chk[qd;ints;{x~asc x}]
 .t.t["db: the shrunk choices are saved"; (r1`choices)~get ` sv d,`t1]
 r2:.qc.chk[qd,enlist[`seed]!enlist 99;ints;{x~asc x}]
 .t.t["db: a saved failure is replayed before generation"; (0=r2`n) and r2[`x]~r1`x]
 r3:.qc.chk[qd;ints;{1b}]
 .t.t["db: an entry that no longer fails is removed"; (r3`ok) and 0=count key ` sv d,`t1]
-system"rm -rf ",1_string d
-.qc.cfg[`v]:1
+.t.rm d

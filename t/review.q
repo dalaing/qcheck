@@ -1,7 +1,4 @@
 / pinned by the intensive review after M6. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 7"
 .t.t["flt: a huge range does not error and stays finite"; all {(not null x) and abs[x]<1e19} .qc.draw 50#enlist .qc.flt -1e300 1e300]
 .t.t["elem/one of nothing say so"; ("qc: elem of nothing"~@[.qc.draw;.qc.elem ();{x}]) and "qc: one of nothing"~@[.qc.draw;.qc.one ();{x}]]
@@ -50,4 +47,3 @@ r:.qc.chk[q;.qc.t"j";{$[null x; 1b; x<1000000]}]
 / AUDIT2 (C14): phase-2 boundaries say qc: too
 .t.t["C14 ts and dates refuse non-temporal bounds; btab refuses a non-char type"; ((@[.qc.draw;.qc.ts[`a;`b];{x}]) like "qc: ts*") and ((@[.qc.draw;.qc.dates[1;2];{x}]) like "qc: dates*") and (@[.qc.draw;.qc.btab[1 1] enlist[`a]!enlist (5;0 9);{x}]) like "qc: btab*"]
 .t.t["C14 mono refuses a negative delta, atr u makes the value distinct"; ((@[.qc.draw;.qc.tabr[3 3] enlist[`t]!enlist .qc.mono[.qc.int 0 9;.qc.int -9 -1];{x}]) like "qc: mono*") and (`u=attr v) and v~distinct v:.qc.draw .qc.atr[`u] .qc.lst[10 10] .qc.int 0 1]
-.qc.cfg[`v]:1

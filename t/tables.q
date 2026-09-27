@@ -1,7 +1,4 @@
 / M7: tables with constrained columns (mono uniq dep), attributes (atr) and schemas. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 7"
 D:{[g;n] {.qc.draw x} each n#enlist g}
 / mono: sorted by construction, in every example and every shrink candidate (A18)
@@ -65,4 +62,3 @@ r:.qc.chk[q;pair;{if[not all (x[`q;`sym],x[`t;`sym]) in x`s; bad+:1]; (aj[`sym`t
 m:r[`x]`x
 .t.t["aj: the planted bug shrinks to one symbol, two quotes at one time with two prices, one trade; every candidate referentially valid"; (2=count m`q) and (1=count m`t) and (1=count m`s) and (1=count distinct m[`q]`time) and (2=count distinct m[`q]`px) and 0=bad]
 .t.t["aj: within 300 attempts"; r[`attempts]<=300]
-.qc.cfg[`v]:1

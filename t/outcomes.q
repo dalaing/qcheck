@@ -1,7 +1,4 @@
 / the outcome matrix: verdicts, signals in both phases, result schema, stop x why, and state after every exit
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 / the pass rule
 pv:((::);1b;0b;101b;111b;();5;"s";`a)
 .t.t["pass: documented verdicts for every result kind"; (1b;1b;0b;0b;1b;1b;`ERR;`ERR;`ERR)~{@[.qc.pass;x;{`ERR}]} each pv]
@@ -37,7 +34,6 @@ calls:({.qc.chk[q;.qc.int 0 9;{1b}]}; {.qc.chk[q;.qc.int 0 9;{x<5}]}; {.qc.chk[q
 calls,:({.qc.chk[q,enlist[`sz]!enlist 3;.qc.list .qc.int 0 9;{1b}]}; {.qc.chk[q,enlist[`sz]!enlist 3;.qc.int 5 1;{1b}]})
 .t.t["the size-leak calls are in the list (15 calls)"; 15=count calls]
 .t.t["state is clean after every entry point, on success and on error"; all {@[x;::;{x}]; clean[]} each calls]
-.qc.cfg[`v]:1
 / C6/C9: what an error leaves behind — the entry points and the probe restore everything they touched
 .t.e[.qc.minimal;{'"boom"}]
 .t.t["minimal: a raising spec leaves the minimal flag clear and the cursor at 0"; (not .qc.mn) and 0=.qc.i]

@@ -1,7 +1,4 @@
 / M4 type zoo tests. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 system"S 5"
 cs:"bgxhijefcspmdznuvt"
 / every .qc.t c value has type c
@@ -81,4 +78,3 @@ system"S 3"
 .t.t["C11 every zoo generator replays across sizes"; all {[g] .t.sz 5; v:.qc.draw g; c:.qc.C`v; .t.sz 100; v~.qc.replay[c] g} each gs]
 .t.sz 100
 .t.t["canary: zoo defaults reject an extra argument"; all {(@[x;1;{x}]) like "qc: too many*"} each (.qc.str;.qc.sym;.qc.chr;.qc.dbl;.qc.gid)]
-.qc.cfg[`v]:1

@@ -1,7 +1,4 @@
 / C19: the run stops when it has learned what it can. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 r:.qc.chk[q;.qc.bool;{1b}]
 .t.t["exhausted: bool is two inputs"; (r`ok) and (2=r`n) and `exhausted=r`stop]
 .t.t["exhausted: a pair of bools is four"; 4=(.qc.chk[q;(.qc.bool;.qc.bool);{[a;b] 1b}])`n]
@@ -49,4 +46,3 @@ r:.qc.chk[q,enlist[`nmax]!enlist 300;.qc.elem til 1000;{.qc.cover[`most;90;x<910
 .t.t["cover: nmax caps the extension"; (r[`n]>100) and r[`n]<=300]
 .t.t["stop is always present"; all `stop in/: key each (.qc.chk[q;.qc.int 0 9;{x<3}];.qc.chk[q;.qc.such[{0b}] .qc.int 0 9;{1b}];.qc.recheck[.qc.int 0 9;{1b};enlist 4])]
 .t.t["checks reports stop"; `stop in cols .qc.chks[q;enlist[`b]!enlist (.qc.bool;{1b})]]
-.qc.cfg[`v]:1

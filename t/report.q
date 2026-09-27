@@ -1,7 +1,4 @@
 / M3 reporting tests. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)
 / formatter
 .t.t["fmt: atoms, vectors, ::, functions"; (enlist["1"]~.qc.fmt 1) and ("1 2 3"~.qc.fmt 1 2 3) and ("::"~.qc.fmt (::)) and "{x+1}"~.qc.fmt {x+1}]
 .t.t["fmt: flat dict is key: value lines"; "a: 1\nb: 2 3"~.qc.fmt `a`b!(1;2 3)]
@@ -66,4 +63,3 @@ c:r`cover
 tb:.qc.chks[q;`comm`sorted!((( .qc.int 0 9;.qc.int 0 9);{(x+y)=y+x});(.qc.list .qc.int 0 9;{x~asc x}))]
 .t.t["checks: one row per property with outcome"; (98h=type tb) and (`comm`sorted~tb`name) and 10b~tb`ok]
 .t.t["checks: why column"; `ok`falsified~tb`why]
-.qc.cfg[`v]:1

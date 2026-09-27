@@ -1,7 +1,5 @@
 / C17: the distribution you ship, measured on the ranges people use, for every hint and every generator.
 / pinned seed; bounds are several sigma wide, never exact rates. loaded by t/run.q
-.qc.new[]
-.qc.cfg[`v]:0
 system"S 11"
 D:{[g;n] {.qc.draw x} each n#enlist g}                                    / n independent examples of g
 near:{[x;t;w] x within t+w*-1 1}
@@ -44,4 +42,3 @@ cm:([cmd:enlist `a] run:enlist {[a] ::})
 sc:count each D[.qc.sm[`m0`steps!(0;0 10)] cm;1000]
 .t.t["sm steps 0..10 at size 30: every count appears and none is rare"; (11=count distinct sc) and all 0.04<(count each group sc)%1000]
 .t.sz 100
-.qc.cfg[`v]:1

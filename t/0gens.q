@@ -2,7 +2,6 @@
 / t/contracts.q runs over every row, so a new generator is covered by adding a row here.
 / columns: name, gen, origin (its minimal value), ok (a predicate on one value), typed (type stable), canary (has d)
 / a constant is the one generator that records no choice; the registry says so with .g.NOCH
-.qc.new[]
 .g.cm:([cmd:enlist `a] run:enlist {[a] ::})
 .g.org:{$[x="c"; "a"; x="s"; `; x="g"; 0Ng; x$0]}
 .g.rows:(

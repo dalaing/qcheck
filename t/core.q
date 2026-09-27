@@ -1,7 +1,5 @@
 / M1 core engine tests. loaded by t/run.q (which defines .t.t)
-.qc.new[]
 .qc.cfg[`v]:0                                                / quiet: recheck and cfg-as-number read the global
-q:.qc.cfg,`v`n`seed`db!(0;100;7;`)                          / quiet, pinned seed (C8), no failure db
 system"S 7"                                                 / and the fresh draws below (C8)
 / draw is a homomorphism over data
 .t.t["draw: atoms, vectors, tables, :: are constants"; (1~.qc.draw 1) and (1 2 3~.qc.draw 1 2 3) and (tt~.qc.draw tt:([]a:1 2)) and (::)~.qc.draw (::)]
@@ -151,4 +149,3 @@ nn:{.qc.draw x} each 300#enlist .qc.rec[2 2;0;{1+sum x}]
 .t.t["C17 rec at size 30: under 20% leaves, median node count >= 8"; (0.2>avg 0=nn) and 8<=med nn]
 .t.sz 100
 .t.t["C17 flt 0 1 hits both bounds"; (any v=0) and any 1=v:.qc.draw 1000#enlist .qc.flt 0 1]
-.qc.cfg[`v]:1
