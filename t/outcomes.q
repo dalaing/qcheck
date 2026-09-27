@@ -28,11 +28,13 @@ if[not all pieces; -1 "  outcome pieces: ",.Q.s1 pieces; -1 "  stops: ",.Q.s1 R@
 .t.t["stop x why consistency"; all {[r] ((r[`why] in `falsified`error)=r[`stop]=`fail) and ((r[`why]=`gaveup)=r[`stop]=`gaveup) and (r[`why] in `ok`cover)=r[`stop] in `n`exhausted`cover`nmax} each R]
 / state after every entry point on every exit, including errors
 clean:{(not .qc.run) and (.qc.cf~.qc.cfg) and (0=.qc.dp) and (0=count .qc.st) and (.qc.bs=.qc.cfg`sz) and (.qc.sz=.qc.cfg`sz) and 25 80i~system"c"}
-/ a run's size must not leak into later interactive draws (C9): chk resets every example at the run's size
-calls,:({.qc.chk[q,enlist[`sz]!enlist 3;.qc.list .qc.int 0 9;{1b}]}; {.qc.chk[q,enlist[`sz]!enlist 3;.qc.int 5 1;{1b}]})
 calls:({.qc.chk[q;.qc.int 0 9;{1b}]}; {.qc.chk[q;.qc.int 0 9;{x<5}]}; {.qc.chk[q;.qc.int 0 9;{.qc.check[.qc.int 0 9;{1b}]}]};
   {.qc.chk[q;.qc.int 0 9;5]}; {.qc.chk[q;.qc.int 5 1;{1b}]}; {.qc.chk[q;.qc.sm[`m0`init!(0;{'"x"})] .g.cm;::]};
   {.qc.recheck[.qc.int 0 9;5;enlist 1]}; {.qc.minimal {[d] '"x"}}; {.qc.replay[1 2] {[d] .qc.draw .qc.int 5 1}}; {.qc.draw .qc.sized 5};
   {.qc.chk[q;.qc.int 0 9;{.qc.fmt ([]a:til 30); 1b}]}; {.qc.chks[q;5]}; {.qc.check[.qc.bool;{.qc.minimal .qc.bool}]})
+/ a run's size must not leak into later interactive draws (C9): chk resets every example at the run's size. (Appended
+/ after the definition: ,: on an undefined global defines it at top level, so the first version of this was lost — pitfall 41)
+calls,:({.qc.chk[q,enlist[`sz]!enlist 3;.qc.list .qc.int 0 9;{1b}]}; {.qc.chk[q,enlist[`sz]!enlist 3;.qc.int 5 1;{1b}]})
+.t.t["the size-leak calls are in the list (15 calls)"; 15=count calls]
 .t.t["state is clean after every entry point, on success and on error"; all {@[x;::;{x}]; clean[]} each calls]
 .qc.cfg[`v]:1

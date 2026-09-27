@@ -80,7 +80,7 @@ New files pin (`t/tables.q:5`, `t/scale.q:5`, `t/integ.q:5`); `t/stop.q`, `t/rep
   Near-certain in 100 tests, not pinned. Same standing as the other example assertions in the first audit.
 
 ### C9 — engine state is restored at the example boundary
-- [ ] **bug (test)** `t/outcomes.q:32-33` — `calls,:(…)` precedes `calls:(…)`. At top level `,:` on an undefined
+- [x] **bug (test)** `t/outcomes.q:32-33` — `calls,:(…)` precedes `calls:(…)`. At top level `,:` on an undefined
   global defines it (reproduced), and the definition on the next line then replaces it, so the two calls that
   exercise the C9 size leak through `clean` are never run. The regression test for `2b1ef15` does not exist.
 - Library: `CS`, `UR`, `US` are saved before and restored after every table, on the error path through the trap
