@@ -1,4 +1,9 @@
 / q t/run.q — load qc.q, run every t/*.q except this file, print one table, exit 0/1
+/ How a file is read: one top-level statement at a time, where a line that begins with a space continues the
+/ statement above (as \l does), each statement evaluated with value under a trap. Two consequences for test files:
+/ a closer (} or )) must never start at column 0, or it becomes a statement of its own and both halves raise;
+/ and inside a multi-line lambda every line must end in a semicolon, because value of a multi-line string does
+/ not treat the newline as a separator the way \l does. The check below enforces the first; t/names.q pl shows the second.
 \l qc.q
 .t.r:()
 q:()!()                                                                              / (defined per file by .t.load)
@@ -24,6 +29,7 @@ q:()!()                                                                         
 .t.load:{[x] .t.f::x; .qc.cfg:.t.cfg0; .qc.cfg[`v]:0; .qc.new[]; q::.qc.cfg,`v`n`seed`db!(0;100;7;`); g0:key `.; se:.t.stmts read0 `$":t/",string x;
   {[n;s] e:.Q.trp[{value x; ""};s;{[e;bt] e,"\n",.Q.sbt bt}]; if[count e; .t.t["line ",string[n]," raised: ",first "\n" vs e;0b]; -1 "  ",e];}'[se 0;se 1];
   if[count nw:(key `.) except g0,`q; ![`.;();0b;nw]];}   / (guarded: a functional delete with no names deletes everything, pitfall 43)
+.t.f:`run.q; .t.t["no test file has a closer at column 0 (it would split its statement)"; not any {any (read0 ` sv `:t,x) like "[})]*"} each f where (f:key `:t) like "*.q"]
 .t.load each except[f where (f:key `:t) like "*.q";`run.q];                        / *.q only: not an editor's stray file
 .t.R:flip `file`name`ok!flip .t.r
 system"c 200 200"                                                                 / the summary in full: the default console cuts it at 25 rows
