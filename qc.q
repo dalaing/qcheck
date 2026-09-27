@@ -425,7 +425,11 @@ recheck1:{[gen;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[gen;prop]
 
 / ---- shrinking: edit the recorded choice vector, replay, keep what still fails and is smaller ------------
 zig:{(2*"f"$abs x)-x>0}                               / distance from origin: 0 1 -1 2 -2 ... (float: 2*0W overflows)
-skey:{[v;o] (count v; zig ("f"$v)-"f"$o)}              / shortlex key; the distance in floats: a long difference wraps on full ranges (C21)
+/ how far values are from their origins: the long difference wherever it does not wrap, the float one where it
+/ would (C21). The float one alone cannot tell a timestamp from the one a nanosecond later, so nor could the order
+dst:{[v;o] f:("f"$v)-"f"$o; ?[9e18>abs f; "f"$v-o; f]}
+mid:{[a;b] $[9e18>abs ("f"$b)-"f"$a; a+(b-a) div 2; "j"$(("f"$a)+"f"$b)%2]}   / half way from a to b, exactly where b-a does not wrap
+skey:{[v;o] (count v; zig dst[v;o])}                   / shortlex key
 less:{[a;b] $[a[0]<>b 0; a[0]<b 0; a[1]~b 1; 0b; (a[1]<b 1) first where a[1]<>b 1]}
 dl:{[v;s;e] pt[v;s;e;()]}
 pt:{[v;s;e;w] (s#v),w,e _ v}
@@ -433,14 +437,17 @@ pt:{[v;s;e;w] (s#v),w,e _ v}
 cv:`long$(); cC:C; cE:E; co:()!(); cerr:""; na:0; ns:0; cp:`; sgen:(::); sprop:(::)
 K:(enlist 0#0)!enlist 0N                              / candidates already tried (seeded with a vector key)
 H:([]n:`long$();pass:`symbol$();len:`long$())         / history of accepted shrinks
-/ try one candidate, as a cond chain: budget, identical, cached, valid, same failure, strictly smaller (C2)
-try:{[cand] cand:"j"$cand;
-  $[na>=cf`shrinks; 0b; cand~cv; 0b; not null K cand; 0b;
+/ tst: does the candidate fail as the original did? As a cond chain: identical, cached, budget, valid, same failure
+/ (C2). One that fails and is strictly smaller becomes the current one. K remembers the answer: 0 did not fail, 1 did.
+/ try: was the candidate taken? A pass that only goes downhill asks try; a search that must cross ground that is no
+/ better before it reaches ground that is (the far side of an origin, the most two choices can be moved) asks tst
+tst:{[cand] cand:"j"$cand;
+  $[cand~cv; 1b; not null r:K cand; 1=r; na>=cf`shrinks; 0b;
     [na+:1; reset[cand;bs;0b;1b]; r:run1[sgen;sprop];
-     ok:$[not `fail=r`st; 0b; (r`err) in ENG; 0b; cf`same; r[`err]~cerr; 1b];
-     if[ok; ok:less[skey[C`v;C`o];skey[cv;cC`o]]];
-     if[ok; cv::C`v; cC::C; cE::E; co::r; ns+:1; H,:(na;cp;count cv)];
-     K[cand]:0; ok]]}
+     f:$[not `fail=r`st; 0b; (r`err) in ENG; 0b; cf`same; r[`err]~cerr; 1b];
+     if[f; if[less[skey[C`v;C`o];skey[cv;cC`o]]; cv::C`v; cC::C; cE::E; co::r; ns+:1; H,:(na;cp;count cv)]];
+     K[cand]:"j"$f; f]]}
+try:{[cand] n:ns; tst cand; ns>n}
 spans:{`w xdesc update w:e-s from cE}                 / largest first
 / consecutive siblings from span s0: same label and depth, each starting where the previous ended
 chain:{[s0;l0;d0] c:`s xasc select s,e from cE where l=l0,d=d0,s>=s0; if[not s0~c[0;`s]; :0#c];
@@ -456,7 +463,7 @@ pdesc:{cp::`desc; p:0b; j:0; while[j<count tb:spans[]; s0:tb[j;`s]; e0:tb[j;`e];
   ds:select from tb where l=l0,s>=s0,e<=e0,not (s=s0)&e=e0; ii:0; ok:0b;
   while[(ii<count ds) and not ok; ok:try pt[cv;s0;e0;cv ds[ii;`s]+til ds[ii;`w]]; ii+:1];
   $[ok; p:1b; j+:1]]; p}
-bkey:{[s;e] (e-s;zig ("f"$cv ix)-"f"$cC[`o] ix:s+til e-s)}    / shortlex key of one block (floats, C21)
+bkey:{[s;e] ix:s+til e-s; (e-s;zig dst[cv ix;cC[`o] ix])}    / shortlex key of one block
 ordr:{[ks] n:count ks; ix:til n; ii:0; while[ii<n-1; j:ii+1; while[j<n; if[less[ks ix j;ks ix ii]; ix[ii,j]:ix[j,ii]]; j+:1]; ii+:1]; ix}
 blk:{[c;ix] raze {[s;e] cv s+til e-s}'[c[ix;`s];c[ix;`e]]}
 psort:{cp::`sort; p:0b; j:0;
@@ -466,23 +473,61 @@ psort:{cp::`sort; p:0b; j:0;
        if[not ix~til count ix; ok:try pt[cv;c[0;`s];last c`e;blk[c;ix]]];
        ii:0; while[(ii<count[c]-1) and not ok; if[less[ks ii+1;ks ii]; ok:try pt[cv;c[ii;`s];c[ii+1;`e];blk[c;(ii+1;ii)]]]; ii+:1];
        $[ok; p:1b; j+:1]]]]; p}
-pdup:{cp::`dup; p:0b; ix:where cv<>cC`o; g:ix each value group (flip (cv;cC`lo;cC`hi)) ix; g:g where 1<count each g; j:0;   / same value and range
+/ the generator that made each choice: the label of the innermost span around it. The continue bits of a list are
+/ the list's, its items their own generator's
+clb:{lb:count[cv]#0N; sp:`d`w xasc update w:s-e from cE; n:0; while[n<count sp; lb[sp[n;`s]+til sp[n;`e]-sp[n;`s]]:sp[n;`l]; n+:1]; lb}
+pdup:{cp::`dup; p:0b; ix:where cv<>cC`o; g:ix each value group (flip (cv;cC`lo;cC`hi;clb[])) ix; g:g where 1<count each g; j:0;   / same value, range and generator: two symbols that must agree are lowered together, without the bits that happen to equal them
   while[j<count g; ps:g j; ok:try @[cv;ps;:;cC[`o] ps];
     if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[go and all 1<abs d; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];   / distances in floats (C21)
     if[ok; p:1b]; j+:1]; p}
-bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs ("f"$b)-"f"$a; m:"j"$(("f"$a)+"f"$b)%2; $[m in (a;b); a:b; try @[cv;j;:;m]; [b:m; p:1b]; a:m]]; p}   / float midpoint: b-a overflows on full ranges
-/ a value below its origin is tried at the same distance above it, which is the simpler of the two (zig: 1 before -1)
-pmir:{[j] o:cC[`o] j; v:cv j; $[v>=o; 0b; (("f"$o)+("f"$o)-"f"$v)>"f"$cC[`hi] j; 0b; try @[cv;j;:;o+o-v]]}   / the room above, in floats (C21)
-pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; if[pmir j; p:1b]; j+:1]]]; p}
-/ pairs: move value from an earlier choice to a later one of the same range within a small window (elements of a
-/ list are separated by their decision bits), then lower both together
-pred:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1; vi:cv ii; oi:cC[`o] ii;
-  $[vi=oi; ii+:1;
-    [js:(ii+1+til 3) inter where (cC[`lo]=cC[`lo] ii)&cC[`hi]=cC[`hi] ii; ok:0b; n:0;
-     while[(n<count js) and not ok; j:js n; vj:cv j; k:"j"$(("f"$vi)-"f"$oi)&("f"$cC[`hi] j)-"f"$vj;   / room to move, in floats (C21); a rounded candidate is clamped on replay
-       ok:$[k>0; try @[cv;ii,j;:;(vi-k;vj+k)]; 0b];
-       if[(not ok) and vj>cC[`o] j; ok:try @[cv;ii,j;-;1]]; n+:1];
+bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs first dst[b;a]; m:mid[a;b]; $[m in (a;b); a:b; try @[cv;j;:;m]; [b:m; p:1b]; a:m]]; p}
+/ one choice at a time: its origin; then nearer its origin on the side it is on, by halves (bsr); then the other
+/ side (osd): at the same distance, and nearer by halves if it fails there, or else the four places nearest the
+/ origin. The order ranks 1 before -1, and a failure may lie nearer the origin on the far side than on this one
+far:{[j] "j"$9e18&abs first dst[cv j;cC[`o] j]}                       / how far choice j is from its origin, saturated (C21)
+vat:{[j;s;n] w:("f"$cC[`o] j)+s*"f"$n; $[w<"f"$cC[`lo] j; 0N; w>"f"$cC[`hi] j; 0N; cC[`o][j]+s*n]}   / the value n from the origin of choice j on side s (1 above, -1 below); null outside its range, judged in floats (C21)
+osd:{[j] s:$[cv[j]>cC[`o] j; -1; 1]; d:far j; n:ns;
+  f:{[j;s;k] $[null w:vat[j;s;k]; 0b; tst @[cv;j;:;w]]}[j;s];
+  $[f d; [lo:0; hi:d; while[1<hi-lo; m:lo+(hi-lo) div 2; $[f m; hi:m; lo:m]]]; [k:1; while[$[k>4; 0b; k<d]; $[f k; k:d; k+:1]]]];
+  ns>n}
+pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; if[osd j; p:1b]; j+:1]]]; p}
+/ two choices at a time. The partners of a choice are the next few made by the same generator over the same range,
+/ however far off: the items of a list are a continue bit apart, the inputs of a state machine's steps three or more
+prt:{[ii;w] lb:clb[]; ix:where (lb=lb ii)&(cC[`lo]=cC[`lo] ii)&cC[`hi]=cC[`hi] ii; w sublist ix where ix>ii}
+sdo:{[ii] $[cv[ii]>cC[`o] ii; 1; -1]}                                      / the side of its origin that choice ii is on
+inr:{[j;v] $[("f"$v)<"f"$cC[`lo] j; 0b; ("f"$v)<="f"$cC[`hi] j]}
+/ fint f: the most n for which f n holds, taking f to hold up to some n and not beyond: 1 to 4 one at a time, then
+/ doubling until it fails, then halving between (Hypothesis's find_integer)
+fint:{[f] n:1; while[n<5; if[not f n; :n-1]; n+:1]; lo:4; hi:5; while[f hi; lo:hi; hi*:2]; while[1<hi-lo; m:lo+(hi-lo) div 2; $[f m; lo:m; hi:m]]; lo}
+/ rds: choice i nearer its origin by k and its partner j further from its own by k, for a sum that must be kept:
+/ all the way first, then the most that still fails. tgr: both moved by n the way that brings i nearer, for a
+/ difference that must be kept; j may cross its origin (1 0 to 0 -1). (Hypothesis's redistribute_numeric_pairs
+/ and lower_integers_together)
+rds:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; f:{[ii;j;s;d;vi;vj;k] $[k>d; 0b; null w:("f"$vj)+s*"f"$k; 0b; not inr[j;w]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj+s*k)]]}[ii;j;s;d;vi;vj];
+  if[not f d; fint f]; ns>n}
+tgr:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; fint {[ii;j;s;d;vi;vj;k] $[k>d; 0b; not inr[j;("f"$vj)-s*"f"$k]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj-s*k)]]}[ii;j;s;d;vi;vj]; ns>n}
+ppr:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1;
+  $[cv[ii]=cC[`o] ii; ii+:1;
+    [n:ns; js:prt[ii;4]; k:0; while[$[k>=count js; 0b; ns>n; 0b; not cv[ii]=cC[`o] ii]; rds[ii;js k]; k+:1];
+     js:3 sublist js; k:0; while[$[k>=count js; 0b; ns>n; 0b; not cv[ii]=cC[`o] ii]; tgr[ii;js k]; k+:1];
+     $[ns>n; p:1b; ii+:1]]]]; p}
+/ trade: an earlier choice made simpler (its origin, or one or two places nearer it) and a partner searched outwards
+/ from where it is, the nearest place first, for TD places. rds and tgr keep a sum or a difference; this keeps
+/ nothing, so it finds 3 17 from 5 10 for a product that must reach 50. The order is lexicographic, so whatever
+/ the later choice becomes the result is simpler
+TD:24
+ring:{[j;v;n;up] o:cC[`o] j; d:1152921504606846976&"j"$9e18&abs first dst[v;o]; k:$[d=0; 0; (2*d)-v>o];   / k: the place of v among 0 1 2 3 4 ... for o, o+1, o-1, o+2, o-2 ...
+  ks:$[up; k+1+til 2*n; reverse (0|k-2*n)+til k&2*n]; w:vat[j]'[1 -1 (0=ks mod 2);(ks+1) div 2]; n sublist w where not null w}
+ptr:{cp::`trade; p:0b; ii:0; while[ii<count[cv]-1;
+  $[cv[ii]=cC[`o] ii; ii+:1;
+    [js:prt[ii;3]; ok:0b; ci:distinct cC[`o][ii],ring[ii;cv ii;2;0b]; n:0;
+     while[$[n>=count js; 0b; not ok]; j:js n; cj:ring[j;cv j;TD;1b]; m:0;
+       while[$[m>=count ci; 0b; not ok]; q:0; while[$[q>=count cj; 0b; not ok]; ok:try @[cv;ii,j;:;(ci m;cj q)]; q+:1]; m+:1];
+       n+:1];
      $[ok; p:1b; ii+:1]]]]; p}
+/ runs: any one or two choices in a row deleted, where pdel deletes whole spans. Two sibling lists become one by
+/ losing the stop bit of the first and the continue bit before the second (Hypothesis's node programs, which go to five)
+pnd:{cp::`run; p:0b; k:2; while[k>0; ii:0; while[ii<=count[cv]-k; $[try dl[cv;ii;ii+k]; p:1b; ii+:1]]; k-:1]; p}
 / blocks (M8): a blk span is a length choice k followed by m blocks of k values (one for bulk, one per column for
 / btab). Delete the same chunk from every block and lower k (ddmin: g chunks; a hit keeps g, a miss doubles it),
 / so a block reaches a minimum that is not a prefix.
@@ -495,7 +540,7 @@ pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
 / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
 shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
   K::(enlist 0#0)!enlist 0N; H::0#H; bs::cf`sz;
-  while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;pred); 0b]];   / cond, not and: passes are not free
+  while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;ppr;ptr;pnd); 0b]];   / cond, not and: passes are not free
   co,`shrinks`attempts`hist!(ns;na;H)}
 / failure database: one file per (gen;prop) under cfg`db, keyed by cfg`name or a hash of their source
 dbf:{[gen;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(gen;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console

@@ -6,7 +6,7 @@ that breaks the rule, and cuts it down to the simplest input that still does.
 ```q
 q)\l qc.q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
@@ -36,7 +36,7 @@ The rule in the transcript above is false on purpose, so that its report can be 
 | in the report | what it says |
 |---|---|
 | `falsified after 5 tests` | five examples passed and the next one broke the rule |
-| `8 shrinks (36 attempts` | the shrinker tried 36 simpler candidates; 8 of them still failed, each simpler than the last |
+| `7 shrinks (59 attempts` | the shrinker tried 59 other inputs; 7 of them failed and were simpler than the one before, and each became the counterexample in its turn |
 | `x: 1 0` | the counterexample: no unsorted list is shorter, and none of this length has smaller items |
 | `seed 7` | the seed of the run: the same seed draws the same examples |
 | `rerun:` | `.qc.again[]` tests this counterexample again, which is how you see that a fix worked; in the longer form, `gen` and `prop` stand for the generator and the property you gave, and the numbers reproduce the counterexample |
@@ -56,7 +56,7 @@ A rule that sounds true finds the input you would not have written down. After `
 
 ```q
 q).qc.check[.qc.list .qc.t"j"; {not any null fills x}];
-FAIL falsified after 23 tests, 2 shrinks (13 attempts, seed 7)
+FAIL falsified after 23 tests, 2 shrinks (17 attempts, seed 7)
 x: ,0N
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0]
 ```
@@ -164,7 +164,7 @@ Inside a property:
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -234,7 +234,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 10 tests, 3 shrinks (43 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (57 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------

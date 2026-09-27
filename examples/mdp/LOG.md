@@ -9,8 +9,9 @@ the log when it appeared in the work.
 
 The log was reviewed on 2026-09-28. Where a statement in it was found to be wrong it has been put right, and
 each such place is marked *(corrected: …)* with what it said before. The library's word for what a property's
-inputs are drawn from is now *generator*, and its rerun line says `gen`, so the log says so too. Nothing else
-has been changed.
+inputs are drawn from is now *generator*, and its rerun line says `gen`, so the log says so too. The shrinker
+has since been improved, so the counts of shrinks and attempts in the first line of each report are those of
+the shrinker as it now is; every counterexample and every trace is as it was. Nothing else has been changed.
 
 ## Piece 1 — reference data
 
@@ -34,12 +35,12 @@ ABC| 0.05 1   10
 AB | 1    1   10  
 B  | 0.05 1   1   
 q).qc.check[.mdp.g.ref; {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}[(`A;0f)]
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 q).qc.check[.mdp.g.ref; {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}[(`A;0f)]
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
@@ -159,7 +160,7 @@ time                          kind  sym bid      ask      px       qty
 2024.01.02D09:30:01.125495236 trade ACC 60.82281 68.5     91.41703 1  
 q)replay:{[ev] .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; out:0#.mdp.enrich1 select time,sym,px,qty from ev; {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; out,:.mdp.enrich1 enlist `time`sym`px`qty#e]} each ev; out}
 q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select time,sym,px,qty from x where kind=`trade; select time,sym,bid,ask from x where kind=`quote]; .qc.eq[inc;bat]}];
-FAIL falsified after 2 tests, 11 shrinks (63 attempts, seed 7)
+FAIL falsified after 2 tests, 11 shrinks (83 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -183,7 +184,7 @@ q)system"l examples/mdp/steps/03_quotes.q"
 q)system"l examples/mdp/steps/03_gen.q"
 q)replay:{[ev] .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
 q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select time,sym,px,qty from x where kind=`trade; select time,sym,bid,ask from x where kind=`quote]; .qc.eq[inc;bat]}];
-FAIL falsified after 19 tests, 19 shrinks (90 attempts, seed 7)
+FAIL falsified after 19 tests, 19 shrinks (124 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -209,7 +210,7 @@ q)system"l examples/mdp/steps/04_quotes.q"
 q)system"l examples/mdp/steps/04_gen.q"
 q)replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
 q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select seq,time,sym,px,qty from inc; .mdp.quote]; .qc.eq[inc;bat]}];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x:
   time kind sym bid ask px qty
   ----------------------------
@@ -230,7 +231,7 @@ q)system"l examples/mdp/steps/05_quotes.q"
 q)system"l examples/mdp/steps/04_gen.q"
 q)replay:{[ev] .mdp.seq::0; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; {[o;e] $[`quote=e`kind; [.mdp.onquote enlist `time`sym`bid`ask#e; o]; o,.mdp.enrich1 enlist `time`sym`px`qty#e]}/[0#.mdp.enrich1 select time,sym,px,qty from ev;ev]}
 q).qc.check[.mdp.g.stream; {inc:replay x; bat:.mdp.enrichb[select seq,time,sym,px,qty from inc; .mdp.quote]; .qc.eq[inc;bat]}];
-FAIL falsified after 6 tests, 37 shrinks (124 attempts, seed 7)
+FAIL falsified after 6 tests, 36 shrinks (155 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -277,7 +278,7 @@ times up to thirty seconds apart so that minutes fill and boundaries get crossed
 q)system"l examples/mdp/steps/07_bars.q"
 q)system"l examples/mdp/steps/07_gen.q"
 q).qc.check[.mdp.g.trades; {.mdp.bar::0#.mdp.bar; .mdp.onbar x; .qc.eq[.mdp.bar; .mdp.barsb x]}];
-FAIL falsified after 4 tests, 25 shrinks (176 attempts, seed 7)
+FAIL falsified after 4 tests, 25 shrinks (204 attempts, seed 7)
 x:
   time                          sym px qty
   ----------------------------------------
@@ -330,7 +331,7 @@ and the book balances — realised plus unrealised equals the cash flow of the f
 q)system"l examples/mdp/steps/08_pos.q"
 q)system"l examples/mdp/steps/08_gen.q"
 q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; .qc.eq[exec qty from .mdp.pos; exec sum qty*1 -1 `buy`sell?side by sym from f]}];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -344,7 +345,7 @@ path why  a b
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 q)cash:{[f] exec sum .mdp.inst[sym;`mult]*qty*px*-1 1 `buy`sell?side from f}
 q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum .mdp.inst[sym;`mult]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -374,7 +375,7 @@ q)system"l examples/mdp/steps/08_gen.q"
 q)mult:{exec sym!mult from .mdp.inst}
 q)cash:{[f] exec sum mult[][sym]*qty*px*-1 1 `buy`sell?side from f}
 q).qc.check[.mdp.g.fills; {f:x 0; mk:x 1; .mdp.pos::0#.mdp.pos; .mdp.onfill f; lhs:(exec sum real from .mdp.pos)+.mdp.unreal mk; rhs:cash[f]+exec sum mult[][sym]*qty*mk sym from .mdp.pos; 1e-6>abs lhs-rhs}];
-FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 2 tests, 9 shrinks (60 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -384,7 +385,7 @@ x:
     A: 1f
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[.mdp.g.fills; {f:x 0; .mdp.pos::0#.mdp.pos; .mdp.onfill f; p:0!select from .mdp.pos where qty<>0; r:select mn:min px,mx:max px by sym from f; k:([]sym:p`sym); all (p[`cost]>=(r[k]`mn)-1e-9) and p[`cost]<=1e-9+r[k]`mx}];
-FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 2 tests, 9 shrinks (60 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -394,7 +395,7 @@ x:
     A: 1f
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); {[s;q;p] .mdp.inst::([sym:`A`B] tick:0.01 0.01; lot:1 1; mult:1 10); .mdp.pos::0#.mdp.pos; .mdp.onfill ([]sym:s,s; side:`buy`sell; qty:q,q; px:p,p); (0=.mdp.pos[s;`qty]) and 0=.mdp.pos[s;`real]}];
-FAIL falsified after 0 tests, 0 shrinks (2 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (5 attempts, seed 7)
 s: `A
 q: 1
 p: 1f
@@ -453,7 +454,7 @@ q)reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qca
 q)feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
 q)ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
 q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); {[ev;a;b] w:asc (a;b); reset[]; feed ev; s:exec sym from .mdp.inst; mem:ask[2024.01.02;;w 0;w 1] each s; .mdp.eod 2024.01.02; .qc.eq[mem; ask[2024.01.02;;w 0;w 1] each s]}];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 ev:
   time kind sym bid ask px qty
   ----------------------------
@@ -479,7 +480,7 @@ q)reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qca
 q)feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
 q)ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
 q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); {[ev;a;b] w:asc (a;b); reset[]; feed ev; s:exec sym from .mdp.inst; mem:ask[2024.01.02;;w 0;w 1] each s; .mdp.eod 2024.01.02; .qc.eq[mem; ask[2024.01.02;;w 0;w 1] each s]}];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 ev:
   time kind sym bid ask px qty
   ----------------------------
@@ -552,7 +553,7 @@ q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/14_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
-FAIL falsified after 4 tests, 4 shrinks (17 attempts, seed 7)
+FAIL falsified after 4 tests, 4 shrinks (24 attempts, seed 7)
 qc.run round
 step cmd   arg                                   res model ok
 -------------------------------------------------------------
@@ -635,7 +636,7 @@ q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/18_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
-FAIL falsified after 13 tests, 6 shrinks (20 attempts, seed 7)
+FAIL falsified after 13 tests, 6 shrinks (28 attempts, seed 7)
 qc.run ./2024.01.02/trade/seq. OS reports: No such file or directory
 step cmd  arg                                   res model ok
 ------------------------------------------------------------
@@ -706,7 +707,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/19_sm.q"
 q).mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; system"l ",1_string .mdp.hdb;}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 146 tests, 21 shrinks (97 attempts, seed 7)
+FAIL falsified after 146 tests, 21 shrinks (152 attempts, seed 7)
 qc.post qc.eq
 path why   a b
 --------------
@@ -766,7 +767,7 @@ q)system"l examples/mdp/steps/20_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q)seams:{[tr] c:tr`cmd; .qc.classify[`rename_in_effect; any (c=`eod) and 0<sums c=`rename]; .qc.classify[`old_name_used_after_its_rename; any {[r] $[r[`cmd] in `quote`trade`fill; (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; .qc.classify[`positions_merged_at_a_close; any {[r] $[`eod=r`cmd; any (exec sym from r[`model]`f)<>.mdp.canon'[exec sym from r[`model]`f;r[`model]`day]; 0b]} each tr]; .qc.classify[`query_of_a_past_day_by_a_renamed_name; any {[r] $[`query=r`cmd; (r[`arg][0]<r[`model]`day) and (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; 1b}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
-FAIL falsified after 117 tests, 25 shrinks (116 attempts, seed 7)
+FAIL falsified after 117 tests, 24 shrinks (183 attempts, seed 7)
 qc.inv
 step cmd    arg                 res ok
 --------------------------------------
@@ -810,7 +811,7 @@ q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q)seams:{[tr] c:tr`cmd; .qc.classify[`rename_in_effect; any (c=`eod) and 0<sums c=`rename]; .qc.classify[`old_name_used_after_its_rename; any {[r] $[r[`cmd] in `quote`trade`fill; (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; .qc.classify[`positions_merged_at_a_close; any {[r] $[`eod=r`cmd; any (exec sym from r[`model]`f)<>.mdp.canon'[exec sym from r[`model]`f;r[`model]`day]; 0b]} each tr]; .qc.classify[`query_of_a_past_day_by_a_renamed_name; any {[r] $[`query=r`cmd; (r[`arg][0]<r[`model]`day) and (r[`arg][1])<>.mdp.canon[r[`arg][1];r[`model]`day]; 0b]} each tr]; 1b}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; seams];
-FAIL falsified after 186 tests, 22 shrinks (105 attempts, seed 7)
+FAIL falsified after 186 tests, 22 shrinks (205 attempts, seed 7)
 qc.post qc.eq
 path           why   a b
 ------------------------
@@ -884,7 +885,7 @@ q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/23_sm.q"
 q).mdp.mergepos:{[o;n] a:.mdp.pos o; .mdp.pos[n]:`qty`cost`real!(a`qty;a`cost;a`real); .mdp.pos::delete from .mdp.pos where sym=o;}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 111 tests, 21 shrinks (101 attempts, seed 7)
+FAIL falsified after 111 tests, 21 shrinks (165 attempts, seed 7)
 qc.inv qc.eq
 path why   a b
 --------------
@@ -906,7 +907,7 @@ q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/23_sm.q"
 q).mdp.roll:{[] ks:exec sym from .mdp.pos; o:ks where ks<>.mdp.canon'[ks;.mdp.today]; .mdp.mergepos'[o;.mdp.canon'[o;.mdp.today]];}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 66 tests, 17 shrinks (64 attempts, seed 7)
+FAIL falsified after 66 tests, 17 shrinks (94 attempts, seed 7)
 qc.inv qc.eq
 path   why   a b 
 -----------------
@@ -927,7 +928,7 @@ q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/23_sm.q"
 q).mdp.mergeq:{[o;n] a:.mdp.qcache o; b:.mdp.qcache n; if[null b`seq; .mdp.qcache[n]:a]; .mdp.qcache::delete from .mdp.qcache where sym=o;}
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 91 tests, 29 shrinks (146 attempts, seed 7)
+FAIL falsified after 91 tests, 28 shrinks (263 attempts, seed 7)
 qc.inv qc.eq
 path   why   a b
 ----------------
@@ -961,7 +962,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/23_sm.q"
 q).qc.chk[`n`seed!(300;826650575i);.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 240 tests, 23 shrinks (109 attempts, seed 826650575)
+FAIL falsified after 240 tests, 23 shrinks (158 attempts, seed 826650575)
 qc.post qc.eq
 path           why   a b
 ------------------------

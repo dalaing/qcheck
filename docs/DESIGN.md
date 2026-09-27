@@ -366,11 +366,13 @@ Replaying a candidate `P'`: reset, generate and run. Each draw takes `lo|hi&P' i
 misalignment** — so any prefix is a valid input and filters, dependent draws and state machines never see an
 impossible value (A3). Running past the end of `P'` while shrinking signals `"qc.overrun"`: candidate invalid.
 A candidate is accepted iff it is valid, still fails (with the same error text when `same` is set), and is
-strictly smaller under the shortlex key `(count v; zig 0W^v-o)`, `zig:{(2*abs x)-x>0}` (0, 1, −1, 2, −2, …).
-The four tests run as a cond chain in that order — cache, validity, failure, size — because q's `and`
-evaluates every term and the property run is the expensive one (C2).
-The `0W^` guards the one range whose distances overflow — the full long domain of `.qc.t"j"` — where ties at
-the extremes are harmless.
+strictly smaller under the shortlex key `(count v; zig d)`, `zig:{(2*abs x)-x>0}` (0, 1, −1, 2, −2, …), where
+`d` is the distance of each choice from its origin: the long difference wherever that does not wrap, the float
+one on the ranges where it would (`dst`, C21). The tests run as a cond chain in that order — cache, validity,
+failure, size — because q's `and` evaluates every term and the property run is the expensive one (C2).
+`tst` answers "does this candidate fail?", taking it as the current one when it is also smaller, and `try`
+answers "was it taken?". A pass that only goes downhill asks `try`; a search that has to cross ground that is no
+better on its way to ground that is asks `tst`.
 
 Structure the shrinker exploits: every `.qc.draw` of a function wraps a **span** labelled by the generator's
 identity; `list` wraps each element and emits a *continue bit* before it — forced bits are recorded as
@@ -389,19 +391,34 @@ vector (q dicts accept vector keys, A1). The loop and every pass are iterative, 
 2. zero a span (set every choice to its origin);
 3. replace a span by a descendant with the same label (collapses recursion);
 4. reorder sibling spans of the same label into sorted order (canonical lists);
-5. minimise duplicated values together (`group v`), then each choice individually by binary search toward its
-   origin, and a value left below its origin is tried at the same distance above it, which the order ranks
-   simpler (1 before -1; the binary search makes no attempt at distance 1, so -1 used to stay);
-6. redistribute numeric pairs (`x-k, y+k`) and lower pairs together;
-7. (M8) delete the same chunk from every block of a bulk span and lower its length, ddmin-style — first, since a
+5. minimise duplicated values together (`group v`);
+6. each choice by itself: its origin; then nearer its origin on the side it is on, by binary search; then the
+   other side of the origin, at the same distance and nearer by halves if it fails there, or else at the four
+   places nearest the origin. The order ranks 1 before −1, and a failure may lie nearer the origin on the far
+   side than on this one (`x<50` and `x>-10` both required: 50 is found first, and −10 is simpler);
+7. two choices together, a choice with a *partner*: redistribute (`x-k, y+k`, all the way and then the most
+   that still fails, for a sum that must be kept) and lower together (`x-n, y-n`, the most that still fails, for
+   a difference that must be kept: `1 0` to `0 -1`);
+8. trade: an earlier choice made simpler (its origin, or one or two places nearer it) while a partner is
+   searched outwards from where it is, nearest first, for 24 places. It keeps nothing, so it finds `3 17` from
+   `5 10` for a product that must reach 50;
+9. runs: any one or two choices in a row deleted, where 1 deletes whole spans. Two sibling lists become one by
+   losing the stop bit of the first and the continue bit before the second;
+10. (M8) delete the same chunk from every block of a bulk span and lower its length, ddmin-style — first, since a
    block of 1e5 values must shrink to a handful before the per-choice passes can afford to touch it.
+
+Passes 6 to 9 are the result of an experiment (A28, below). 6, 7 and 9 are Hypothesis's `minimize_nodes`,
+`redistribute_numeric_pairs` with `lower_integers_together`, and node programs, written again for this engine.
 
 Each pass is a loop over the *current* structure that re-derives it after every accepted attempt (indices
 shift, so nothing is precomputed), and the shrinker cycles the passes until a whole cycle accepts nothing or
-the attempt budget is spent. Passes that need coordinated moves: duplicates are grouped by value *and* range
-(a list's decision bits and its elements can share a value); pairs are sought within a window of three
-positions among choices of the same range, because list elements are separated by their bits. The candidate
-cache is a dict keyed by choice vectors and must be seeded with a vector key — seeded with `::` it amends
+the attempt budget is spent. Passes that need coordinated moves go by **the generator that made each choice**,
+which is the label of the innermost span around it (`clb`): duplicates are grouped by value, range *and*
+generator (a list's continue bits and its items can share a value, and two symbols that must agree are lowered
+together without the bits that happen to equal them); and the partners of a choice are the next few made by the
+same generator over the same range, however far off. Nearness by position served lists, whose items are one
+bit apart, and failed state machines, where the inputs of two steps are three or more choices apart. The
+candidate cache is a dict keyed by choice vectors and must be seeded with a vector key — seeded with `::` it amends
 elementwise. Lists use continue bits rather than a length prefix so that deleting an element is one span
 deletion: measured in A6, continue bits reach 9/9 minima, a length prefix 6/9.
 
@@ -412,10 +429,12 @@ regardless. Clamp-on-misalignment and reject-on-misalignment reach the same mini
 is a valid input, which the state machines and the interactive `replay` rely on.
 
 **What the order can and cannot do.** Shortlex decides which of two *reachable* candidates is simpler; it does
-not make every simpler value reachable. The passes make single-position and same-range moves, so a value
-that is simpler under the order but needs two fields to change at once is a local minimum: a float encoded as
-integer part plus fraction cannot get from −0.5 to −1, and a NaN drawn on the special branch cannot cross to
-a normal value. Two consequences for encodings (A13): lay fields out so that the moves the shrinker makes are
+not make every simpler value reachable. The passes move one choice, or two of the same range and generator, so
+a value that is simpler under the order but needs two fields of *different* kinds to change at once is a local
+minimum: a float encoded as integer part plus fraction cannot get from −0.5 to −1, a NaN drawn on the special
+branch cannot cross to a normal value, and a float whose value is 1 but whose choices say 2^25/2^25 stays so
+encoded (the value the reader sees is the same). Three choices that must change together are out of reach
+too. Two consequences for encodings (A13): lay fields out so that the moves the shrinker makes are
 the moves you want (sign · mantissa · 2^exponent, exponent first: moving the exponent toward 0 turns a
 fraction into an integer while the mantissa stays put), and keep every alternative the same length — under
 shortlex a two-choice special branch ranks below a four-choice normal branch, so `0w` would be "simpler" than
@@ -424,33 +443,72 @@ shortlex a two-choice special branch ranks below a four-choice normal branch, so
 Cost model (A2, A10): about 0.5 µs to append a choice, 0.5 µs for its span, 0.2 µs for the label — call it
 1.2 µs per draw. A 1000-choice example generates in about a millisecond, so the default budget of 2000 shrink
 attempts is a worst case of a few seconds on top of the property's own cost. Measured on the A8 suite: 18
-properties shrink to their analytic minima in 546 attempts and 146 ms in total, the worst case 79 attempts.
+properties shrink to their analytic minima in 838 attempts and 218 ms in total, the worst case 160 attempts.
+(Before A28 it was 546 attempts: the passes for one and two choices cost half as much again, and buy a
+counterexample that no longer depends on the seed.)
 
 **A8 — shrink quality** (`spikes/a8_bench.q`; every case reaches its analytic minimum):
 
 | property | found | shrinks | attempts |
 |---|---|---|---|
-| `x~asc x` on lists of `0..99` | `1 0` | 7 | 31 |
-| `x~reverse x` | `0 1` | 8 | 33 |
-| `x~distinct x` | `0 0` | 2 | 14 |
-| `5>count x` | `0 0 0 0 0` | 2 | 36 |
-| `100>=sum x` | `2 99` | 13 | 54 |
-| no adjacent equal | `0 0` | 3 | 14 |
-| `x<=50` | `51` | 2 | 12 |
-| `x>=0` on `-99..99` | `-1` | 0 | 2 |
-| `x>=y` | `0 1` | 0 | 3 |
-| nested lists, total < 6 | `(,0;0 0 0 0 0)` | 5 | 79 |
-| nested lists, sum ≤ 5 | `,,6` | 4 | 33 |
-| binary tree, depth < 3 | `(0;(0;0 0))` | 4 | 34 |
-| binary tree, nodes < 4 | `(0;(0;(0;0 0)))` | 3 | 40 |
-| rose tree, < 3 children | `` (`n;0 0 0) `` | 1 | 12 |
-| filtered `such[{x>0}]`, sorted | `2 1` | 8 | 55 |
-| `x<1000000` on `0..0W` | `1000000` | 32 | 62 |
-| interactive draw `n<10` | choices `,10` | 4 | 10 |
-| `100>sum x*x` | `,10` | 6 | 22 |
+| `x~asc x` on lists of `0..99` | `1 0` | 7 | 59 |
+| `x~reverse x` | `0 1` | 6 | 34 |
+| `x~distinct x` | `0 0` | 4 | 29 |
+| `5>count x` | `0 0 0 0 0` | 5 | 58 |
+| `100>=sum x` | `2 99` | 9 | 52 |
+| no adjacent equal | `0 0` | 4 | 27 |
+| `x<=50` | `51` | 0 | 8 |
+| `x>=0` on `-99..99` | `-1` | 0 | 3 |
+| `x>=y` | `0 1` | 0 | 4 |
+| nested lists, total < 6 | `,0 0 0 0 0 0` | 9 | 160 |
+| nested lists, sum ≤ 5 | `,,6` | 8 | 47 |
+| binary tree, depth < 3 | `(0;(0;0 0))` | 2 | 37 |
+| binary tree, nodes < 4 | `(0;(0;(0;0 0)))` | 2 | 49 |
+| rose tree, < 3 children | `` (`n;0 0 0) `` | 2 | 20 |
+| filtered `such[{x>0}]`, sorted | `2 1` | 8 | 143 |
+| `x<1000000` on `0..0W` | `1000000` | 50 | 79 |
+| interactive draw `n<10` | choices `,10` | 0 | 6 |
+| `100>sum x*x` | `,10` | 5 | 23 |
 
 Hypothesis's attempt counts were not measured (it is not installed here); its documented minima for the
 comparable cases (`[1, 0]`, `[0, 1]`, `[0, 0]`, five zeros, `51`, `-1`, a three-node chain) agree.
+
+**A28 — the same counterexample at every seed** (`spikes/sweep.q`, `spikes/a28_sweep.q`, `spikes/shrink_arms.q`).
+A8 runs at one seed, and at one seed a local minimum looks like a minimum. The sweep runs 42 cases — the 18 of
+A8, the same over ranges that span their origin, inputs that constrain one another through a sum, a difference
+or a product, nested lists, tables, floats and three state machines — at 60 seeds each, and scores a shrinker
+by the share of seeds at which it ends on the simplest counterexample found for that case at any seed by any
+shrinker. The arms, each adding to the one before unless it says otherwise:
+
+| arm | what it does | cases always right | share of runs right | attempts |
+|---|---|---|---|---|
+| base | the passes as they were | 28 of 42 | 88.7% | 80,319 |
+| rank | one choice: binary search over the *places* of its values (0, 1, −1, 2, −2, …) | 29 | 89.3% | 84,188 |
+| two | one choice: each side of the origin searched by distance (pass 6) | 29 | 89.5% | 82,434 |
+| hyp | two, with Hypothesis's two passes for pairs (pass 7) | 36 | 91.5% | 84,479 |
+| trade | two, with the old pairs and the trade (pass 8) | 37 | 96.3% | 101,692 |
+| both | two, Hypothesis's pairs and the trade | 39 | 96.7% | 101,432 |
+| del | both, and runs of 1 to 5 choices deleted | 40 | 98.5% | 127,070 |
+| lab | both, with partners and duplicates by generator and not by position | 41 | 98.3% | 107,400 |
+| all | lab and del | 42 | 100% | 133,406 |
+| **lib** | all, with runs of 1 and 2 only: the library | **42** | **100%** | 120,960 |
+
+What each bought. *two* over *base*: the one case with a failure on each side of the origin. *rank* does the
+same less directly (a binary search over interleaved signs is not monotone, so it takes several rounds) and
+costs more. *hyp*: the cases where a pair keeps a sum or a difference (sorted lists over a range with
+negatives, `x>=y`, a sum beyond ±50). *trade*: the cases where a pair keeps neither, a product; Hypothesis's
+passes do not reach these, and the trade does not reach two that they do, so the two are not rivals. *lab*:
+both state machines, where the partner of a step's input is the input of the next step of that command and
+not whatever is three places on. *del*: the nested lists, which need two siblings merged. Runs of three to
+five bought nothing here and cost a tenth more, so the library stops at two.
+
+The cost is half as many attempts again as before (120,960 against 80,319), and a shrink that ends in the
+same place at every seed of every case. Found on the way: distances were compared in floats, so the order
+could not tell a timestamp from the one a nanosecond later, and one seed in sixty of the bars case stopped one
+nanosecond from the open (`dst` and `mid` are exact now wherever the long difference does not wrap). Not
+tried: an exhaustive finish, which would enumerate what is simpler than the counterexample once the passes
+stall. The sweep gives no case that needs it; a state machine with three inputs that must change together
+would.
 
 ### 1.6 Rich output
 
@@ -484,7 +542,7 @@ is executed by `t/doctest.q` (seed 7) and must print exactly this:
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100;{.qc.eq[x;asc x]}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -509,7 +567,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 10 tests, 3 shrinks (43 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (57 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -572,10 +630,12 @@ plugins, no `peach` (state is global, so `.qc.check` is not reentrant and a nest
 qc.q            the library
 README.md       what property-based testing is, and usage; written for a q programmer new to it
 LICENSE         MIT; qc.q carries a one-line notice in its header, since it travels alone
-spikes/         one script per validated assumption; sh spikes/run.sh runs them all
+spikes/         one script per validated assumption; sh spikes/run.sh runs them all (shrink_arms.q, the experiment
+                behind A28, is run by hand: it takes three minutes)
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
-                state after every exit), bench (the A8 minima with attempt caps), dist (distributions), reportx,
+                state after every exit), bench (the A8 minima with attempt caps), sweep (A28 at ten seeds), dist
+                (distributions), reportx,
                 doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file and examples/mdp/LOG.md; QC_FAST=1
                 skips the state-machine blocks, most of the suite's time), docs (names in docs exist; WALKTHROUGH's
                 excerpts are in their files),
@@ -771,11 +831,13 @@ library's side, during the review rounds.
 **C21 — arithmetic on choice bounds is done in floats, or guarded.** A difference, product or midpoint of two
 longs from a full range overflows, the result is `0N` or wraps, and a null compares *low* — so an overflow does
 not fail, it quietly makes the wrong branch look smaller. `wid`, the shortlex keys (`skey`, `bkey`, whose
-differences from the origin are taken in floats — a long difference *wraps* on a full range, which `0W^` did not
-catch), the binary search's midpoint, `pdup`'s and `pred`'s distances, `mix`'s magnitude, `lin`, the list and
+differences from the origin are taken in floats wherever the long difference would *wrap*, which `0W^` did not
+catch, and in longs everywhere else: `dst`), the binary search's midpoint (`mid`, the same), `pdup`'s distances
+and those of the passes for pairs, `mix`'s magnitude, `lin`, the list and
 step caps and the choice tree's path product all compute in floats and saturate on the way back to longs; `rec`
 refuses sizes whose counting tables would overflow. The price is that two distances above 2^53 can compare
-equal. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null; the audit found the rest.
+equal — which is why `dst` and `mid` use floats only where they must: taken in floats throughout, the distance
+of a timestamp from its origin could not tell one nanosecond from the next (A28). Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null; the audit found the rest.
 
 **C22 — state that belongs to a structure is saved and restored around that structure.** A constrained
 table's columns need memory across rows (the last `mono` value, `uniq`'s remaining and used values); it lives in
@@ -836,6 +898,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 | A22 | Scale: 1e3..1e6-element vectors under per-element and bulk recording | `a22_scale.q` 5/5 | ✅ | Bulk (one call records n choices: fresh by `n?`, replay by slicing the prefix, one `C,:`) generates 1e6 longs in 9 ms against 2.5 s for 1e5 per-element. Bulk truncation alone stops at the shortest failing *prefix* (9 elements for `x~asc x`); with a block-deletion pass (ddmin over the block, shortening the length choice) every size shrinks to `1 0`: 37/39/44 attempts and under 3 ms at 1e3/1e4/1e5. A seeded bulk draw recording `(n;seed)` was dropped unmeasured: q has one RNG stream, so it would reseed the process mid-example (A3). Chosen for M8: bulk recording plus the block pass; the ramp keeps per-element failures small anyway. Also found: interactive draws read `cf`, which `cfg` did not reach without a run (fixed). |
 | A26 | Finite temporal generators: timestamps in a session as base plus deltas, dates in a range | `a26_time.q` 7/7 | ✅ | Timestamps never leave the session and are monotone in every example; a planted `xbar` bug (four in one minute) shrinks to four timestamps at the open; a date bug shrinks to the first failing date; `gtime ltime x` round-trips; the minimal list is empty and the minimal date the first. Defaults for M10: a session `09:30`–`16:00` on a given day, a calendar year of dates. |
 | A27 | An arbitrary q value from `rec` over the zoo with list, dict, table and keyed-table nodes | `a27_value.q` 5/5 | ✅ | At size 30, 1000 draws reach every one of the 18 atom types, typed vectors, general lists, dicts, tables and keyed tables (depth quartiles 5/7/10; 11/16/21 at size 100), and `-9!-8!x` round-trips every value. Two library facts surfaced: children that are dicts with different keys made `sub` and `lst` fail with `mismatch` (pitfall 30, fixed), and a node function receives conforming dict children as a table. |
+| A28 | A shrink ends on the same counterexample, the simplest, whatever the seed | `a28_sweep.q` 4/4; `shrink_arms.q` by hand | ✅ | 42 cases at 60 seeds. The passes as they were: 28 cases always right, 88.7% of runs. With each side of the origin searched, Hypothesis's two passes for pairs, a trade, partners and duplicates by generator, and runs of one or two choices deleted: 42 of 42 and 100%, for half as many attempts again (table in §1.5). Distances are exact wherever the long difference does not wrap: in floats a timestamp and the one a nanosecond later were the same. |
 | A21 | A generator from a schema | `a21_meta.q` 3/3 | ✅ after a redesign | Reading `meta` fails on enumerations: its `f` names only keyed-table foreign keys, so an enumerated column looks plain. Reading a *sample table* works: the type from `type`, the enumeration domain from `key`, the attribute from `attr`, typed empties from `0#`, keys from `keys`. Six shapes (plain, keyed, nested, attributed, general, enumerated) round-trip `meta` and the enumerated column stays `20h`. `0#` of a table drops attributes while `0#` of a vector keeps them, so an empty table carries none. For M7: the schema generator takes a table; `tabr`'s own empty table has untyped columns, which a schema fixes. Spike lessons: `like` and `vs` are keywords; a lambda does not capture the enclosing locals. |
 
 ---

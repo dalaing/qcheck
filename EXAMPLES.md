@@ -19,9 +19,9 @@ on what the session has drawn before, so it matches in a fresh session.
 
 Six of the sections are also scripts under `examples/`, with the commentary as comments. Each runs from the
 repository root, for example `q examples/reverse.q`. They take their seed from the clock, so the first line of a
-report (how many tests passed, how many shrinks) differs from run to run and from what is printed here. Now and
-then the counterexample differs too: shrinking stops where no single step makes the input simpler, and from
-another starting point that can be another place.
+report (how many tests passed, how many shrinks) differs from run to run and from what is printed here. The
+counterexample should not: shrinking is built to end in the same place wherever it starts. It cannot promise
+to, and a counterexample that changes with the seed is worth reporting.
 
 | script | section |
 |---|---|
@@ -183,14 +183,14 @@ A rule that is false, that a list is its own reverse:
 ```q
 q)ints:.qc.list .qc.int 0 99
 q).qc.check[ints; {x~reverse x}];
-FAIL falsified after 5 tests, 7 shrinks (32 attempts, seed 7)
+FAIL falsified after 5 tests, 6 shrinks (34 attempts, seed 7)
 x: 0 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 0]
 ```
 
 Five lists passed (the empty list and lists of one item are their own reverse, and so are some others). The sixth
-did not, and it was shrunk: 32 simpler candidates were tried, and 7 of them also failed, each simpler than the
-one before. `0 1` is what is left. No list of fewer than two items can fail, and no two different longs in the range are nearer to 0 than these.
+did not, and it was shrunk: 34 other lists were tried, and 6 of them failed and were simpler than the one
+before. `0 1` is what is left. No list of fewer than two items can fail, and no two different longs in the range are nearer to 0 than these.
 
 In the `rerun:` line, `gen` and `prop` stand for the generator and the property that were given to `check`, and
 the numbers are the choices that draw `0 1`.
@@ -202,7 +202,7 @@ a table of the differences.
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {.qc.eq[x;asc x]}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 qc.eq
 path why   a b
@@ -225,7 +225,7 @@ are matched by name, in any order, and the report uses the names:
 q).qc.check[(.qc.int 0 9; .qc.int 0 9); {x<=x+y}];
 ok 100 tests, exhausted (seed 7)
 q).qc.check[`xs`n!(.qc.list .qc.int 0 9; .qc.int 0 5); {[n;xs] n<=count xs}];
-FAIL falsified after 1 tests, 0 shrinks (3 attempts, seed 7)
+FAIL falsified after 1 tests, 0 shrinks (4 attempts, seed 7)
 xs: ()
 n: 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 1]
@@ -245,7 +245,7 @@ of more than three items, and the counterexample is the simplest list of four:
 
 ```q
 q).qc.check[.qc.list .qc.int 0 9; {if[3<count x; '"too long"]; 1b}];
-FAIL falsified after 7 tests, 5 shrinks (38 attempts, seed 7)
+FAIL falsified after 7 tests, 5 shrinks (49 attempts, seed 7)
 x: 0 0 0 0
 too long
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 1 0 0]
@@ -260,7 +260,7 @@ property over corrected code. Both run one test, so their reports read `after 0 
 
 ```q
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.again[];
@@ -280,11 +280,11 @@ A failure therefore stays failed until it is fixed, whatever the seed of the nex
 ```q
 q).qc.cfg[`db]:hsym `$first system"mktemp -d"
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q).qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (40 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
@@ -302,7 +302,7 @@ report with `.qc.note`:
 
 ```q
 q).qc.check[::; {n:.qc.draw .qc.int 1 9; .qc.note n; n<7}];
-FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
+FAIL falsified after 6 tests, 0 shrinks (5 attempts, seed 7)
 7
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;7]
 ```
@@ -334,7 +334,7 @@ q)px:.qc.spc[0n 0w] .qc.flt 1 100
 q).qc.check[.qc.lst[1 0W] .qc.flt 1 100; {all 0<=1_deltas sums x}];
 ok 100 tests (seed 7)
 q).qc.check[.qc.lst[1 0W] px; {all 0<=1_deltas sums x}];
-FAIL falsified after 8 tests, 9 shrinks (37 attempts, seed 7)
+FAIL falsified after 8 tests, 9 shrinks (53 attempts, seed 7)
 x: 0w 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0 1 1 0 0 0 0 1 0]
 ```
@@ -388,7 +388,7 @@ values that do:
 
 ```q
 q).qc.check[.qc.tab `k`v!(.qc.uniq .qc.int 0 3; .qc.int 0 9); {20>sum x`v}];
-FAIL falsified after 42 tests, 10 shrinks (124 attempts, seed 7)
+FAIL falsified after 42 tests, 10 shrinks (107 attempts, seed 7)
 x:
   k v
   ---
@@ -432,11 +432,11 @@ thousand values is still reported in a handful:
 
 ```q
 q).qc.check[.qc.bulk[0 99;0 100000]; {x~asc x}];
-FAIL falsified after 1 tests, 10 shrinks (26 attempts, seed 7)
+FAIL falsified after 1 tests, 10 shrinks (76 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;2 1 0]
 q).qc.check[.qc.btab[0 100000] `k`v!(0 9;("d";0 9)); {all x[`v]<2000.01.09}];
-FAIL falsified after 1 tests, 9 shrinks (18 attempts, seed 7)
+FAIL falsified after 1 tests, 9 shrinks (22 attempts, seed 7)
 x:
   k v
   ------------
@@ -472,7 +472,7 @@ q)nodes:{$[0h=type x; 1+sum .z.s each x; 0<type x; 1; 0]}
 q).qc.check[tree; {leaves[x]=1+nodes x}];
 ok 100 tests (seed 7)
 q).qc.check[tree; {depth[x]<4}];
-FAIL falsified after 6 tests, 2 shrinks (41 attempts, seed 7)
+FAIL falsified after 6 tests, 2 shrinks (49 attempts, seed 7)
 x: (0;(0;(0;0 0)))
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;4 0 0 0 3 0 0 0 2 0 0 0 1 0 0 0 0 0]
 ```
@@ -495,7 +495,7 @@ ok 2 tests, exhausted (seed 7)
 q).qc.check[.qc.one (.qc.bool; .qc.int 0 9); {1b}];
 ok 12 tests, exhausted (seed 7)
 q).qc.check[(.qc.int 0 3; .qc.bool); {[a;b] a<3}];
-FAIL falsified after 6 tests, 0 shrinks (4 attempts, seed 7)
+FAIL falsified after 6 tests, 0 shrinks (6 attempts, seed 7)
 a: 3
 b: 0b
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0]
@@ -619,7 +619,7 @@ q).qc.lin[0;1000] each 0 50 100
 0 500
 0 1000
 q).qc.check[.qc.int {0,x}; {x<50}];
-FAIL falsified after 63 tests, 0 shrinks (7 attempts, seed 7)
+FAIL falsified after 63 tests, 0 shrinks (8 attempts, seed 7)
 x: 50
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;50]
 ```
@@ -648,7 +648,7 @@ label n  pct req lo        hi       ok bar
 9     3  3       1.025434  8.452078 1
 8     1  1       0.1767387 5.448752 1
 q).qc.check[short; {3>count x}];
-FAIL falsified after 21 tests, 3 shrinks (28 attempts, seed 7)
+FAIL falsified after 21 tests, 3 shrinks (35 attempts, seed 7)
 x: 0 0 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 0 1 0 0]
 ```
@@ -733,7 +733,7 @@ q).qc.checks `comm`sorted!(((.qc.int 0 9;.qc.int 0 9);{(x+y)=y+x}); (.qc.list .q
 --- comm
 ok 100 tests, exhausted (seed 7)
 --- sorted
-FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)
+FAIL falsified after 5 tests, 1 shrinks (27 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 name   ok why       stop      n   shrinks seed
@@ -781,7 +781,7 @@ q)r`ok`n
 100
 q)e:@[.qc.must[.qc.list .qc.int 0 9]; {x~asc x}; {x}]
 q)-1 e;
-qc: FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)
+qc: FAIL falsified after 5 tests, 1 shrinks (27 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
@@ -799,7 +799,7 @@ q)r:.qc.chk[enlist[`v]!enlist 0; .qc.list .qc.int 0 9; {x~asc x}]
 q)r`ok
 0b
 q)"\n" sv .qc.report r
-"FAIL falsified after 5 tests, 1 shrinks (17 attempts, seed 7)\nx: 1 0\nrerun..
+"FAIL falsified after 5 tests, 1 shrinks (27 attempts, seed 7)\nx: 1 0\nrerun..
 ```
 
 `examples/frameworks/` has a file for each of three frameworks, tried on kdb+ 5.0 with the versions of them
@@ -823,20 +823,20 @@ In each file `qc.q` is loaded before the framework runs the tests.
 
 ```q
 q)r:.qc.check[.qc.list .qc.int 0 100; {x~asc x}];
-FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)
+FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 q)r`ok`why`n`shrinks
 0b
 `falsified
 5
-8
+7
 q)r`x
 x| 1 0
 q)r`choices
 1 1 1 0 0
 q).qc.report r
-"FAIL falsified after 5 tests, 8 shrinks (36 attempts, seed 7)"
+"FAIL falsified after 5 tests, 7 shrinks (59 attempts, seed 7)"
 "x: 1 0"
 "rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]"
 ```
@@ -886,7 +886,7 @@ q)tbl:{[s;nm;g] .qc.tabr[1 0W] (`sym`time,nm)!(.qc.elem s; .qc.mono[.qc.int 0 9;
 q)pair:{[d] s:.qc.draw syms; `q`t!(.qc.draw tbl[s;`px;.qc.int 0 9]; .qc.draw tbl[s;`qty;.qc.int 0 9])}
 q)naive:{[t;q] f:{[q;s;tm] $[count r:exec px from q where sym=s,time<=tm; first r; 0N]}[q]; update px:"j"$f'[sym;time] from t}
 q).qc.check[pair; {.qc.eq[aj[`sym`time;x`t;x`q]; naive[x`t;x`q]]}];
-FAIL falsified after 1 tests, 9 shrinks (74 attempts, seed 7)
+FAIL falsified after 1 tests, 8 shrinks (87 attempts, seed 7)
 x:
   q:
     sym time px
@@ -927,7 +927,7 @@ step cmd  arg res model ok
 1    push 2   ::  1 2   1
 2    pop  ::  2   ,1    1
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 10 tests, 3 shrinks (43 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (57 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -944,9 +944,8 @@ is of any length up to the size of the example). `check` draws up to a hundred s
 with a row that is not `ok`.
 
 `pop` is wrong once three items are stacked, when it returns the bottom of the stack and not the top. The trace
-is the shortest sequence that shows it: three pushes are needed, and the top and the bottom must differ. With
-another seed the three pushes may carry other values, such as `1 0 0` with a `pop` that returns 1, and now and
-then a push and a pop that cancel each other are left in front of them.
+is the shortest sequence that shows it: three pushes are needed, and the top and the bottom must differ. `0 0 1`
+is the simplest three values that do, and the script ends on them whatever its seed.
 
 ## A system in another process
 

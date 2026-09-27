@@ -76,12 +76,12 @@ ABC| 0.05 1   10
 AB | 1    1   10
 B  | 0.05 1   1
 q).qc.check[.mdp.g.ref; {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] r:.mdp.round[s;px]; r=.mdp.round[s;r]}[(`A;0f)]
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
 q).qc.check[.mdp.g.ref; {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x: (`A;0f)
 qc: property returned {[s;px] .5>=abs[px-.mdp.round[s;px]]%.mdp.inst[s;`tick]}[(`A;0f)]
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 0]
@@ -223,7 +223,7 @@ time                          kind  sym bid      ask      px       qty
 2024.01.02D09:30:01.039131004 quote ACC 43.85249 65.85082 17.74133 1
 2024.01.02D09:30:01.125495236 trade ACC 60.82281 68.5     91.41703 1
 q).qc.check[.mdp.g.stream; agree0[replay0]];
-FAIL falsified after 2 tests, 11 shrinks (63 attempts, seed 7)
+FAIL falsified after 2 tests, 11 shrinks (83 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -257,7 +257,7 @@ q)system"l examples/mdp/steps/03_quotes.q"
 q)system"l examples/mdp/steps/03_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.stream; agree0[replay]];
-FAIL falsified after 19 tests, 19 shrinks (90 attempts, seed 7)
+FAIL falsified after 19 tests, 19 shrinks (124 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -302,7 +302,7 @@ q)system"l examples/mdp/steps/04_quotes.q"
 q)system"l examples/mdp/steps/04_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.stream; agree];
-FAIL falsified after 0 tests, 0 shrinks (12 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (15 attempts, seed 7)
 x:
   time kind sym bid ask px qty
   ----------------------------
@@ -322,7 +322,7 @@ q)system"l examples/mdp/steps/05_quotes.q"
 q)system"l examples/mdp/steps/04_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.stream; agree];
-FAIL falsified after 6 tests, 37 shrinks (124 attempts, seed 7)
+FAIL falsified after 6 tests, 36 shrinks (155 attempts, seed 7)
 x:
   time                          kind  sym bid ask px qty
   ------------------------------------------------------
@@ -386,7 +386,7 @@ q)system"l examples/mdp/steps/07_bars.q"
 q)system"l examples/mdp/steps/07_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.trades; {.qc.eq[fold x; .mdp.barsb x]}];
-FAIL falsified after 4 tests, 25 shrinks (176 attempts, seed 7)
+FAIL falsified after 4 tests, 25 shrinks (204 attempts, seed 7)
 x:
   time                          sym px qty
   ----------------------------------------
@@ -464,7 +464,7 @@ q)system"l examples/mdp/steps/08_pos.q"
 q)system"l examples/mdp/steps/08_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.fills; {book x 0; .qc.eq[exec qty from .mdp.pos; signed x 0]}];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -477,7 +477,7 @@ path why  a b
      type 7 99
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 0 0 0 1]
 q).qc.check[.mdp.g.fills; balances];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -515,7 +515,7 @@ q)system"l examples/mdp/steps/09_pos.q"
 q)system"l examples/mdp/steps/08_gen.q"
 q)system"l examples/mdp/walk.q"
 q).qc.check[.mdp.g.fills; balances];
-FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 2 tests, 9 shrinks (60 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -525,7 +525,7 @@ x:
     A: 1f
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[.mdp.g.fills; costs];
-FAIL falsified after 2 tests, 9 shrinks (49 attempts, seed 7)
+FAIL falsified after 2 tests, 9 shrinks (60 attempts, seed 7)
 x:
   0:
     sym side qty px
@@ -535,7 +535,7 @@ x:
     A: 1f
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 1]
 q).qc.check[(.qc.elem `A`B; .qc.elem 1 10 100; .qc.flt 1 100); trip];
-FAIL falsified after 0 tests, 0 shrinks (2 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (5 attempts, seed 7)
 s: `A
 q: 1
 p: 1f
@@ -610,7 +610,7 @@ q)system"l examples/mdp/steps/07_gen.q"
 q)system"l examples/mdp/walk.q"
 q).mdp.hdb:hsym `$first system"mktemp -d"
 q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); memdisk];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 ev:
   time kind sym bid ask px qty
   ----------------------------
@@ -633,7 +633,7 @@ q)system"l examples/mdp/steps/07_gen.q"
 q)system"l examples/mdp/walk.q"
 q).mdp.hdb:hsym `$first system"mktemp -d"
 q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); memdisk];
-FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (18 attempts, seed 7)
 ev:
   time kind sym bid ask px qty
   ----------------------------
@@ -747,7 +747,7 @@ q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/14_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
-FAIL falsified after 4 tests, 4 shrinks (17 attempts, seed 7)
+FAIL falsified after 4 tests, 4 shrinks (24 attempts, seed 7)
 qc.run round
 step cmd   arg                                   res model ok
 -------------------------------------------------------------
@@ -821,7 +821,7 @@ q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/18_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
-FAIL falsified after 13 tests, 6 shrinks (20 attempts, seed 7)
+FAIL falsified after 13 tests, 6 shrinks (28 attempts, seed 7)
 qc.run ./2024.01.02/trade/seq. OS reports: No such file or directory
 step cmd  arg                                   res model ok
 ------------------------------------------------------------
@@ -864,7 +864,7 @@ q).mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; system"l ",1_string
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
 ok 100 tests (seed 7)
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 146 tests, 21 shrinks (97 attempts, seed 7)
+FAIL falsified after 146 tests, 21 shrinks (152 attempts, seed 7)
 qc.post qc.eq
 path why   a b
 --------------
@@ -918,7 +918,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/20_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 117 tests, 25 shrinks (116 attempts, seed 7)
+FAIL falsified after 117 tests, 24 shrinks (183 attempts, seed 7)
 qc.inv
 step cmd    arg                 res ok
 --------------------------------------
@@ -970,7 +970,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 186 tests, 22 shrinks (105 attempts, seed 7)
+FAIL falsified after 186 tests, 22 shrinks (205 attempts, seed 7)
 qc.post qc.eq
 path           why   a b
 ------------------------

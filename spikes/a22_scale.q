@@ -23,7 +23,7 @@ pblk:{.qc.cp::`blk; p:0b; g:2;
   p}
 .qc.shr:{[spec;prop;o] .qc.sgen::spec; .qc.sprop::prop; .qc.cv::.qc.C`v; .qc.cC::.qc.C; .qc.cE::.qc.E; .qc.co::o; .qc.cerr::o`err; .qc.na::0; .qc.ns::0;
   .qc.K::(enlist 0#0)!enlist 0N; .qc.H::0#.qc.H; .qc.bs::.qc.cf`sz;
-  while[$[.qc.na<.qc.cf`shrinks; any {x[]} each (pblk;.qc.pdisc;.qc.pdel;.qc.pzero;.qc.pdesc;.qc.psort;.qc.pdup;.qc.pmin;.qc.pred); 0b]];
+  while[$[.qc.na<.qc.cf`shrinks; any {x[]} each (pblk;.qc.pdisc;.qc.pdel;.qc.pzero;.qc.pdesc;.qc.psort;.qc.pdup;.qc.pmin;.qc.ppr;.qc.ptr;.qc.pnd); 0b]];
   .qc.co,`shrinks`attempts`hist!(.qc.ns;.qc.na;.qc.H)}
 q:.b.q,`choices`sz!(3000000;100)
 .qc.cfg[`choices]:.qc.cf[`choices]:3000000                                     / the timing draws run outside a check (cf: interactive draws read the effective config, which cfg reaches only through a run — a wart for the library)

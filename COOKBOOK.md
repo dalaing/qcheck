@@ -43,7 +43,7 @@ q)tbl:{[s;nm;g] .qc.tabr[1 0W] (`sym`time,nm)!(.qc.elem s; .qc.mono[.qc.int 0 9;
 q)pair:{[d] s:.qc.draw syms; `q`t!(.qc.draw tbl[s;`px;.qc.int 0 9]; .qc.draw tbl[s;`qty;.qc.int 0 9])}
 q)naive:{[t;q] f:{[q;s;tm] $[count r:exec px from q where sym=s,time<=tm; first r; 0N]}[q]; update px:"j"$f'[sym;time] from t}
 q).qc.check[pair; {.qc.eq[aj[`sym`time;x`t;x`q]; naive[x`t;x`q]]}];
-FAIL falsified after 1 tests, 9 shrinks (74 attempts, seed 7)
+FAIL falsified after 1 tests, 8 shrinks (87 attempts, seed 7)
 x:
   q:
     sym time px
@@ -108,7 +108,7 @@ k| v
 2| 1
 q)bad:{[t;u] keys[t] xkey (0!t),0!u}
 q).qc.check[(kt;kt); {[t;u] .qc.eq[t upsert u; bad[t;u]]}];
-FAIL falsified after 4 tests, 5 shrinks (38 attempts, seed 7)
+FAIL falsified after 4 tests, 5 shrinks (43 attempts, seed 7)
 t:
   k| v
   -| -
@@ -137,7 +137,7 @@ a key, and you might expect the rule to pass for a long time. It does not:
 q)big:.qc.ktab[`k;0 4] `k`v!(.qc.int 0 1000000; .qc.int 0 9)
 q)bad:{[t;u] keys[t] xkey (0!t),0!u}
 q).qc.check[(big;big); {[t;u] .qc.eq[t upsert u; bad[t;u]]}];
-FAIL falsified after 45 tests, 4 shrinks (29 attempts, seed 7)
+FAIL falsified after 45 tests, 4 shrinks (34 attempts, seed 7)
 t:
   k| v
   -| -
@@ -217,12 +217,12 @@ q)TBL:([]sym:`symbol$(); px:`float$())
 q)upd:{[t;x] TBL::0!(`sym xkey TBL) upsert x}
 q)cmds:([cmd:enlist `upd] gen:enlist {[m] .qc.tabr[1 5] `sym`px!(.qc.symc["ab";1 1]; .qc.flt 0 9)}; run:enlist {[x] upd[`trade;x]}; upd:enlist {[m;a;o] m+count a})
 q).qc.check[.qc.sm[`m0`init`inv!(0; {TBL::0#TBL}; {[m] m=count TBL})] cmds; ::];
-FAIL falsified after 4 tests, 5 shrinks (52 attempts, seed 7)
+FAIL falsified after 4 tests, 6 shrinks (68 attempts, seed 7)
 qc.inv
 step cmd arg                  res model ok
 ------------------------------------------
-0    upd +`sym`px!(`b`b;0 0f) ::  2     1
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 1 0 0 0 0 1 1 1 0 0 0 0 0]
+0    upd +`sym`px!(`a`a;0 0f) ::  2     1
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0]
 ```
 
 **The commands.** There is one, so every column is a list of one item, made with `enlist`.
@@ -263,7 +263,7 @@ atom of any type, a list, a dict, a table.
 q).qc.check[.qc.val; {x~-9!-8!x}];
 ok 100 tests (seed 7)
 q).qc.check[.qc.val; {x~.j.k .j.j x}];
-FAIL falsified after 1 tests, 7 shrinks (26 attempts, seed 7)
+FAIL falsified after 1 tests, 7 shrinks (29 attempts, seed 7)
 x: 0x00
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;0 2 0]
 q).j.k .j.j 0x00
@@ -278,7 +278,7 @@ survive, and the way to find out is to try a narrower generator and read the cou
 
 ```q
 q).qc.check[.qc.list .qc.flt 0 1; {x~.j.k .j.j x}];
-FAIL falsified after 4 tests, 53 shrinks (78 attempts, seed 7)
+FAIL falsified after 4 tests, 52 shrinks (93 attempts, seed 7)
 x: ,0.0004882812
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 11 1 0]
 ```
@@ -333,7 +333,7 @@ time                          px
 2024.01.02D09:39:31.901553860 9.04231
 q)bars:{select o:first px, h:first px, l:min px, c:last px by 0D00:01 xbar time from x}
 q).qc.check[trades; {b:0!bars x; mx:0!select mx:max px by 0D00:01 xbar time from x; .qc.eq[mx`mx; b`h]}];
-FAIL falsified after 3 tests, 11 shrinks (57 attempts, seed 7)
+FAIL falsified after 3 tests, 10 shrinks (146 attempts, seed 7)
 x:
   time                          px
   --------------------------------
@@ -370,7 +370,7 @@ q)day:2024.01.02D09:30; close:2024.01.02D16:00
 q)trades:.qc.tabr[1 50] `time`px!(.qc.mono[.qc.ts[day;close]; .qc.int (0;"j"$0D00:01)]; .qc.flt 1 100)
 q)bars:{select o:first px, h:first px, l:min px, c:last px by 0D00:01 xbar time from x}
 q).qc.check[trades; {b:0!bars x; all (b[`h]>=b`o) and (b[`h]>=b`c) and (b[`l]<=b`o) and b[`l]<=b`c}];
-FAIL falsified after 3 tests, 13 shrinks (57 attempts, seed 7)
+FAIL falsified after 3 tests, 12 shrinks (144 attempts, seed 7)
 x:
   time                          px
   --------------------------------
@@ -397,7 +397,7 @@ q).qc.minimal ts
 `s#,0
 q)at:{[ts;t] ts binr t}
 q).qc.check[(ts;.qc.int 0 20); {[ts;t] .qc.eq[-1+sum ts<=t; at[ts;t]]}];
-FAIL falsified after 1 tests, 1 shrinks (7 attempts, seed 7)
+FAIL falsified after 1 tests, 1 shrinks (10 attempts, seed 7)
 ts: `s#,0
 t: 1
 qc.eq
@@ -425,7 +425,7 @@ q)ins:{[ts;t] (ts where ts<=t),t,ts where ts>t}
 q).qc.check[(ts;.qc.int 0 20); {[ts;t] ins[ts;t]~asc ts,t}];
 ok 100 tests (seed 7)
 q).qc.check[(ts;.qc.int 0 20); {[ts;t] .qc.eq[`s; attr ins[ts;t]]}];
-FAIL falsified after 0 tests, 0 shrinks (4 attempts, seed 7)
+FAIL falsified after 0 tests, 0 shrinks (6 attempts, seed 7)
 ts: `s#,0
 t: 0
 qc.eq
