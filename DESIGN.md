@@ -1,7 +1,7 @@
 # qcheck — property-based testing for q
 
 *Design document. Status: complete — assumptions validated on kdb+ 5.0 (2026.07.23, m64) only (the README's earlier
-"4.0 or later" was never verified and is now stated as such); M1–M6 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
+"4.0 or later" was never verified and is now stated as such); M1–M11 implemented in `qc.q`, tests in `t/`, examples in `examples/`, usage in `README.md`, recipes in `COOKBOOK.md`; the two items once deferred are folded in as C19, and C19's own deferred step — Hypothesis's DataTree, enumeration of value-dependent structure — is in.*
 
 qcheck takes the choice-sequence engine and integrated shrinking of **Hypothesis**, the failure reporting and
 `Range`-style generator control of **Hedgehog**, and the state-machine testing of both, and expresses them in
@@ -545,6 +545,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
                 examples/*.q runs as a child q and reports what its prose promises), and the per-milestone files
 EXAMPLES.md     a tour in verified transcripts
+COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, every transcript doctested (M11)
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 examples/       reverse.q tree.q sm_table.q sm_ipc.q aj.q   (sm_ipc.q starts a child q process)
 ```
@@ -846,6 +847,13 @@ the invariant falsifies and shrinks, weights are honoured 3:1. What it taught: `
 `f` is a projection of the each, not a list of results; the space and the empty symbol *are* q's nulls for `c`
 and `s`, so a finite zoo must drop them; `value`, `any`, `inv` are keywords (the hook keeps `inv` as a dict key,
 never a name); and drawing the command index by weights moved the state-machine transcripts by four examples.
+
+**M11 — cookbook.** Done: six recipes in `COOKBOOK.md`, every transcript executed by `t/doctest.q` and every
+name checked by `t/docs.q`: the as-of join (M7), upsert on keyed tables (`uniq` keys), a splayed table read back
+(`schema`, `.Q.en`, enumeration), a tickerplant handler as a state machine with an invariant (M10), serialisation
+and JSON over `val`, per-minute bars over `mono` and `ts`. Each recipe's planted bug shrinks to its analytic
+minimum. Writing them found nothing new in the library; two recipes taught q facts the reader meets anyway (the
+empty table is the smallest witness of enumeration; JSON's smallest non-round-tripping value is a byte).
 
 ---
 

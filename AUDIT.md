@@ -412,3 +412,9 @@ Over `tin`, `spcs`, `tf`, `t`, `dble`, `gidf`, `ts`, `dates`, `vleaf`, `vnode`, 
   C17 the 3:1 weight test in `t/sm.q` is pinned and multi-sigma.
 - C21 `tin`'s `j` range is built from `-0W+1` and `0W-1`, both exact longs.
 - Not done: `tf` for `c` and `s` is narrower than `t` by design (no space, no empty symbol), stated in §1.3.
+
+## M11 pass (2026-09-27)
+
+`COOKBOOK.md` is documentation: C18 applies (every block doctested, every name checked) and nothing else. The
+recipes use only public names and the documented idioms; the transcripts were generated with `tools/doc_child.q`,
+never typed. Phase 2 (A18–A27, M7–M11) is complete: 1436 tests before the cookbook's doctests, all green.

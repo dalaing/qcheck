@@ -12,5 +12,5 @@ runb:{[f;i;b] inf:` sv dir,`$"in",string[i],".txt"; inf 0: {2_x} each b where b 
   if[not ok; n:count[got]|count want; -1 "  ",string[f]," block ",string[i],": expected | got"; -1 mm'[n#want,n#enlist "";n#got,n#enlist ""]];
   ok}
 doc:{[f] b:blocks f; .t.t[string[f]," transcripts (",string[count b]," blocks) produce their stated output"; (0<count b) and all runb[f]'[til count b;b]]}
-doc each `:README.md`:EXAMPLES.md`:DESIGN.md
+doc each `:README.md`:EXAMPLES.md`:DESIGN.md`:COOKBOOK.md
 system"rm -rf ",1_string dir

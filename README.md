@@ -115,12 +115,15 @@ system before every example and every replay, so the system can live in another 
 Every transcript in this file and in `EXAMPLES.md` is executed by the test suite (in a session with
 `.qc.cfg[`seed]:7i`) and must print exactly what is shown.
 
-See `EXAMPLES.md` for a tour in verified transcripts.
+See `EXAMPLES.md` for a tour in verified transcripts, and `COOKBOOK.md` for recipes: an as-of join, upsert on
+keyed tables, a splayed table read back, a tickerplant handler as a state machine, serialisation over any value,
+per-minute bars — each with a planted bug found and shrunk.
 
 ## Files
 
 ```
 qc.q          the library            examples/   reverse.q tree.q sm_table.q sm_ipc.q aj.q
+COOKBOOK.md   recipes for kdb tasks
 DESIGN.md     design, conventions,   t/          q t/run.q runs the tests and prints one table
               measurements, pitfalls spikes/     sh spikes/run.sh re-runs the design's measurements
 ```

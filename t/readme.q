@@ -4,7 +4,7 @@
 .qc.cfg[`v`db`seed]:(0;`;7i)                                / the blocks run their own checks: pinned (C8)
 qbs:{[f] ln:read0 f; fence:where ln like "```*"; b:{[ln;se] ln (1+se 0)+til (se 1)-1+se 0}[ln] each 2 cut fence;
   b where (ln[fence 2*til count b] like "```q") and not any each b like\:"q)*"}
-qb:raze qbs each `:README.md`:DESIGN.md
+qb:raze qbs each `:README.md`:DESIGN.md`:COOKBOOK.md
 d:`$":",getenv[`TMPDIR],"qcreadme_",string .z.i; system"mkdir -p ",1_string d
 S:([]v:`long$())                                             / the state-machine block redefines these; harmless
 runb:{[i;b] f:` sv d,`$"b",string[i],".q"; f 0: b; e:@[{system"l ",1_string x; ""};f;{x}]; $[count e; (first b),": ",e; ""]}
