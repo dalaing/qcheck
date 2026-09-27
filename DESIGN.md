@@ -603,7 +603,8 @@ a range may be a function of size, and a generator is a function, so the two are
 Hence the naming rule in §1.2. Origin: `.qc.list[3 5] g` silently producing a constant list.
 
 **C2 — guards are conds, not conjunctions.** q evaluates every argument of `and`/`or`; any check whose later
-terms are meaningful only when earlier ones hold is `$[c1; $[c2; …]; 0b]`. This is also a cost rule for the
+terms are meaningful only when earlier ones hold is `$[c1; $[c2; …]; 0b]`. `and`/`or` stay where every term is safe and cheap on its own (three sites: `chk1`'s
+arity test, `chks`'s shape test, the shrinker's acceptance), which is what the rule is for. This is also a cost rule for the
 shrinker's acceptance chain (§1.5) and the order of `diff` (§1.6). Origin: `byname` calling `key` on a list,
 `tabs` indexing a missing table.
 
@@ -686,7 +687,7 @@ bit behind, and a tree that ended at the size cap without a stop.
 **C14 — the error vocabulary is closed and classified.** Three classes, three spellings: control signals
 (`qc.discard qc.overrun qc.toodeep qc.toolarge qc.misaligned`, the `ENG` list; never counterexamples, discards
 during generation, invalid candidates during shrinking), failure signals (`qc.<stem>` optionally followed by
-detail, stems `qc.eq qc.post qc.run` in `FS`; a falsification wherever raised, even while a spec is being
+detail, stems `qc.eq qc.post qc.run qc.inv` in `FS`; a falsification wherever raised, even while a spec is being
 drawn, and they shrink like one), and usage errors (`qc: …`, colon and space: canary, range, config, bad
 property result; and `must`'s `qc: FAIL …`, the library telling the caller that the property failed). A new engine signal goes in `ENG`; a new failure stem goes in `FS`; `t/names.q` scans the
 source for `'"qc.` literals to enforce both. Origin: a `qc.*` prefix test that classified `qc.eq` as an engine signal and silently

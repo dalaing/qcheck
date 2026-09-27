@@ -8,6 +8,8 @@ cfg:`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v!(
 cf:cfg                                                / effective config of the current run
 
 / ---- engine state: global, reset per example --------------------------------------------------------
+/ (the rule for these: inside a lambda a global is assigned with :: or amended with op: (i+:1, dp-:1), never with a
+/ single colon, which would make a local; a name that appears with :: anywhere in a lambda is a global throughout it)
 C:([]v:`long$();lo:`long$();hi:`long$();o:`long$())                   / choices: value, bounds, origin
 E:([]s:`long$();e:`long$();l:`long$();d:`long$();x:`boolean$())       / spans: start end label depth discarded
 P:`long$()                  / prefix being replayed
@@ -47,7 +49,7 @@ rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '
   if[r[0]>r 1; '"qc: range: lo exceeds hi in ",.Q.s1 r]; $[2=count r; r,r[0]|r[1]&0; @[r;2;{y|z&x}[;r 0;r 1]]]}
 / ch[r;w]: draw a long in range r.  w hints the fresh-draw law: :: mixture, `u uniform, float p Bernoulli
 / (0/1 ranges), float vector = weights over lo..hi.  Replay clamps into range; past the prefix while
-/ shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix.
+/ shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix, and by their vector forms freshn, unifn and mixn (M8).
 ch:{[r;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:1;
   v:$[j<count P; $[cf`clamp; lo|hi&P j; (P j) within (lo;hi); P j; '"qc.misaligned"]; sh; '"qc.overrun"; mn; o; fresh[lo;hi;o;w]];
   nch+:1; if[cf[`choices]<nch; '"qc.toolarge"];
@@ -66,7 +68,8 @@ mixn:{[lo;hi;o;n] b:0=n?8; nb:(o;lo;hi;$[o<hi; o+1; o];$[o>lo; o-1; o]) n?5; sg:
   ?[b;nb;lo|hi&"j"$("f"$o)+sg*(n?1f)*2 xexp n?1+bits hi-lo]}
 fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; 9h=type w; lo+sums[w] binr rand sum w;
   w~`u; unif[lo;hi]; mix[lo;hi;o]]}
-unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}   / a width that overflows (null or negative) draws from [lo;lo+0W) or (hi-0W;hi]: on the full long range that misses 0 (mix reaches it as the origin); `u is only used on small ranges
+/ a width that overflows (null or negative) draws from [lo;lo+0W) or (hi-0W;hi]: on the full long range that misses 0 (mix reaches it as the origin); `u is only used on small ranges
+unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}
 bits:{$[null x; 63; x<0; 63; x<1; 1; count 2 vs x]}
 / boundary values one time in eight, else a random magnitude; the sign only goes where the origin leaves room
 / (a random sign on a one-sided range clamps half the draws to the bound: 56% zeros on 0..1000, C17)
@@ -88,7 +91,8 @@ dr:{$[(::)~x; x; type[x] within 100 112; call x; 99h=type x; $[98h=type key x; x
   0h=type x; .z.s each x; x]}
 / the interactive entry points own the example boundary: reset, run flag, protected dr, restore (C6, C9, C10)
 / outside a run the effective config is the defaults: a cfg edit must reach the next interactive draw
-top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; mn::0b; sh::0b; i::0; P::`long$(); 'x}]; run::0b; r}   / on error: flag, depth, spans, size, and the minimal/strict modes and cursor (C6: nothing inconsistent)
+/ on error: flag, depth, spans, size, and the minimal/strict modes and cursor (C6: nothing inconsistent)
+top:{[p;m;h;s] if[run; '"qc: nested check"]; cf::cfg; reset[p;bs;m;h]; run::1b; r:@[dr;s;{run::0b; dp::0; st::(); sz::bs; mn::0b; sh::0b; i::0; P::`long$(); 'x}]; run::0b; r}
 draw:{$[run or dp>0; dr x; top[`long$();0b;0b;x]]}   / fresh draws; inside a run or a draw, just interpret
 minimal:top[`long$();1b;0b]                           / the simplest value of a spec: every draw is its origin
 replay:{[p;s] top[p;0b;0b;s]}                         / the value a recorded choice vector produces
@@ -106,12 +110,12 @@ elem:{[xs;d] dd[d;".qc.elem xs"]; if[99h=type xs; '"qc: elem takes a list"]; xs:
 one:{[gs;d] dd[d;".qc.one gs"]; if[99h=type gs; '"qc: one takes a list of alternatives"]; gs:(),gs; if[0=count gs; '"qc: one of nothing"]; draw gs ch[(0;-1+count gs;0);`u]}
 freq:{[w;gs;d] dd[d;".qc.freq[w] gs"]; if[99h=type gs; '"qc: freq takes a list of alternatives"]; gs:(),gs; if[not type[w] in -5 -6 -7 -8 -9 5 6 7 8 9h; '"qc: freq needs numeric weights"]; w:"f"$(),w;
   if[$[0=count gs; 1b; count[w]<>count gs; 1b; any w<0; 1b; 0=sum w]; '"qc: freq needs one non-negative weight per alternative, not all zero"]; draw gs ch[(0;-1+count gs;0);w]}
-such:{[p;g;d] dd[d;".qc.such[p] g"]; need[p;"such's predicate"]; k:0; while[k<cf`tries; beg`try; x:@[draw;g;{end[]; 'x}]; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}   / (a raising g closes the try span before the error leaves)
+/ (a raising g closes the try span before the error leaves)
+such:{[p;g;d] dd[d;".qc.such[p] g"]; need[p;"such's predicate"]; k:0; while[k<cf`tries; beg`try; x:@[draw;g;{end[]; 'x}]; end[]; if[p x; :x]; E[count[E]-1;`x]:1b; k+:1]; '"qc.discard"}
 discard:{'"qc.discard"}
-/ list: continue bit before each element (forced while under lo); size caps the length; the bit's
-/ probability makes the length uniform on lo..m
-/ every iteration records its decision bit, forced 1 under lo and forced 0 at the cap, so the structure is the
-/ same at every size and a replay at a larger size still finds its stop (C7). span = decision bit + element.
+/ list: a decision bit before each element, forced 1 under lo and forced 0 at the cap m (size caps the length), with
+/ a probability that makes the length uniform on lo..m; so the structure is the same at every size and a replay at
+/ a larger size still finds its stop (C7). span = decision bit + element.
 / elements gather behind a :: seed and the seed is dropped at the end: a list of conforming dicts is a table and the
 / next dict that does not conform cannot be joined onto it (pitfall 30); atoms still collapse to a typed vector
 more:{[n;lo;m] 1=$[n<lo; ch[1 1 1;::]; n<m; ch[0 1 0;(m-n)%1+m-n]; ch[0 0 0;::]]}   / the stop bit of a growing list (C23): forced on under lo, forced off at m, else a coin that stops more the fuller it is
@@ -236,7 +240,7 @@ uinit:{CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!();}   / the uniq col
 urest:{[s0] CS::s0 0; UR::s0 1; US::s0 2;}                / and its restoration around a nested table
 tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
   $[all `=value ks; [if[(::)~em; em:emtab[cg;probe cg]]; rs:draw lst[r] cg];   / the probe is one minimal row: a dep sees the columns before it
-    [s0:(CS;UR;US); uinit[]; uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
+    [s0:(CS;UR;US); uinit[]; uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; h:not (::)~/:cd; UR::(uc where h)!cd where h; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
      if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
      if[(::)~em; p:probe rowd[cg;ks]; if[(::)~p; p:key[cg]!{[ks;k;g] $[`=ks k; probe g; `dep=ks k; ::; probe value[g] 1]}[ks]'[key cg;value cg]]; em:emtab[cg;p]];   / a row whose dep fails: type the other columns alone
      rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] urest s0; 'e}[s0]]; urest s0]];
@@ -271,8 +275,12 @@ smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
 smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of the model, checked after every step (M10)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
-smnote:{[R] tr:smtab R; tr:update res:{s:.Q.s1 x; $[60<count s; (57#s),"..."; x]} each res from tr; $[any blocky each tr`model; delete model from tr; tr]}   / the trace as noted on a failure: a res whose print exceeds 60 characters is cut to text (a one-row table printed whole made 500-column lines; short values stay values), and a model that holds tables or dicts left out, where it would bury the steps
-sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds must be a table (or keyed table) of commands, got type ",string type cmds; 98h=type key cmds; 0!cmds; '"qc: cmds must be a table of commands, not a dict"];
+/ the trace as noted on a failure: a res whose print exceeds 60 characters is cut to text (a one-row table printed whole made 500-column lines; short values stay values), and a model that holds tables or dicts left out, where it would bury the steps
+smnote:{[R] tr:smtab R; tr:update res:{s:.Q.s1 x; $[60<count s; (57#s),"..."; x]} each res from tr; $[any blocky each tr`model; delete model from tr; tr]}
+sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"];
+  if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"];
+  if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h;
+  c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds must be a table (or keyed table) of commands, got type ",string type cmds; 98h=type key cmds; 0!cmds; '"qc: cmds must be a table of commands, not a dict"];
   if[not `cmd in cols c; '"qc: cmds needs a cmd column; columns are "," " sv string cols c]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
   if[not `w in cols c; c:update w:1f from c]; if[$[not type[c`w] in 5 6 7 8 9h; 1b; any c[`w]<=0]; '"qc: cmds: w must be positive weights"]; c:update w:"f"$w from c;
@@ -363,7 +371,8 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / with no coverage question open, or the cap nmax on extending the budget to settle one. Example 0 is the
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}   / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
+/ the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sspec::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}
 chk:{[c;spec;prop] if[run; '"qc: nested check"]; r:@[chk1[c;spec];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;spec;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type spec; if[count[spec]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the spec has ",string count spec]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
@@ -431,7 +440,7 @@ spans:{`w xdesc update w:e-s from cE}                 / largest first
 chain:{[s0;l0;d0] c:`s xasc select s,e from cE where l=l0,d=d0,s>=s0; if[not s0~c[0;`s]; :0#c];
   k:1; while[$[k<count c; c[k;`s]=c[k-1;`e]; 0b]; k+:1]; k#c}   / cond, not and: the row k does not exist at the end (C2)
 / passes: each loops over the current structure, re-deriving it after every accepted attempt, and returns progress
-pdisc:{cp::`disc; p:0b; j:0; while[j<count tb:select from spans[] where x; $[try dl[cv;tb[j;`s];tb[j;`e]]; p:1b; j+:1]]; p}
+pdisc:{[d0] cp::`disc; p:0b; j:0; while[j<count tb:select from spans[] where x; $[try dl[cv;tb[j;`s];tb[j;`e]]; p:1b; j+:1]]; p}
 pdel:{cp::`del; p:0b; j:0; while[j<count tb:spans[]; s:tb[j;`s];
   $[try dl[cv;s;tb[j;`e]]; [p:1b; adel[s;tb[j;`l];tb[j;`d]]]; j+:1]]; p}
 adel:{[s;l;d] k:2; while[$[k<=count c:chain[s;l;d]; try dl[cv;s;c[k-1;`e]]; 0b]; k*:2];}   / delete 2, 4, 8 siblings
@@ -483,7 +492,7 @@ shr:{[spec;prop;o] sspec::spec; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr:
 / failure database: one file per (spec;prop) under cfg`db, keyed by cfg`name or a hash of their source
 dbf:{[spec;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(spec;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console
 
-/ ---- formatting: a total dispatch over the eight shapes (C3) -------------------------------------------
+/ ---- formatting: a total dispatch over the nine shapes kind names (C3) -------------------------------------------
 kind:{ty:type x; $[(::)~x; `null; ty within 100 112; `fn; ty<0; `atom; ty within 1 19; `vec; 0h=ty; `list; 98h=ty; `tab;
   99h=ty; $[98h=type key x; `ktab; `dict]; `other]}
 blocky:{k:kind x; $[k in `tab`ktab`dict; 1b; k=`list; any blocky each x; 0b]}   / needs a block: holds a table or dict somewhere
@@ -500,16 +509,8 @@ fmt1:{k:kind x; $[`null=k; "::"; k in `atom`vec`fn`other; .Q.s1 x; k in `tab`kta
 / ---- diff: one row per difference, typed before counted before valued (C2, C3) ----------------------
 dft:([]path:();why:`symbol$();a:();b:())
 diff:{[a;b] r:df[();a;b]; $[count r; flip `path`why`a`b!flip r; dft]}
-df:{[p;a;b] ta:type a; tb:type b;
-  $[not ta=tb; enlist (p;`type;ta;tb);
-    ta within 100 112; dat[p;a;b];
-    ta<0; dat[p;a;b];
-    10h=ta; dat[p;a;b];
-    ta within 1 19; dvec[p;a;b];
-    0h=ta; dlist[p;a;b];
-    98h=ta; dtab[p;a;b];
-    99h=ta; $[98h=type key a; dtab[p;0!a;0!b]; ddict[p;a;b]];
-    dat[p;a;b]]}
+df:{[p;a;b] ta:type a; tb:type b; if[not ta=tb; :enlist (p;`type;ta;tb)]; k:kind a;   / one shape dispatch, kind's (a string compares whole, like an atom)
+  $[10h=ta; dat[p;a;b]; k=`vec; dvec[p;a;b]; k=`list; dlist[p;a;b]; k=`tab; dtab[p;a;b]; k=`ktab; dtab[p;0!a;0!b]; k=`dict; ddict[p;a;b]; dat[p;a;b]]}
 dat:{[p;a;b] $[a~b; (); enlist (p;`value;a;b)]}
 dcnt:{[p;a;b] $[count[a]=count b; (); enlist (p;`count;count a;count b)]}
 dvec:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],{[p;a;b;ii] (p,ii;`value;a ii;b ii)}[p;a;b] each where (n#a)<>n#b}
