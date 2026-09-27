@@ -422,3 +422,98 @@ Piece 4 tally: two bugs in the piece (a namespace name inside q-SQL; operator pr
 mistyped property, and two q facts learned on the way (a keyed table indexed by a list of keys and a column;
 `exec … by` gives a dictionary). Four properties stand; the balance-sheet identity is the one the state machine
 will carry, since it holds for any fill log and any mark.
+
+## Piece 5 — end of day
+
+### Entry 14: the close, and a query that cannot be asked of a partitioned table
+
+At the close the day's trades, quotes and bars go to a date partition of the HDB — sorted by symbol, `p#sym`,
+symbols enumerated — the day tables are cleared, the HDB is remapped, the day advances. Three queries answer for
+any date in one shape, from memory if the date is today and from disk otherwise: bars for a symbol in a window,
+the day's VWAP, the day's trades. Piece 5 also keeps the day's enriched trades, which nothing had kept until now,
+so `ontrade` (enrich, keep, bar) appears here. The property: feed a day, ask every query of every symbol, close
+the day, ask again, and the answers agree. The HDB root is a fresh temporary directory per session.
+
+```q
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/11_eod.q"
+q)system"l examples/mdp/steps/07_gen.q"
+q).mdp.hdb:hsym `$first system"mktemp -d"
+q)reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; .mdp.trade::0#.mdp.trade; .mdp.bar::0#.mdp.bar}
+q)feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
+q)ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
+q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); {[ev;a;b] w:asc (a;b); reset[]; feed ev; s:exec sym from .mdp.inst; mem:ask[2024.01.02;;w 0;w 1] each s; .mdp.eod 2024.01.02; .qc.eq[mem; ask[2024.01.02;;w 0;w 1] each s]}];
+FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+ev:
+  time kind sym bid ask px qty
+  ----------------------------
+a: 2024.01.02D09:30:00.000000000
+b: 2024.01.02D09:30:00.000000000
+nyi
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+```
+
+`nyi` on the empty day: `exec qty wavg px from trade where date=d, sym=s` — `exec` is not implemented over a
+partitioned table, where the same aggregate in a `select` is. The RDB form and the HDB form of a query are not the
+same text with a `date=` added, which is the whole reason to test parity. Step 12 asks the HDB with a `select`.
+
+### Entry 15: the symbols come back different
+
+```q
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/12_eod.q"
+q)system"l examples/mdp/steps/07_gen.q"
+q).mdp.hdb:hsym `$first system"mktemp -d"
+q)reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; .mdp.trade::0#.mdp.trade; .mdp.bar::0#.mdp.bar}
+q)feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
+q)ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
+q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); {[ev;a;b] w:asc (a;b); reset[]; feed ev; s:exec sym from .mdp.inst; mem:ask[2024.01.02;;w 0;w 1] each s; .mdp.eod 2024.01.02; .qc.eq[mem; ask[2024.01.02;;w 0;w 1] each s]}];
+FAIL falsified after 0 tests, 0 shrinks (13 attempts, seed 7)
+ev:
+  time kind sym bid ask px qty
+  ----------------------------
+a: 2024.01.02D09:30:00.000000000
+b: 2024.01.02D09:30:00.000000000
+qc.eq
+path           why  a  b 
+-------------------------
+`bars   0 `sym type 11 20
+`trades 0 `sym type 11 20
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 1 0 0 0 0 0 0 0 757503000000000000 757503000000000000]
+```
+
+Still the empty day, and still not a row in sight: the disk answers carry enumerated symbols (type 20) where
+memory's are plain (11). Equal to look at, different to compare — and different to a client that joins the answer
+to something of its own. Since the queries promise one shape for any date, step 13 has the disk branch return
+memory's shape: the `date` column dropped, the symbols un-enumerated.
+
+### Entry 16: piece 5 passes
+
+```q
+q)system"l examples/mdp/steps/06_quotes.q"
+q)system"l examples/mdp/steps/07_bars.q"
+q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/07_gen.q"
+q).mdp.hdb:hsym `$first system"mktemp -d"
+q)reset:{.mdp.seq::0; .mdp.today::2024.01.02; .mdp.quote::0#.mdp.quote; .mdp.qcache::0#.mdp.qcache; .mdp.trade::0#.mdp.trade; .mdp.bar::0#.mdp.bar}
+q)feed:{[ev] {[e] $[`quote=e`kind; .mdp.onquote enlist `time`sym`bid`ask#e; .mdp.ontrade enlist `time`sym`px`qty#e]} each ev;}
+q)ask:{[d;s;a;b] `bars`vwap`trades!(.mdp.qbars[d;s;a;b]; .mdp.qvwap[d;s]; .mdp.qtrades[d;s])}
+q).qc.check[(.mdp.g.stream; .qc.ts[.mdp.open;.mdp.close]; .qc.ts[.mdp.open;.mdp.close]); {[ev;a;b] w:asc (a;b); reset[]; feed ev; s:exec sym from .mdp.inst; mem:ask[2024.01.02;;w 0;w 1] each s; .mdp.eod 2024.01.02; .qc.eq[mem; ask[2024.01.02;;w 0;w 1] each s]}];
+ok 100 tests (seed 7)
+q).qc.check[(.mdp.g.stream; .mdp.g.stream); {[e1;e2] reset[]; feed e1; s:exec sym from .mdp.inst; d1:ask[2024.01.02;;.mdp.open;.mdp.close] each s; .mdp.eod 2024.01.02; feed update time+1D from e2; d2:ask[2024.01.03;;.mdp.open+1D;.mdp.close+1D] each s; .mdp.eod 2024.01.03; .qc.eq[(d1;d2); (ask[2024.01.02;;.mdp.open;.mdp.close] each s; ask[2024.01.03;;.mdp.open+1D;.mdp.close+1D] each s)]}];
+ok 100 tests (seed 7)
+q).qc.check[.mdp.g.stream; {reset[]; feed x; c:.mdp.qcache; .mdp.eod 2024.01.02; (c~.mdp.qcache) and (0=count .mdp.trade) and 0=count .mdp.bar}];
+ok 100 tests (seed 7)
+```
+
+Two more properties for the road: two days closed in turn are both still answerable, each as it was in memory;
+and the close clears the day tables but leaves the quote cache alone, which is the one piece of state that is
+meant to carry across the boundary. Piece 5 tally: two bugs in the piece, both in the disk branch of the queries
+(an `exec` the HDB cannot run; an enumeration the caller would not expect), both found at the empty day before
+the first row was ever written. Nothing was found in the writing itself.
+
+With the pieces in hand: piece 1 one bug, piece 2 three, piece 3 none, piece 4 two, piece 5 two — eight in the
+pieces, six in my test code or the library, every one caught by a minimal example a person can read at a glance.
+Now the assembly, and the state machine over it.
