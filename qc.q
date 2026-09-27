@@ -61,7 +61,7 @@ chn:{[r;n;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:n; m:0|n&count[P]-j; p:m#j 
   nch+:1; if[cf[`choices]<nch; '"qc.toolarge"];
   C,:flip `v`lo`hi`o!(v;n#lo;n#hi;n#o); v}
 freshn:{[lo;hi;o;w;n] $[lo=hi; n#lo; -9h=type w; hi&lo+"j"$w>n?1f; 9h=type w; lo+sums[w] binr n?sum w; w~`u; unifn[lo;hi;n]; mixn[lo;hi;o;n]]}
-unifn:{[lo;hi;n] $[lo=hi; n#lo; 0<k:1+hi-lo; lo+n?k; ?[n?2; lo+n?0W; hi-n?0W]]}
+unifn:{[lo;hi;n] $[lo=hi; n#lo; 0<k:1+hi-lo; lo+n?k; ?[n?01b; lo+n?0W; hi-n?0W]]}   / (the vector conditional wants booleans: n?01b, not n?2 — pitfall 42)
 mixn:{[lo;hi;o;n] b:0=n?8; nb:(o;lo;hi;$[o<hi; o+1; o];$[o>lo; o-1; o]) n?5; sg:$[o=lo; n#1; o=hi; n#-1; (1 -1) n?2];
   ?[b;nb;lo|hi&"j"$("f"$o)+sg*(n?1f)*2 xexp n?1+bits hi-lo]}
 fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; 9h=type w; lo+sums[w] binr rand sum w;

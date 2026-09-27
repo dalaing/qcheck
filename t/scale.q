@@ -18,6 +18,7 @@ v:.qc.draw .qc.bulk[0 1000;100000 100000]
 v:.qc.draw .qc.bulk[-1000 1000;100000 100000]
 .t.t["bulk: symmetric range has both signs"; (0.4<avg v>0) and 0.4<avg v<0]
 .t.t["bulk: full long range stays in bounds"; all within[;(-0W;0W)] .qc.draw .qc.bulk[-0W 0W;1000 1000]]
+.t.t["unifn on a range whose width overflows draws from both halves (AUDIT2: the conditional was given longs)"; (all within[;(-0W;0W)] v) and (any v<0) and any 0<v:.qc.unifn[-0W;0W;2000]]
 / shrinking: the minimum is not a prefix, and block deletion reaches it fast
 r:ms[{.qc.chk[q;x;{x~asc x}]};.qc.bulk[0 99;0 100000]]
 .t.t["bulk: x~asc x over up to 1e5 elements shrinks to 1 0"; 1 0~r[0][`x]`x]

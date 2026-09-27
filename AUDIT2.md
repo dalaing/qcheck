@@ -46,7 +46,7 @@ Library: clean. The phase-2 `and`s have independent terms (`qc.q:224` `count[at]
   `type` from `key`, and a keyed-table value builds an enumeration generator over the key table. Reproduced:
   `.qc.colg ([]a:1 2;b:3 4)` raises `type`. The test should be `tc within 20 76h`; tables and keyed tables then
   fall to the general branch.
-- [ ] **bug** `qc.q:64` `unifn`: `?[n?2; lo+n?0W; hi-n?0W]` gives the vector conditional a long vector; it needs
+- [x] **bug** `qc.q:64` `unifn`: `?[n?2; lo+n?0W; hi-n?0W]` gives the vector conditional a long vector; it needs
   booleans and raises `type` (`.qc.unifn[-0W;0W;5]`). Reachable through `chn` with the `u` hint on a range whose
   width overflows; no public caller passes `u` to `chn` today, so it is latent. `mixn` beside it is correct.
 - `kind`, `fmt1`, `df`, `mark` (`:204`), `cands` (`:206`), `vnode` (`:187-190`) all end in an else.
@@ -145,7 +145,7 @@ functions with `~`; `colg`'s `f$` is an enumeration, not an application.
 ### C21 — arithmetic on choice bounds is done in floats, or guarded
 - [ ] **exposed** `qc.q:124,126` — `nr[1]&:nr[0]+sz*1000` is long arithmetic; near `0W` it wraps and the range
   fails as `qc: range` (reproduced). `"j"$("f"$nr 0)+sz*1000` saturates instead.
-- [ ] **exposed** `qc.q:64` `unifn` — the same `?[n?2;…]` bug as under C3; the overflow branch it guards is
+- [x] **exposed** `qc.q:64` `unifn` — the same `?[n?2;…]` bug as under C3; the overflow branch it guards is
   right, the guard's result is not usable.
 - Handled: `mixn` adds in floats and saturates; `cands` uses `wid`; `tin`'s `j` range is built from `-0W+1` and
   `0W-1`; `chn`'s prefix slice uses `0|n&count[P]-j`.
