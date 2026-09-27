@@ -400,3 +400,15 @@ Over `mustc`, `must`, `main`, the `ms` column and `t/integ.q`:
 - Pitfall 32 (`\S`) recorded. Pitfall 13: `main` calls `exit`, so it is tested in a child q, never loaded.
 - Not done: `ms` is not printed (transcripts must stay exact); a `--json` style output for `main` is left to the
   caller (`.j.j` on the table).
+
+## M10 pass (2026-09-27)
+
+Over `tin`, `spcs`, `tf`, `t`, `dble`, `gidf`, `ts`, `dates`, `vleaf`, `vnode`, `val`, and `sm`'s `inv` and `w`:
+- C1 canary on `ts`, `dates`, `val`, `gidf`, `dble`, every `tf c` (contracts c10 over 24 new registry rows).
+  C2 conds (`vnode`'s table test is a cond chain). C5 green; `value`, `any`, `inv` avoided as names.
+- C7 every `tf c` records a choice at size 0 (contract c3). C12 `val`'s leaves have unequal lengths across
+  alternatives — accepted: `val` is for reach, not for simplicity order.
+- C14 `qc.inv` added to `FS` with its detail form; a non-function `inv` and non-positive weights are usage errors.
+  C17 the 3:1 weight test in `t/sm.q` is pinned and multi-sigma.
+- C21 `tin`'s `j` range is built from `-0W+1` and `0W-1`, both exact longs.
+- Not done: `tf` for `c` and `s` is narrower than `t` by design (no space, no empty symbol), stated in §1.3.

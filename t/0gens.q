@@ -49,9 +49,14 @@
   (`tabc;.qc.tab `t`k`a!(.qc.mono[.qc.int 0 9;.qc.int 0 9];.qc.uniq .qc.elem `a`b`c;.qc.dep {[r] .qc.int (0;r`t)});flip `t`k`a!(();();());{98h=type x};1b;1b);
   (`schema;.qc.schema ([]a:1 2;b:`x`y);([]a:`long$();b:`symbol$());{98h=type x};1b;1b);
   (`bulk;.qc.bulk[0 99;0 1000];`long$();{(7h=type x) and all x within 0 99};1b;1b);
+  (`tstamp;.qc.ts[2024.01.01;2024.12.31];2024.01.01D00:00:00.000000000;{x within 2024.01.01D0 2024.12.31D0};1b;1b);
+  (`dates;.qc.dates[2024.01.01;2024.12.31];2024.01.01;{x within 2024.01.01 2024.12.31};1b;1b);
+  (`val;.qc.val;0b;{1b};0b;1b);
+  (`gidf;.qc.gidf;0Ng;{(-2h=type x) and not null x};1b;1b);
   (`btab;.qc.btab[0 50] `a`b!(0 9;("d";0 9));flip `a`b!(`long$();`date$());{(98h=type x) and (7h=type x`a) and 14h=type x`b};1b;1b))
 .g.rows,:{[c] (`$"t",c;.qc.t c;.g.org c;{[c;x] (neg .Q.t?c)=type x}[c];1b;1b)} each "bgxhijefcspmdznuvt"
+.g.rows,:{[c] (`$"tf",c;.qc.tf c;$[c="s"; `a; .g.org c];{[c;x] ((neg .Q.t?c)=type x) and not null x}[c];1b;1b)} each "bgxhijefcspmdznuvt"   / (tf s has no empty symbol: its origin is `a)
 .g.T:flip `name`gen`origin`ok`typed`canary!flip .g.rows
 .g.NOCH:enlist `const
-.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t`mono`uniq`dep`atr`schema`bulk`btab) in key `.qc]
-.t.t["registry: has a row per type char and no duplicate names"; (18=count .g.T where (string .g.T`name) like "t?") and (count .g.T)=count distinct .g.T`name]
+.t.t["registry: every public generator name appears"; all (`int`flt`dbl`bit`bool`elem`one`freq`such`const`sized`small`list`lst`rec`recb`spc`gid`chr`chrc`str`strc`sym`symc`vec`tab`tabr`ktab`sm`t`mono`uniq`dep`atr`schema`bulk`btab`tf`ts`dates`val`gidf) in key `.qc]
+.t.t["registry: has a row per type char for t and tf, and no duplicate names"; (all (`$"t",/:"bgxhijefcspmdznuvt") in .g.T`name) and (all (`$"tf",/:"bgxhijefcspmdznuvt") in .g.T`name) and (count .g.T)=count distinct .g.T`name]

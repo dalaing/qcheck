@@ -124,6 +124,9 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
+| `.qc.tf c` | the **finite** domain of an atom type: no null, no infinity (`h i j` stop one short of their infinities, `e` fits a real, `c` has no space, `s` no empty symbol); `t c` is `tf c` wrapped in `spc` with the specials (M10) |
+| `.qc.ts[from;to]`, `.qc.dates[from;to]` | one timestamp or date in a window, the start simplest (dates accepted as timestamp bounds); a monotone series is `mono[ts[a;b];int 0 60000000000]` in a table or `atr[`s] list ts[a;b]` (A26) |
+| `.qc.val` | an arbitrary q value: `rec` over the full-domain zoo with list, dict, table and keyed-table nodes — every atom type, both list kinds, dicts, tables at size 30; `-9!-8!x` round-trips all of it (A27) |
 | `.qc.one gs` | one of several alternative specs; the first is the simplest *provided it draws no more choices than the others* (C12) |
 | `.qc.freq[w] gs` | weighted alternatives, parallel lists |
 | `.qc.elem xs` | an element of a constant list (preferred over generating symbols) |
@@ -471,7 +474,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 6 tests, 3 shrinks (44 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (43 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -498,6 +501,10 @@ which draws only valid inputs from the model (`{.qc.int 0,x`balance}`), not in a
 the command can run at all. Drawing an `sm` spec executes the real system, on every path that draws: examples,
 shrink candidates, `minimal`, `replay`, a saved failure, `again[]`, and after a discard — which is why `init`
 is part of `h` and not something the property does.
+
+An `inv` hook (model → boolean, or a list of them) is checked after every step's `upd`; a false one notes the
+trace and raises `qc.inv`, a failure signal like `qc.post`. A `w` column weights the choice among the commands
+whose `pre` holds (positive numbers; the default is one each), through the `freq` law. (M10.)
 
 A step's span holds its decision bit, command index and input draw and nothing else (C13), so deleting a step
 is one span deletion and misaligned command indices clamp to available commands (steps therefore differ in
@@ -830,6 +837,15 @@ transcript, 12 rows where one would do); and `blk` was already a name in the shr
 `ms` column in `checks` (returned, not printed), `.j.j` documented as the machine-readable form (A25), and the
 `\S` reseed as pitfall 32. `t/integ.q`: the signal's first line is the verdict for falsified, gave-up and
 coverage outcomes; every outcome round-trips through `.j.j`/`.j.k`; `main`'s exit codes checked in a child q.
+
+**M10 — time, values, state machines.** Done, from A26 and A27: the zoo rebuilt over `tin` so `tf` (finite) and
+`t` (full domain) share one table of inner generators; `dble` so a real never overflows; `ts` and `dates`;
+`val`; `inv` and `w` in `sm` with `qc.inv` as a fourth failure stem. `t/types.q`: no null or infinity from any
+`tf`, `t` still reaches them, the xbar bug shrinks to four timestamps at the open, `val` round-trips; `t/sm.q`:
+the invariant falsifies and shrinks, weights are honoured 3:1. What it taught: `f'[a;b]` over a three-argument
+`f` is a projection of the each, not a list of results; the space and the empty symbol *are* q's nulls for `c`
+and `s`, so a finite zoo must drop them; `value`, `any`, `inv` are keywords (the hook keeps `inv` as a dict key,
+never a name); and drawing the command index by weights moved the state-machine transcripts by four examples.
 
 ---
 

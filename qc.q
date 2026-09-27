@@ -164,14 +164,31 @@ strc:{[s;r;d] dd[d;".qc.strc[s;r]"]; "c"$draw lst[r] chrc s}
 str:strc[AZ;0 0W]
 symc:{[s;r;d] dd[d;".qc.symc[s;r]"]; `$"c"$draw lst[r] chrc s}     / bounded alphabet: symbols intern forever
 sym:symc["abcd";0 3]
-/ t: type char -> generator of that atom type's full domain, nulls and infinities included; origin = c$0
-t:"bgxhijefcspmdznuvt"!(bool;gid;cast["x";int 0 255];
-  spc[(0Nh;0Wh;-0Wh);cast["h";int -32767 32767]];spc[(0Ni;0Wi;-0Wi);cast["i";int -2147483647 2147483647]];
-  spc[(0N;0W;-0W);int -0W 0W];spc[(0Ne;0We;-0We);cast["e";dbl]];spc[(0n;0w;-0w);dbl];chr;sym;
-  spc[(0Np;0Wp;-0Wp);cast["p";int -1500000000000000000 1500000000000000000]];spc[(0Nm;0Wm;-0Wm);cast["m";int -1200 1200]];
-  spc[(0Nd;0Wd;-0Wd);cast["d";int -36500 36500]];spc[(0Nz;0Wz;-0Wz);cast["z";flt -36500 36500]];
-  spc[(0Nn;0Wn;-0Wn);cast["n";int -1000000000000000000 1000000000000000000]];spc[(0Nu;0Wu;-0Wu);cast["u";int 0 1439]];
-  spc[(0Nv;0Wv;-0Wv);cast["v";int 0 86399]];spc[(0Nt;0Wt;-0Wt);cast["t";int 0 86399999]])
+gidf:{[d] dd[d;".qc.gidf"]; 0x0 sv "x"$draw 16#enlist int 0 255}   / a guid that is never null
+/ dble: a double that fits a real (24-bit mantissa, exponent to 2^103), so "e"$ never overflows to 0we
+dble:{[d] dd[d;".qc.dble"]; s:ch[(0;1;0);0.3]; e:ch[(-126;103;0);::]; m:ch[(0;16777215;0);::]; (1 -1 s)*m*2 xexp e}
+/ tin: each atom type's finite domain — no null, no infinity (h i j stop one short of their infinities, e fits a
+/ real, c has no space, s no empty symbol: those are q's nulls); tf c is that as a generator (M10, A26); t c wraps
+/ it in spc, adding the null and both infinities, and keeps chr, sym and gid for c s g: the full domain
+tin:"bgxhijefcspmdznuvt"!(bool;gidf;cast["x";int 0 255];cast["h";int -32766 32766];cast["i";int -2147483646 2147483646];int (-0W+1;0W-1);cast["e";dble];dbl;chrc[.Q.a,.Q.A,.Q.n];symc["abcd";1 3];
+  cast["p";int -1500000000000000000 1500000000000000000];cast["m";int -1200 1200];cast["d";int -36500 36500];cast["z";flt -36500 36500];
+  cast["n";int -1000000000000000000 1000000000000000000];cast["u";int 0 1439];cast["v";int 0 86399];cast["t";int 0 86399999])
+spcs:"hijefpmdznuvt"!((0Nh;0Wh;-0Wh);(0Ni;0Wi;-0Wi);(0N;0W;-0W);(0Ne;0We;-0We);(0n;0w;-0w);(0Np;0Wp;-0Wp);(0Nm;0Wm;-0Wm);(0Nd;0Wd;-0Wd);(0Nz;0Wz;-0Wz);(0Nn;0Wn;-0Wn);(0Nu;0Wu;-0Wu);(0Nv;0Wv;-0Wv);(0Nt;0Wt;-0Wt))
+tf:tin
+t:tin,key[spcs]!{[sp;g] spc[sp;g]}'[value spcs;tin key spcs]; t["g"]:gid; t["c"]:chr; t["s"]:sym   / (spc'[a;b] would be a projection of the each, not 13 results)
+/ ts[from;to], dates[from;to]: one timestamp or date in a window, the start simplest (A26); a monotone series is
+/ mono[ts[a;b];int 0 60000000000] in a table, or atr[`s] list ts[a;b]
+ts:{[a;b;d] dd[d;".qc.ts[from;to]"]; "p"$ch[("j"$"p"$a;"j"$"p"$b;"j"$"p"$a);::]}
+dates:{[a;b;d] dd[d;".qc.dates[from;to]"]; "d"$ch[("j"$"d"$a;"j"$"d"$b;"j"$"d"$a);::]}
+/ val: an arbitrary q value — rec over the full-domain zoo with list, dict, table and keyed-table nodes (A27), for
+/ properties about serialisation, IPC, formatting and match itself; -9!-8!x round-trips everything it makes.
+/ Children that are same-type atoms arrive as a typed vector and conforming dicts as a table: both already values.
+vleaf:one (value t),(str;{[d] draw vec[0 4] draw elem key t})
+vnode:{if[not 0h=type x; :x]; k:draw elem `list`dict`tab`ktab; n:count x;
+  $[k=`list; x; k=`dict; (draw lst[n,n] sym)!x;
+    $[not k in `tab`ktab; 0b; n=0; 0b; not all (type each x) within 1 19h; 0b; 1=count distinct count each x]; [tb:flip (`$"c",/:string til n)!x; $[(k=`ktab) and n>1; 1!tb; tb]];
+    x]}
+val:{[d] dd[d;".qc.val"]; draw rec[0 4;vleaf;vnode]}
 vec:{[r;c;d] dd[d;".qc.vec[r] c"]; c$draw lst[r] t c}            / typed even when empty
 / ---- tables: rows are spans (deleting a row is one deletion); a constrained column is drawn with the row so far ----
 / A constrained column is a projection of mono, uniq or dep, which tabr recognises (mark) and draws itself; drawn on
@@ -227,22 +244,26 @@ schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k 
 / example and replay (the real system must be resettable), `steps a range (default 0 0W, capped by size).
 / cmds: a keyed table (or a table with a cmd column) with any of pre gen run post upd; missing columns take
 / the defaults. Each step's span holds its decision bit, command index and input draw and nothing else (C13);
-/ run, post and upd happen after it. A failed postcondition notes the trace and raises qc.post, a failure signal.
+/ run, post and upd happen after it, then inv on the new model. A failed postcondition notes the trace and raises
+/ qc.post, a failed invariant qc.inv: failure signals. A w column weights the choice among the available commands.
 smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
-smh:`m0`init`fini`steps!(::;{};{};0 0W)
+smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of the model, checked after every step (M10)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
 sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds"; 98h=type key cmds; 0!cmds; '"qc: cmds"];
   if[not `cmd in cols c; '"qc: cmds"]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
-  if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"];
+  if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
+  if[not `w in cols c; c:update w:1f from c]; if[$[not type[c`w] in 5 6 7 8 9h; 1b; any c[`w]<=0]; '"qc: cmds: w must be positive weights"]; c:update w:"f"$w from c;
   r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz; m:h`m0; h[`init][]; R:(); n:0; go:1b;   / (cap in floats, C21)
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
-    $[go; [j:av ch[(0;-1+count av;0);`u]; a:@[draw;c[j;`gen] m;{[h;e] h[`fini][]; 'e}[h]]; end[];   / fini on every exit; (a, not i: i is the cursor)
+    $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:@[draw;c[j;`gen] m;{[h;e] h[`fini][]; 'e}[h]]; end[];   / weighted over the available commands; fini on every exit; (a, not i: i is the cursor)
         o:@[c[j;`run];a;{[h;R;e] note smtab R; h[`fini][]; '"qc.run ",e}[h;R]];   / an error in the system is a failure, not a generator bug
         ok:@[c[j;`post][m;a;];o;{[h;R;e] note smtab R; h[`fini][]; '"qc.post ",e}[h;R]]; ok:$[(::)~ok; 1b; all ok];
         m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
-        if[not ok; h[`fini][]; note smtab R; '"qc.post"]; m:m2; n+:1];
+        if[not ok; h[`fini][]; note smtab R; '"qc.post"];
+        iv:@[h`inv;m2;{[h;R;e] note smtab R; h[`fini][]; '"qc.inv ",e}[h;R]]; if[not $[(::)~iv; 1b; all iv]; h[`fini][]; note smtab R; '"qc.inv"];   / the invariant, on the model after the step
+        m:m2; n+:1];
       end[]]];
   h[`fini][]; smtab R}
 
@@ -265,7 +286,7 @@ app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x (value p)[1]; p 
 pass:{$[(::)~x; 1b; type[x] in -1 1h; all x; ()~x; 1b; '"qc: property returned ",-3!x]}   / () is vacuously true, as all () is
 trap:{[f;x] .Q.trp[{[f;x] `ok`r!(1b;f x)}[f];x;{[e;bt] `ok`e`bt!(0b;e;.Q.sbt bt)}]}
 ENG:("qc.discard";"qc.overrun";"qc.toodeep";"qc.toolarge";"qc.misaligned")   / the engine's own signals: never a counterexample
-FS:("qc.eq";"qc.post";"qc.run")                       / failure-signal stems: qc.<stem>[ detail] is a falsification wherever raised (C14)
+FS:("qc.eq";"qc.post";"qc.run";"qc.inv")              / failure-signal stems: qc.<stem>[ detail] is a falsification wherever raised (C14)
 fsg:{[e] any {[e;s] s~count[s]#e}[e] each FS}
 / one example: generate, apply, classify the outcome as pass / fail / disc
 run1:{[spec;prop]

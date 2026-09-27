@@ -30,7 +30,9 @@ a general list draws a tuple, a dict draws a record, anything else is a constant
 .qc.one (.qc.int 0 9; .qc.sym)         / alternatives; .qc.freq[3 1] gs weights them
 .qc.such[{x>0}] .qc.int -9 9           / a filter (bounded retries, then a discard)
 .qc.t"j"                               / any atom type's full domain, nulls and infinities included
-.qc.t"jf"                              / a pair of them
+.qc.t"jf"                              / a pair of them; .qc.tf"j" the finite domain, no null or infinity
+.qc.ts[2024.01.02D09:30;2024.01.02D16:00] / a timestamp in a session; .qc.dates[from;to] a date
+.qc.val                                 / any q value at all: atoms, lists, dicts, tables (for serialisation round trips)
 .qc.flt 0 1                            / a float in a range; .qc.dbl is any finite double
 .qc.str                                / a string; .qc.sym a symbol over a bounded alphabet
 .qc.vec[0 5]"d"                        / a typed vector, here of dates
@@ -105,7 +107,8 @@ cmds:([cmd:`push`pop]
 .qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::]
 ```
 
-`.qc.sm[h] cmds` draws and executes a command sequence and yields the trace; a failed postcondition prints the
+`.qc.sm[h] cmds` draws and executes a command sequence and yields the trace; `h` may carry an `inv` (an invariant
+of the model, checked after every step) and `cmds` a `w` column of weights; a failed postcondition prints the
 trace with the failing step marked and the sequence shrinks like any other input. `init` resets the real
 system before every example and every replay, so the system can live in another process (`examples/sm_ipc.q`).
 

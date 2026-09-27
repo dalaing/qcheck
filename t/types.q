@@ -18,6 +18,23 @@ hasinf:{[c] v:.qc.draw 1000#enlist .qc.t c; (any v=inf c) and any v=neg inf c}
 / shrinking reaches the origin from wherever the failure was found
 .t.t["t: {null x} shrinks to the origin for numeric and temporal types"; all {[c] (c$0)~(.qc.chk[q;.qc.t c;{null x}])[`x]`x} each "hijefpmdznuvt"]
 .t.t["t: symbols shrink to `a, chars to \"a\""; ((`a)~(.qc.chk[q;.qc.t"s";{x=`}])[`x]`x) and ("a"~(.qc.chk[q;.qc.t"c";{x="b"}])[`x]`x)]
+/ the finite zoo (M10): no null, no infinity, same origin as t
+.t.t["tf: no nulls and no infinities for any type"; all {[c] v:.qc.draw 400#enlist .qc.tf c; (not any null v) and not any (v=inf c) or v=neg inf c} each "hijefpmdznuvt"]
+.t.t["tf: guids are never null, booleans and chars as before"; (not any null .qc.draw 200#enlist .qc.tf "g") and all (type each .qc.draw each .qc.tf "bcs") in -1 -10 -11h]
+.t.t["tf: the minimal value of each type is its origin, as t's (s: `a, there is no empty symbol)"; all {[c] $[c="s"; `a; org c]~.qc.minimal .qc.tf c} each cs]
+.t.t["tf: no space in a char, no empty symbol; t keeps them"; (not any null .qc.draw 500#enlist .qc.tf "c") and (not any null .qc.draw 500#enlist .qc.tf "s") and any null .qc.draw 500#enlist .qc.t "s"]
+.t.t["t still reaches the infinities of h i j (one short in tf)"; all {[c] v:.qc.draw 2000#enlist .qc.t c; (any v=inf c) and any v=neg inf c} each "hij"]
+/ time in a window (M10, A26)
+.t.t["ts: in the window, the start simplest, dates accepted as bounds"; (all (.qc.draw 200#enlist .qc.ts[2024.01.02D09:30;2024.01.02D16:00]) within 2024.01.02D09:30 2024.01.02D16:00) and 2024.01.02D00:00~.qc.minimal .qc.ts[2024.01.02;2024.01.03]]
+.t.t["dates: in the range, the first simplest, a bad range refused"; (all (.qc.draw 200#enlist .qc.dates[2024.01.01;2024.12.31]) within 2024.01.01 2024.12.31) and (2024.01.01~.qc.minimal .qc.dates[2024.01.01;2024.12.31]) and (@[.qc.draw;.qc.dates[2024.12.31;2024.01.01];{x}]) like "qc: range*"]
+.t.t["ts: a planted xbar bug shrinks to four timestamps in one minute from the open"; (4=count v) and (1=count distinct 0D00:01 xbar v) and 2024.01.02D09:30=first v:(.qc.chk[q;.qc.atr[`s] .qc.lst[0 20] .qc.ts[2024.01.02D09:30;2024.01.02D16:00];{not any 3<count each group 0D00:01 xbar x}])[`x]`x]
+/ arbitrary values (M10, A27)
+.t.sz 30
+V:{.qc.draw x} each 300#enlist .qc.val
+kinds:{$[99h=type x; $[98h=type key x; `ktab; `dict]; 98h=type x; `tab; 0h=type x; `list; type[x] within 1 19h; `vec; `atom]}
+.t.t["val: atoms, vectors, lists, dicts and tables all appear at size 30"; all `atom`vec`list`dict`tab in distinct kinds each V]
+.t.t["val: -9!-8! round-trips every drawn value"; all {x~-9!-8!x} each V]
+.t.sz 100
 / floats
 .t.t["flt: within range"; all within[;0 1] .qc.draw 300#enlist .qc.flt 0 1]
 .t.t["flt: negative range within range"; all within[;-5 -2] .qc.draw 100#enlist .qc.flt -5 -2]

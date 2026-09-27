@@ -45,6 +45,21 @@ q).qc.minimal each (.qc.flt 0 1; .qc.str; .qc.sym; .qc.vec[0 3]"j")
 `long$()
 ```
 
+## Any value at all
+
+`val` draws an arbitrary q value — every atom type with its nulls and infinities, typed and general lists, dicts,
+tables — for properties about the things every q program does to values. Serialisation round-trips; JSON does not,
+and the smallest witness is a byte.
+
+```q
+q).qc.check[.qc.val; {x~-9!-8!x}];
+ok 100 tests (seed 7)
+q).qc.check[.qc.val; {x~.j.k .j.j x}];
+FAIL falsified after 1 tests, 7 shrinks (26 attempts, seed 7)
+x: 0x00
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;0 2 0]
+```
+
 ## Tables
 
 A column can be constrained: `mono[b;g]` adds a drawn delta to the previous row, `uniq g` never repeats a value, and
@@ -224,7 +239,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 6 tests, 3 shrinks (44 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (43 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------

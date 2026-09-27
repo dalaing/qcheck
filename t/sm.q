@@ -37,6 +37,16 @@ cm4:([cmd:enlist `put] gen:enlist {[m] .qc.int 0 99}; run:enlist {[i] i}; post:e
 r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist `long$()] cm4;::]
 t:last r`notes
 .t.t["sm: inputs shrink: one put of 50"; (1=count t) and 50~first t`arg]
+/ invariants and weights (M10)
+cm5:([cmd:`inc`dec] run:({[a] ::};{[a] ::}); upd:({[m;a;o] m+1};{[m;a;o] m-1}))
+r:.qc.chk[q;.qc.sm[`m0`inv!(0;{[m] m<3})] cm5;::]
+.t.t["sm: a failed invariant falsifies with qc.inv, the trace noted, and shrinks to the three steps that break it"; (`falsified=r`why) and ("qc.inv"~r`err) and (3=count t) and all `inc=(t:last r`notes)`cmd]
+.t.t["sm: an invariant that errors is qc.inv with the text"; "qc.inv boom"~(.qc.chk[q;.qc.sm[`m0`inv!(0;{[m] '"boom"})] cm5;::])`err]
+.t.t["sm: a non-function inv is refused"; (@[.qc.draw;.qc.sm[`m0`inv!(0;5)] cm5;{x}]) like "qc: inv*"]
+cm6:([cmd:`a`b] run:({[a] ::};{[a] ::}); w:3 1f)
+tr:.qc.draw .qc.sm[`m0`steps!(0;200 200)] cm6
+.t.t["sm: w weights the choice among available commands (3:1 over 200 steps, within 3 sigma)"; (avg `a=tr`cmd) within 0.65 0.85]
+.t.t["sm: weights must be positive numbers"; ((@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] update w:0 1f from cm6;{x}]) like "qc: cmds: w*") and (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] update w:`x`y from cm6;{x}]) like "qc: cmds: w*"]
 / validation and the canary
 .t.t["sm: cmds must be a table with a cmd column"; ("qc: cmds"~@[.qc.draw;.qc.sm[h] 5;{x}]) and "qc: cmds"~@[.qc.draw;.qc.sm[h] ([]a:1 2);{x}]]
 .t.t["sm: canary"; (@[.qc.sm[h;cm];1;{x}]) like "qc: too many*"]
