@@ -123,6 +123,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g` (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a spec. On their own each is its plain part |
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
 | `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
+| `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
 | `.qc.one gs` | one of several alternative specs; the first is the simplest *provided it draws no more choices than the others* (C12) |
 | `.qc.freq[w] gs` | weighted alternatives, parallel lists |
 | `.qc.elem xs` | an element of a constant list (preferred over generating symbols) |
@@ -210,7 +211,7 @@ without affecting replay. The hints are a closed vocabulary, chosen deliberately
 back to drawing a random half of the range (A5).
 
 **Budgets.** `.qc.draw` counts nesting depth and signals `"qc.toodeep"` at `cfg`depth` (default 200); the
-choice table is capped at `cfg`choices` (default 8192) with `"qc.toolarge"`. Both are named errors that
+number of draw calls is capped at `cfg`choices` (default 8192; a bulk block counts once, whatever its length) with `"qc.toolarge"`. Both are named errors that
 arrive before q's own `'stack` (about 1000 user levels through the interpreter, A16). During generation they
 count as discards, reported separately (§1.4).
 
@@ -344,7 +345,9 @@ vector (q dicts accept vector keys, A1). The loop and every pass are iterative, 
 4. reorder sibling spans of the same label into sorted order (canonical lists);
 5. minimise duplicated values together (`group v`), then each choice individually by binary search toward its
    origin;
-6. redistribute numeric pairs (`x-k, y+k`) and lower pairs together.
+6. redistribute numeric pairs (`x-k, y+k`) and lower pairs together;
+7. (M8) delete the same chunk from every block of a bulk span and lower its length, ddmin-style — first, since a
+   block of 1e5 values must shrink to a handful before the per-choice passes can afford to touch it.
 
 Each pass is a loop over the *current* structure that re-derives it after every accepted attempt (indices
 shift, so nothing is precomputed), and the shrinker cycles the passes until a whole cycle accepts nothing or
@@ -804,6 +807,15 @@ the row grows behind a `::` seed (pitfall 6 in dict form); `where` over a dict g
 `p#` failing is reported as `u-fail`; `asc`, `attr`, `like`, `cols`, `vs` are all keywords (pitfall 3, five times
 in one milestone); `0#` of a table drops attributes while `0#` of a vector keeps them; and a general column's
 `meta` type is read from its first element only.
+
+**M8 — scale.** Done, from A22: `chn` records a block of n choices in one call (fresh values by `n?` through
+`freshn`, `unifn`, `mixn`; replay by slicing the prefix), `bulk` and `btab` draw over it, `pblk` deletes the same
+chunk from every block of a span and lowers the length (ddmin), and `cfg`choices` bounds draw calls rather than
+recorded rows. `t/scale.q`: a million longs in under half a second, `x~asc x` over 1e5 elements to `1 0` in
+under 100 attempts, a `btab` bug over 1e5 rows to one row. What it taught: a block span with several columns
+needs the chunk removed from every block, or the columns misalign and the minimum stalls (found by the
+transcript, 12 rows where one would do); and `blk` was already a name in the shrinker — a collision the
+`t/names.q` scan cannot see because both are in `.qc` (the generator is `bulk`).
 
 ---
 

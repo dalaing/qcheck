@@ -378,3 +378,14 @@ The conventions rerun over the M7 code (`mono`, `uniq`, `dep`, `atr`, `mark`, `c
 - Pitfall 6 (dict form) the row accumulator behind a `::` seed; pitfall 28 `dct` at `tabr`, `ktab`; pitfall 30
   `lst`'s seed carries the rows.
 - Not done: `tab`'s empty table stays untyped (documented in §1.3; `schema` is the typed way).
+
+## M8 pass (2026-09-27)
+
+Over `chn`, `freshn`, `unifn`, `mixn`, `bulk`, `btab`, `pblk`, `nch` and `t/scale.q`:
+- C1 canary on `bulk` and `btab` (contracts c10). C2 conds throughout (`$[1>k…; g<=k]`, the `while` guards have
+  independent terms). C5 green, but a name collision inside `.qc` (`blk`) that the scan cannot catch: the design
+  records it. C9 `nch` is reset per example by `reset`. C13 a bulk span is length plus blocks (`beg`blk`).
+- C14 `btab` refuses a non-dict. C16 `bulk`'s ranges go through `rng`. C21 `unifn`'s overflow branch mirrors
+  `unif`; `mixn` adds the magnitude in floats and saturates.
+- Pitfall 7 vectorised: `n?k` for k>0 only (the width check); `n?1f` for floats.
+- Not done: a bulk column with a float or symbol type (M8 covers types reachable by casting a long range).

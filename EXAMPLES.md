@@ -78,6 +78,29 @@ x:
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 2 1 0 9 1 0 9 0]
 ```
 
+## Large data
+
+`bulk` records a whole vector as one block, so a million values cost one draw call and a few milliseconds, and a
+block shrinks by deleting chunks as well as by its values. `btab` is a table of blocks.
+
+```q
+q)count .qc.draw .qc.bulk[0 99;1000000 1000000]
+1000000
+q).qc.nch
+2
+q).qc.check[.qc.bulk[0 99;0 100000]; {x~asc x}];
+FAIL falsified after 1 tests, 10 shrinks (26 attempts, seed 7)
+x: 1 0
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;2 1 0]
+q).qc.check[.qc.btab[0 100000] `k`v!(0 9;("d";0 9)); {all x[`v]<2000.01.09}];
+FAIL falsified after 1 tests, 9 shrinks (18 attempts, seed 7)
+x:
+  k v         
+  ------------
+  0 2000.01.09
+rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 8]
+```
+
 ## A first property, and what a failure looks like
 
 ```q

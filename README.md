@@ -38,6 +38,7 @@ a general list draws a tuple, a dict draws a record, anything else is a constant
 .qc.tab `t`k`v!(.qc.mono[.qc.int 0 9;.qc.int 1 9]; .qc.uniq .qc.elem `a`b`c; .qc.dep {[r] .qc.int (r`t;99)})   / a sorted column, distinct keys, a column that sees the row
 .qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations
 .qc.atr[`s] .qc.list .qc.int 0 9         / a sorted vector carrying s#
+.qc.bulk[0 99;0 1000000]                 / a long vector of up to a million values in one block; .qc.btab[nr] cols a table of them
 .qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
 ```
 
