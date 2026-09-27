@@ -135,14 +135,13 @@ ctab:{[k;n] T:1f,n#0f; CT:(1+k 1)#enlist 1f,n#0f; j:1;
 tabs:{[k;n] if[n>300; '"qc: rec: size above 300 has too many shapes to count; lower cfg`sz"]; s:`$"," sv string k;
   if[$[s in key TB; n>=count TB[s]`T; 1b]; TB[s]:ctab[k;n|300&cf`sz]]; TB s}
 / uniform over shapes: arity weighted by C[m][r], child sizes by T[j]*C[m-1-i][r-j]; last child takes the rest
-sub:{[k;leaf;node;tb;b] $[b<1; draw leaf; [r:b-1; ms:k[0]+til 1+k[1]-k 0; m:ms ch[(0;-1+count ms;0);tb[`C][ms;r]];
-  cs:enlist (::); j:0; while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);tb[`T][til 1+r]*tb[`C][m-1-j;r-til 1+r]]]; r-:s;
-    c:.z.s[k;leaf;node;tb;s]; end[]; cs:cs,enlist c; j+:1]; node 1_cs]]}   / span = share + subtree; children behind a :: seed (pitfall 30)
+kids:{[k;leaf;node;mf;wf;b] $[b<1; draw leaf; [r:b-1; m:mf r; cs:enlist (::); j:0;   / the child loop both cuts share: mf draws the child count, wf weights a child's share
+  while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);wf[m-1-j;r]]]; r-:s; c:.z.s[k;leaf;node;mf;wf;s]; end[]; cs:cs,enlist c; j+:1]; node 1_cs]]}   / span = share + subtree; children behind a :: seed (pitfall 30)
+sub:{[k;leaf;node;tb;b] kids[k;leaf;node;{[k;tb;r] ms:k[0]+til 1+k[1]-k 0; ms ch[(0;-1+count ms;0);tb[`C][ms;r]]}[k;tb];{[tb;jj;r] tb[`T][til 1+r]*tb[`C][jj;r-til 1+r]}[tb];b]}   / exact cut: the counting tables weight every choice
 rec:{[k;leaf;node;d] dd[d;".qc.rec[k;leaf;node]"]; need[node;"rec's node"]; k:2#(),"j"$k; tb:tabs[k;sz]; beg`sub; n:ch[(0;sz;0);`u];   / rec[2;..]: exactly two
   n:last where 0<tb[`T] til 1+n; r:sub[k;leaf;node;tb;n]; end[]; r}
 / uniform cut (random binary-search-tree law): same choices, uniform weights
-subb:{[k;leaf;node;b] $[b<1; draw leaf; [r:b-1; m:ch[((k 0)|(k 1)&r>0;k 1;k 0);`u]; cs:enlist (::); j:0;
-  while[j<m; beg`sub; s:$[j=m-1; ch[(r;r;r);::]; ch[(0;r;0);`u]]; r-:s; c:.z.s[k;leaf;node;s]; end[]; cs:cs,enlist c; j+:1]; node 1_cs]]}
+subb:{[k;leaf;node;b] kids[k;leaf;node;{[k;r] ch[((k 0)|(k 1)&r>0;k 1;k 0);`u]}[k];{[jj;r] `u};b]}
 recb:{[k;leaf;node;d] dd[d;".qc.recb[k;leaf;node]"]; need[node;"recb's node"]; k:2#(),"j"$k; beg`sub; r:subb[k;leaf;node;ch[(0;sz;0);`u]]; end[]; r}
 
 
@@ -151,13 +150,15 @@ cast:{[c;g] ('[$[c;];g])}                            / a generator cast to type 
 / spc[specials;g]: full-domain wrapper, uniform layout [kind; special; value...] so no branch is shorter (C12)
 spc:{[sp;g;d] dd[d;".qc.spc[specials] g"]; sp:(),sp; k:ch[(0;1;0);0.05]; ix:ch[(0;-1+count sp;0);`u]; v:draw g; $[k; sp ix; v]}   / (ss and cols are keywords)
 / dbl: any finite double, [sign; e; m] = sign*m*2^e; the exponent shrinks first so integers come before fractions
-dbl:{[d] dd[d;".qc.dbl"]; s:ch[(0;1;0);0.3]; e:ch[(-1022;970;0);::]; m:ch[(0;9007199254740991;0);::]; (1 -1 s)*m*2 xexp e}
+dblx:{[e;m] s:ch[(0;1;0);0.3]; ee:ch[(e 0;e 1;0);::]; mm:ch[(0;m;0);::]; (1 -1 s)*mm*2 xexp ee}   / sign, exponent in e, mantissa up to m
+dbl:{[d] dd[d;".qc.dbl"]; dblx[-1022 970;9007199254740991]}
 / flt r: a float in [lo;hi], [sign; k; m] = sign*m/2^k with m ranged so the value never leaves [lo;hi]:
 / 0 (or the nearest bound) is simplest, integers before halves before quarters, uniform within each k
 flt:{[r;d] dd[d;".qc.flt r"]; r:"f"$(),r; if[$[2<>count r; 1b; r[0]>r 1]; '"qc: range: flt takes lo hi with lo<=hi, got ",.Q.s1 r]; lo:r 0; hi:r 1;
   s:ch[(hi<0;lo<0;0);0.3]; a:$[s; neg 0&hi; 0|lo]; b:$[s; neg lo; hi];
   k:ch[(0;0|52&"j"$62-xlog[2;1|b];0);`u]; p:2 xexp k; m:ch[("j"$ceiling a*p;"j"$floor b*p;0);`u]; (1 -1 s)*m%p}   / beyond 2^62 the mantissa saturates: |value| <= 9.2e18
-gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:draw 16#enlist int 0 255; $[k; 0Ng; 0x0 sv "x"$b]}
+gidb:{0x0 sv "x"$draw 16#enlist int 0 255}                          / sixteen bytes as a guid
+gid:{[d] dd[d;".qc.gid"]; k:ch[(0;1;0);0.05]; b:gidb[]; $[k; 0Ng; b]}
 AZ:.Q.a,.Q.A,.Q.n," "
 chrc:{[s;d] dd[d;".qc.chrc s"]; s:(),s; s ch[(0;-1+count s;0);`u]}        / (),s: a one-char alphabet arrives as an atom (C16)
 chr:chrc[AZ]
@@ -165,9 +166,9 @@ strc:{[s;r;d] dd[d;".qc.strc[s;r]"]; "c"$draw lst[r] chrc s}
 str:strc[AZ;0 0W]
 symc:{[s;r;d] dd[d;".qc.symc[s;r]"]; `$"c"$draw lst[r] chrc s}     / bounded alphabet: symbols intern forever
 sym:symc["abcd";0 3]
-gidf:{[d] dd[d;".qc.gidf"]; 0x0 sv "x"$draw 16#enlist int 0 255}   / a guid that is never null
+gidf:{[d] dd[d;".qc.gidf"]; gidb[]}   / a guid that is never null
 / dble: a double that fits a real (24-bit mantissa, exponent to 2^103), so "e"$ never overflows to 0we
-dble:{[d] dd[d;".qc.dble"]; s:ch[(0;1;0);0.3]; e:ch[(-126;103;0);::]; m:ch[(0;16777215;0);::]; (1 -1 s)*m*2 xexp e}
+dble:{[d] dd[d;".qc.dble"]; dblx[-126 103;16777215]}
 / tin: each atom type's finite domain — no null, no infinity (h i j stop one short of their infinities, e fits a
 / real, c has no space, s no empty symbol: those are q's nulls); tf c is that as a generator (M10, A26); t c wraps
 / it in spc, adding the null and both infinities, and keeps chr, sym and gid for c s g: the full domain
@@ -320,8 +321,8 @@ run1:{[spec;prop]
 named:{[spec;prop;x] $[99h=type spec; x; 0h=type spec; pnames[prop;count x]!x; enlist[`x]!enlist x]}
 pnames:{[p;n] $[100h=type p; $[n=count a:(value p)[1]; a; `$"x",/:string til n]; `$"x",/:string til n]}
 / Wilson 95% upper bound of a rate: a requirement fails only when the run is confident the rate is below it (C15)
-wil:{[n;nn] z:1.96; p:n%nn; (p+(z*z%2*nn)+z*sqrt((p*1-p)%nn)+z*z%4*nn*nn)%1+z*z%nn}
-wlo:{[n;nn] z:1.96; p:n%nn; (p+(z*z%2*nn)-z*sqrt((p*1-p)%nn)+z*z%4*nn*nn)%1+z*z%nn}
+wils:{[sg;n;nn] z:1.96; p:n%nn; (p+(z*z%2*nn)+sg*z*sqrt((p*1-p)%nn)+z*z%4*nn*nn)%1+z*z%nn}   / the Wilson bound, sg 1 upper, -1 lower
+wil:wils[1]; wlo:wils[-1]
 covt:{[tests] nn:1|tests; tb:([]label:key LB;n:value LB;pct:100*value[LB]%nn);
   tb:update req:.qc.RQ label,lo:100*.qc.wlo[n;nn],hi:100*.qc.wil[n;nn] from tb;   / q-sql resolves globals in the root, not the namespace
   update ok:(hi>=req) or null req,bar:{`$(floor x%5)#"#"} each pct from tb}
