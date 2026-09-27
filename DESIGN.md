@@ -672,6 +672,30 @@ alphabets, `elem`, `one`, `freq`, `spc`'s specials, `reset`'s prefix (so `replay
 IPC handle 5), and `rec`'s arity as `2#(),k`, which makes `rec[2;…]` read as "exactly two children". Origin:
 `symc["z";1 1]` indexing a char atom.
 
+**C17 — measure the distribution you ship, on the ranges people use.** A5 measured the integer mixture on a
+symmetric range and it looked right; on `int 0 1000`, the commonest shape, a random sign on the magnitude
+clamped half the draws to the bound and 56% of values were 0 — and the same draw set `rec`'s node count, so
+most engine trees were leaves while A15's spike, with its own uniform draw, showed the intended spread. Every
+fresh-draw law now has a distribution test in `t/core.q` on a one-sided and a symmetric range, and `rec`
+draws its node count uniformly, as designed. `t/dist.q` now measures every hint and every generator on the
+ranges people use: list lengths, alternatives, weights, bits, the full-domain wrapper, signs, float means, tree
+and step counts — with pinned seeds and multi-sigma bounds, never exact rates.
+
+
+**C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` and of this document
+as a script and fails on the first error (which is how a stale `.qc.str 0 5` in §1.3 was found), `t/examples.q`
+runs every `examples/*.q` as a child q and checks that it exits cleanly and reports what its prose promises, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
+strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
+mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
+tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
+promised and never written). The harness fails a test whose result is not a boolean instead of letting
+`all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
+top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
+broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
+README.md, EXAMPLES.md, COOKBOOK.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
+(seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
+by hand once, and a dispatcher the dogfooding had not reached.
+
 **C19 — `n` is a budget; the run stops when it has learned what it can.** One rule replaced three stopping
 conditions added one at a time. A run ends `exhausted` (every input tried: the minimal example, run at full
 size so its ranges are the real ones, reveals the space; when the product of the widths fits the budget the
@@ -704,30 +728,6 @@ catch), the binary search's midpoint, `pdup`'s and `pred`'s distances, `mix`'s m
 step caps and the choice tree's path product all compute in floats and saturate on the way back to longs; `rec`
 refuses sizes whose counting tables would overflow. The price is that two distances above 2^53 can compare
 equal. Origin: `1+0W`, then `zig 0W`, then `prd` of widths that were null; the audit found the rest.
-
-**C18 — examples are tests.** `t/readme.q` loads every runnable code block of `README.md` and of this document
-as a script and fails on the first error (which is how a stale `.qc.str 0 5` in §1.3 was found), `t/examples.q`
-runs every `examples/*.q` as a child q and checks that it exits cleanly and reports what its prose promises, and `t/self.q` runs every dispatcher of the runner over one fixed shape zoo (atoms, vectors,
-strings, chars, general lists, dicts, the empty dict, tables, keyed tables, `::`, lambdas, projections): the
-mechanical form of C3, added after `byname` failed on a keyed table that `fmt` and `diff` had already been
-tested over. `t/docs.q` checks that every name in the `.qc` namespace that the design and README mention exists (it found `.qc.lin`,
-promised and never written). The harness fails a test whose result is not a boolean instead of letting
-`all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
-top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
-broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
-README.md, EXAMPLES.md, COOKBOOK.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
-(seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. Origin: README snippets verified
-by hand once, and a dispatcher the dogfooding had not reached.
-
-**C17 — measure the distribution you ship, on the ranges people use.** A5 measured the integer mixture on a
-symmetric range and it looked right; on `int 0 1000`, the commonest shape, a random sign on the magnitude
-clamped half the draws to the bound and 56% of values were 0 — and the same draw set `rec`'s node count, so
-most engine trees were leaves while A15's spike, with its own uniform draw, showed the intended spread. Every
-fresh-draw law now has a distribution test in `t/core.q` on a one-sided and a symmetric range, and `rec`
-draws its node count uniformly, as designed. `t/dist.q` now measures every hint and every generator on the
-ranges people use: list lengths, alternatives, weights, bits, the full-domain wrapper, signs, float means, tree
-and step counts — with pinned seeds and multi-sigma bounds, never exact rates.
-
 
 **C22 — state that belongs to a structure is saved and restored around that structure.** A constrained
 table's columns need memory across rows (the last `mono` value, `uniq`'s remaining and used values); it lives in
@@ -799,8 +799,8 @@ code is ✅ above; the four that need a shrinker or a state machine are schedule
 
 **M1 — engine without shrinking.** Done: `qc.q`, `t/core.q`, `t/names.q`, `examples/reverse.q`,
 `examples/tree.q`. Amended after the fact by the conventions in §1.10 (canary, run flag, exhaustion,
-cond-chain guards, pinned seeds, name assertion), then by C9 and C10 (base size, `minimal` and `replay`). Further
-convention work waits for evidence from M2.
+cond-chain guards, pinned seeds, name assertion), then by C9 and C10 (base size, `minimal` and `replay`). The conventions that
+followed came from the evidence of M2 onwards, as §1.10 records.
 
 **M2 — shrinker.** Done: eight passes, candidate cache, attempt budget, the `same`-error rule, shrink history,
 `recheck` with stale detection, failure db, `cfg`clamp` switch; 27 tests in `t/shrink.q`; A6, A7, A8 and A13
@@ -970,12 +970,12 @@ For the implementer:
     `::` seed and the seed dropped at the end: atoms still collapse to a typed vector, conforming dicts to a
     table, and anything else stays general (`lst`, `sub`, `subb`; found by A27, whose node function must also
     accept children that arrive as a table).
-32. `.qc.chk` reseeds the process RNG with `\S` (a random seed unless `cfg`seed` is pinned), and q cannot save or
-    restore an RNG *state*, only reseed. A process whose own `rand` stream matters — a simulation, a sampler —
-    should pin `cfg`seed` or expect its stream to move after every check.
 31. `in` and `?` compare within one type: `.Q.t?"j"` is a long and `type x` a short, so
     `(neg .Q.t?c) in type each xs` is a type error where `=` would have coerced; cast one side.
 
+32. `.qc.chk` reseeds the process RNG with `\S` (a random seed unless `cfg`seed` is pinned), and q cannot save or
+    restore an RNG *state*, only reseed. A process whose own `rand` stream matters — a simulation, a sampler —
+    should pin `cfg`seed` or expect its stream to move after every check.
 33. `f'[a;b]` over a three-argument `f` is a projection of the each, not a list of results: `count` of it is 1.
     Wrap `f` in a two-argument lambda first (`t`'s construction over `spc`).
 34. `0#` of a table drops its columns' attributes; `0#` of a vector keeps its attribute. An empty table generated
@@ -1025,8 +1025,8 @@ whole codebase rather than to the instance that had surfaced it, and the mechani
 | 6 | C17 audit: measured distributions | the tests' first bounds were wrong, the distributions right (full-domain longs are ~9% specials because the normal branch's boundary picks include `±0W`) | `t/dist.q` |
 | 7 | convergence: every scan and audit rerun, the library read once more | one input guard (negative weights) | — |
 | 8 | convergence, repeated | nothing | — |
-| 10 | the second audit (`AUDIT2.md`), over phase 2 | two `mono` columns of different types (pitfall 6 in dict form, now C23); `colg` sending table-valued columns down the enumeration branch; `unifn`'s long condition (pitfall 42); a `uniq` used set collapsing to a table; the C9 regression test appended before its list existed (pitfall 41); bare errors at the new boundaries; no C22 after five milestones | `t/tables.q`, `t/scale.q`, `t/review.q`, `t/dist.q` (C25), `t/names.q` (duplicate definitions) |
 | 9 | the audit (`AUDIT.md`): every convention and pitfall against every file, each finding reproduced | a run's size leaking into later draws (C9); an elided rerun line for an empty vector and a test that was `x=x` (C18); bare q errors for keyed tables and non-symbol labels (C14, pitfall 28); unpinned seeds in five files (C8); long arithmetic wrapping at six more sites (C21); the examples and the design's snippets not run (C18); a raising assertion skipping its file (C2) | `t/examples.q`, `t/review.q`, the per-statement harness in `t/run.q` |
+| 10 | the second audit (`AUDIT2.md`), over phase 2 | two `mono` columns of different types (pitfall 6 in dict form, now C23); `colg` sending table-valued columns down the enumeration branch; `unifn`'s long condition (pitfall 42); a `uniq` used set collapsing to a table; the C9 regression test appended before its list existed (pitfall 41); bare errors at the new boundaries; no C22 after five milestones | `t/tables.q`, `t/scale.q`, `t/review.q`, `t/dist.q` (C25), `t/names.q` (duplicate definitions) |
 
 Two of the round-4/5 fixes were themselves wrong on first writing (`md5` takes chars, not bytes; a list-valued
 dict key indexes several keys), which is the same lesson as C2/C3 at M6: the conventions exist because the
@@ -1054,4 +1054,4 @@ the run flag poisoning a session, `cf` leaking, `dp` left dirty — outcomes' st
 truncated rerun lines and db keys — reportx and review; the composition label growth — contract 8; C16 atoms
 — review and the registry's single-item rows; every README line that did not parse — doctest and readme.
 Building the suite found one more inconsistency (an engine signal raised in the property phase was a
-falsification, not a discard) and nothing else: 1013 tests, all green; 1019 with the choice tree's cases in `t/stop.q`; 1034 after the audit's cleanup pass.
+falsification, not a discard) and nothing else: 1013 tests, all green; 1019 with the choice tree's cases in `t/stop.q`; 1034 after the audit's cleanup pass; 1462 after phase 2 and the worked example (the count at the time of each writing — `q t/run.q` prints the current one).
