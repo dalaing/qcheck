@@ -114,16 +114,18 @@ discard:{'"qc.discard"}
 / same at every size and a replay at a larger size still finds its stop (C7). span = decision bit + element.
 / elements gather behind a :: seed and the seed is dropped at the end: a list of conforming dicts is a table and the
 / next dict that does not conform cannot be joined onto it (pitfall 30); atoms still collapse to a typed vector
+more:{[n;lo;m] 1=$[n<lo; ch[1 1 1;::]; n<m; ch[0 1 0;(m-n)%1+m-n]; ch[0 0 0;::]]}   / the stop bit of a growing list (C23): forced on under lo, forced off at m, else a coin that stops more the fuller it is
 lst:{[r;g;d] dd[d;".qc.lst[r] g"]; r:rng r; lo:r 0; m:"j"$("f"$r 1)&("f"$lo)+sz; xs:enlist (::); n:0; go:1b;   / the cap in floats: lo+sz wraps near 0W (C21)
-  while[go; beg`el; go:1=$[n<lo; ch[1 1 1;::]; n<m; ch[0 1 0;(m-n)%1+m-n]; ch[0 0 0;::]];
+  while[go; beg`el; go:more[n;lo;m];
     $[go; [x:draw g; end[]; xs:xs,enlist x; n+:1]; end[]]]; 1_xs}
 list:lst[0 0W]
 
 / bulk[r;nr]: a long vector of a length in nr with values in r, recorded as one block (M8): 1e6 values in
 / milliseconds, and a block shrinks by deleting chunks (pblk) as well as by its values. span = length + block.
-bulk:{[r;nr;d] dd[d;".qc.bulk[r;nr]"]; nr:rng nr; nr[1]&:"j"$("f"$nr 0)+sz*1000; beg`blk; n:ch[nr;`u]; v:chn[r;n;::]; end[]; v}   / the length is capped at lo+1000*size (in floats, C21)
+cap:{[nr] nr:rng nr; @[nr;1;&;"j"$("f"$nr 0)+sz*1000]}   / a block length range capped at lo+1000*size (in floats, C21)
+bulk:{[r;nr;d] dd[d;".qc.bulk[r;nr]"]; nr:cap nr; beg`blk; n:ch[nr;`u]; v:chn[r;n;::]; end[]; v}   / the length is capped at lo+1000*size (in floats, C21)
 / btab[nr] cols: a table of blocks with one drawn row count; a column is a range or (type char; range)
-btab:{[nr;cg;d] dd[d;".qc.btab[nr] cols"]; if[not dct cg; '"qc: btab needs a dict of column ranges"]; nr:rng nr; nr[1]&:"j"$("f"$nr 0)+sz*1000; beg`blk; n:ch[nr;`u];   / (cap in floats, C21)
+btab:{[nr;cg;d] dd[d;".qc.btab[nr] cols"]; if[not dct cg; '"qc: btab needs a dict of column ranges"]; nr:cap nr; beg`blk; n:ch[nr;`u];
   if[not all {$[0h<>type x; 1b; -10h<>type x 0; 0b; (x 0) in key t]} each value cg; '"qc: btab: a column is a range or (type char; range)"];
   cs:{[n;s] $[0h=type s; (s 0)$chn[s 1;n;::]; chn[s;n;::]]}[n] each value cg; end[]; flip key[cg]!cs}
 / ---- recursion: rec[k;leaf;node] spends the size budget exactly; shape law = fresh-draw weights ------
@@ -230,18 +232,21 @@ emtab:{[cg;p] key[cg]!$[(::)~p; count[cg]#enlist (); empties value p]}     / typ
 / the table core: rows through lst; em gives typed empty columns (a schema knows them; a column dict probes them, so
 / tab's empty table is typed where a minimal draw is possible); at (col -> attribute) is applied after the rows,
 / sorting by the p then s columns
+uinit:{CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!();}   / the uniq columns' state: seeds (pitfall 6), candidate lists, values used
+urest:{[s0] CS::s0 0; UR::s0 1; US::s0 2;}                / and its restoration around a nested table
 tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
   $[all `=value ks; [if[(::)~em; em:emtab[cg;probe cg]]; rs:draw lst[r] cg];   / the probe is one minimal row: a dep sees the columns before it
-    [s0:(CS;UR;US); CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!(); uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
+    [s0:(CS;UR;US); uinit[]; uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; UR::(uc where h)!cd where h:not (::)~/:cd; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
      if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
      if[(::)~em; p:probe rowd[cg;ks]; if[(::)~p; p:key[cg]!{[ks;k;g] $[`=ks k; probe g; `dep=ks k; ::; probe value[g] 1]}[ks]'[key cg;value cg]]; em:emtab[cg;p]];   / a row whose dep fails: type the other columns alone
-     rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] CS::s0 0; UR::s0 1; US::s0 2; 'e}[s0]]; CS::s0 0; UR::s0 1; US::s0 2]];
+     rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] urest s0; 'e}[s0]]; urest s0]];
   tb:$[count rs; flip key[cg]!flip value each rs; flip em];
   if[count[at] and count rs; tb:((where at=`p),where at=`s) xasc tb; tb:{[at;tb;c] @[tb;c;(at c)#]}[at]/[tb;key at]]; tb}   / parted columns sort first; an empty table carries none, as 0# of a table drops them
 tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; tabx[r;cg;::;(0#`)!`symbol$()]}
 tab:tabr[0 0W]
+ukey:{$[`=mark x; uniq x; x]}                            / a key column is uniq unless already constrained
 ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; if[not dct cg; '"qc: ktab needs a dict of column generators"]; k:(),k;
-  if[count k except key cg; '"qc: ktab: key columns must be columns"]; k xkey tabx[r;@[cg;k;{$[`=mark x; uniq x; x]}];::;(0#`)!`symbol$()]}   / keys are distinct (A19)
+  if[count k except key cg; '"qc: ktab: key columns must be columns"]; k xkey tabx[r;@[cg;k;ukey];::;(0#`)!`symbol$()]}   / keys are distinct (A19)
 / schema t: a generator of tables shaped like t — the column types from the values (an enumeration's domain from
 / key, nested columns from the first element, a general column as a mix), attributes and keys as t has them,
 / typed empties from 0# (an empty table carries no attributes, as 0# of a table does not, A21)
@@ -249,7 +254,7 @@ colg:{[c] tc:type c; $[tc within 20 76h; {[f;d] f$draw elem value f}[key c]; 10h
   $[0h<>tc; 0b; 0=count c; 0b; all (type each c) within 1 19h]; vec[0 3] .Q.t abs type first c; one (int 0 9;sym;str)]}
 / schema t is a constructor (as lin is): it reads t once and returns the generator schx[k;cg;em;at]
 schema:{[x] if[not type[x] in 98 99h; '"qc: schema takes a table"]; k:keys x; u:0!x; cs:cols u; vals:value flip u;
-  cg:cs!colg each vals; cg:@[cg;k,cs where `u=attr each vals;{$[`=mark x; uniq x; x]}]; at:cs!attr each vals; at:where[not null at]#at;
+  cg:cs!colg each vals; cg:@[cg;k,cs where `u=attr each vals;ukey]; at:cs!attr each vals; at:where[not null at]#at;
   if[(`p in at) and `s in at; '"qc: schema: a table with both a p# and an s# column cannot be reproduced row by row (sort by one or the other)"];
   schx[k;cg;cs!`#'0#'vals;at]}
 schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k xkey tb; tb]}
@@ -278,7 +283,7 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of ho
 / the harness's and propagates as itself
 smloop:{[h;c;lo;mx] m:h`m0; h[`init][]; R:(); n:0; go:1b;
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
-    go:1=$[0=count av; ch[0 0 0;::]; n<lo; ch[1 1 1;::]; n<mx; ch[0 1 0;(mx-n)%1+mx-n]; ch[0 0 0;::]];
+    go:$[0=count av; 1=ch[0 0 0;::]; more[n;lo;mx]];
     $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:draw c[j;`gen] m; end[];   / weighted over the available commands; (a, not i: i is the cursor)
         o:@[c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
         ok:@[c[j;`post][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
@@ -407,7 +412,7 @@ recheck1:{[spec;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[spec;pro
 zig:{(2*"f"$abs x)-x>0}                               / distance from origin: 0 1 -1 2 -2 ... (float: 2*0W overflows)
 skey:{[v;o] (count v; zig ("f"$v)-"f"$o)}              / shortlex key; the distance in floats: a long difference wraps on full ranges (C21)
 less:{[a;b] $[a[0]<>b 0; a[0]<b 0; a[1]~b 1; 0b; (a[1]<b 1) first where a[1]<>b 1]}
-dl:{[v;s;e] (s#v),e _ v}
+dl:{[v;s;e] pt[v;s;e;()]}
 pt:{[v;s;e;w] (s#v),w,e _ v}
 / shrinker state: current vector, its choice and span tables, its outcome, the original error
 cv:`long$(); cC:C; cE:E; co:()!(); cerr:""; na:0; ns:0; cp:`; sspec:(::); sprop:(::)
