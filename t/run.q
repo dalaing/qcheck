@@ -13,6 +13,8 @@
   {[n;s] e:.Q.trp[{value x; ""};s;{[e;bt] e,"\n",.Q.sbt bt}]; if[count e; .t.t["line ",string[n]," raised: ",first "\n" vs e;0b]; -1 "  ",e];}'[se 0;se 1];}
 .t.load each except[key `:t;`run.q];
 .t.R:flip `file`name`ok!flip .t.r
+system"c 200 200"                                                                 / the summary in full: the default console cuts it at 25 rows
 show select pass:sum ok,fail:sum not ok by file from .t.R
+if[count f:select from .t.R where not ok; -1 "failed:"; -1 "  ",/:string[f`file],'": ",/:string f`name];   / the FAIL lines again, after everything else has scrolled
 -1 string[sum .t.R`ok],"/",string[count .t.R]," passed";
 exit "i"$0<sum not .t.R`ok
