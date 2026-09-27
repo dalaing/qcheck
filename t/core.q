@@ -48,12 +48,12 @@ dg:{[d] .qc.draw dg}; d0:.qc.cfg`depth; .qc.cfg[`depth]:3; e:@[.qc.draw;dg;{x}];
 .t.t["such: rejected spans are marked discarded"; 0<sum exec x from .qc.E]
 / recursion: node function {1+sum x} on leaf 0 computes the internal node count
 .t.sz 30
-nb:{.qc.draw x} each 200#enlist .qc.rec[2 2;0;{1+sum x}]; nr:{.qc.draw x} each 200#enlist .qc.rec[0 4;0;{1+sum x}]; nu:{.qc.draw x} each 200#enlist .qc.recb[2 2;0;{1+sum x}]   / one example each: 200 trees in one would exceed the choice budget
+nb:{.qc.draw x} each 200#enlist .qc.rec[2 2;0;{1+sum x}]; nr:{.qc.draw x} each 200#enlist .qc.rec[0 4;0;{1+sum 0,x}]; nu:{.qc.draw x} each 200#enlist .qc.recb[2 2;0;{1+sum x}]   / one example each: 200 trees in one would exceed the choice budget
 .t.t["rec: binary node count <= size"; all nb<=30]
 .t.t["rec: rose node count <= size"; all nr<=30]
 .t.t["recb: node count <= size"; all nu<=30]
 .t.t["rec: node counts vary"; 5<count distinct nb]
-.t.t["rec: k=0 0 never exceeds the feasible size"; all 1>=.qc.draw 50#enlist .qc.rec[0 0;0;{1+sum x}]]
+.t.t["rec: k=0 0 never exceeds the feasible size"; all 1>=.qc.draw 50#enlist .qc.rec[0 0;0;{1+sum 0,x}]]   / (sum of a childless node's () is (), not 0: seed the sum. Both rose tests were vacuous until the harness refused an empty boolean list)
 .t.sz 100
 .t.t["rec: counting tables are Catalan"; 1 1 2 5 14 42f~.qc.TB[`$"2,2"][`T] til 6]
 v:.qc.replay[enlist 5] .qc.rec[2 2;.qc.int 0 9;{(`n;x 0;x 1)}]        / the prefix forces a 5-node tree
