@@ -19,5 +19,6 @@ mergepos:{[o;n] a:pos o; b:pos n; if[null b`qty; b:`qty`cost`real!(0;0f;0f)]; qa
 roll:{[] ks:exec sym from qcache; o:ks where ks<>canon'[ks;today]; mergeq'[o;canon'[o;today]];
   ks:exec sym from pos; o:ks where ks<>canon'[ks;today]; mergepos'[o;canon'[o;today]];}
 \d .
+/ in the root, like 13_eod.q, because eod loads the HDB there; eod0 is piece 5's eod, wrapped so the roll follows the close
 .mdp.eod0:.mdp.eod
 .mdp.eod:{[d] .mdp.eod0 d; .mdp.roll[]}
