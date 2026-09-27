@@ -265,7 +265,7 @@ smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
 smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of the model, checked after every step (M10)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
 smtab:{[R] $[count R; flip cols[smt]!flip R; smt]}
-smnote:{[R] tr:smtab R; $[any blocky each tr`model; delete model from tr; tr]}   / the trace as noted on a failure: a model that holds tables or dicts is left out of the print, where it would bury the steps
+smnote:{[R] tr:smtab R; tr:update res:{s:.Q.s1 x; $[60<count s; (57#s),"..."; x]} each res from tr; $[any blocky each tr`model; delete model from tr; tr]}   / the trace as noted on a failure: a res whose print exceeds 60 characters is cut to text (a one-row table printed whole made 500-column lines; short values stay values), and a model that holds tables or dicts left out, where it would bury the steps
 sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"]; if[not dct h; '"qc: sm needs a dict of hooks (m0 init fini steps)"]; if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h; c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds must be a table (or keyed table) of commands, got type ",string type cmds; 98h=type key cmds; 0!cmds; '"qc: cmds must be a table of commands, not a dict"];
   if[not `cmd in cols c; '"qc: cmds needs a cmd column; columns are "," " sv string cols c]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
   if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];

@@ -540,11 +540,7 @@ a lookup into an unkeyed table by a key, and a model that numbered events from o
 from zero. Then the first run that reached the system:
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/14_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
@@ -565,11 +561,7 @@ were the one thing the report did not show. The noted trace now ends with that s
 ### Entry 18: run 1 — the machine passes, and what it did and did not reach
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
@@ -582,11 +574,7 @@ new day arriving before that day's first quote, so that the cache carries yester
 late trade after a close.
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q)seams:{[tr] c:tr`cmd; .qc.classify[`eod;`eod in c]; .qc.classify[`late;`late in c]; .qc.classify[`query_of_a_past_day; any {[r] $[`query=r`cmd; r[`arg][0]<r[`model]`day; 0b]} each tr]; .qc.classify[`late_timed_yesterday; any {[r] $[`late=r`cmd; ("d"$r[`arg]0)<r[`model]`day; 0b]} each tr]; .qc.classify[`late_after_eod; any (c=`late) and 0<sums c=`eod]; .qc.classify[`first_trade_of_a_day_before_its_first_quote; any (c=`trade) and (0<sums c=`eod) and 0=sums (c=`quote) and 0<sums c=`eod]; 1b}
@@ -601,11 +589,7 @@ first_trade_of_a_day_before_its_first_quote 20 20      13.33659 28.8831  1  #..
 late_after_eod                              12 12      6.999337 19.81227 1  #..
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/15_sm.q"
 q)seams:{[tr] c:tr`cmd; .qc.classify[`eod;`eod in c]; .qc.classify[`late;`late in c]; .qc.classify[`query_of_a_past_day; any {[r] $[`query=r`cmd; r[`arg][0]<r[`model]`day; 0b]} each tr]; .qc.classify[`late_timed_yesterday; any {[r] $[`late=r`cmd; ("d"$r[`arg]0)<r[`model]`day; 0b]} each tr]; .qc.classify[`late_after_eod; any (c=`late) and 0<sums c=`eod]; .qc.classify[`first_trade_of_a_day_before_its_first_quote; any (c=`trade) and (0<sums c=`eod) and 0=sums (c=`quote) and 0<sums c=`eod]; 1b}
@@ -637,11 +621,7 @@ trades the model still has, and its `late` trade may be timed eighteen hours bac
 falls on the day before. The model keeps the busted ids and the oracle leaves them out.
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/18_sm.q"
@@ -671,11 +651,7 @@ there is a yesterday.
 ### Entry 20: run 2 passes — and a check that the machine could have seen anything
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/19_sm.q"
@@ -683,11 +659,7 @@ q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
 ok 100 tests (seed 7)
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/19_sm.q"
@@ -710,11 +682,7 @@ memory instead of its day (caught, one step); the close clearing the quote cache
 and `amend` rewriting the day's trades but not its bars:
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/19_sm.q"
@@ -723,11 +691,7 @@ q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
 ok 100 tests (seed 7)
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/19_sm.q"
@@ -739,11 +703,11 @@ path why   a b
 --------------
 bars count 0 1
 0:
-  step cmd   arg                                     res                                                                                                                                                                                                                             ok
-  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  0    eod   ::                                      ::                                                                                                                                                                                                                              1 
-  1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) +`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.000000000;,`A;,1f;,1;,0n;,0n)                                                                                                                                            1 
-  2    query (2024.01.02;`A;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`s#`timestamp$();`float$();`float$();`float$();`float$();`long$();`long$());1f;+`seq`time`sym`px`qty`bid`ask!(`s#,0;,2024.01.02D09:30:00.000000000;,`A;,1f;,1;,0n;,0n)) 0 
+  step cmd   arg                                     res                                                            ok
+  --------------------------------------------------------------------------------------------------------------------
+  0    eod   ::                                      ::                                                             1 
+  1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) "+`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.00..." 1 
+  2    query (2024.01.02;`A;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`..." 0 
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
 ```
 
@@ -773,11 +737,7 @@ the two empty dictionaries as differing in `order` — the diff was empty, since
 where the contract says today's. Then:
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/20_rename.q"
@@ -790,11 +750,7 @@ A pass at the default budget — which entry 20 had just taught me not to trust.
 larger budget:
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/20_rename.q"
@@ -838,11 +794,7 @@ at its own cost.
 ### Entry 22: the next thing the machine found was the oracle's
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -856,14 +808,14 @@ path           why   a b
 `trades `bid 0 value 1  
 `trades `ask 0 value 1  
 0:
-  step cmd    arg                                      res                                                                                                                                                                                                     ok
-  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  0    eod    ::                                       ::                                                                                                                                                                                                      1 
-  1    rename (`A;`N0;2024.01.04)                      ::                                                                                                                                                                                                      1 
-  2    quote  (2024.01.03D09:30:00.000000000;`A;1f;0f) ::                                                                                                                                                                                                      1 
-  3    eod    ::                                       ::                                                                                                                                                                                                      1 
-  4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  +`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)                                                                                                                   1 
-  5    query  (2024.01.04;`N0;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,2024.01.04D09:30:00.000000000;,1f;,1f;,1f;,1f;,1;,1);1f;+`seq`time`sym`px`qty`bid`ask!(`s#,1;,2024.01.04D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)) 0 
+  step cmd    arg                                      res                                                            ok
+  ----------------------------------------------------------------------------------------------------------------------
+  0    eod    ::                                       ::                                                             1 
+  1    rename (`A;`N0;2024.01.04)                      ::                                                             1 
+  2    quote  (2024.01.03D09:30:00.000000000;`A;1f;0f) ::                                                             1 
+  3    eod    ::                                       ::                                                             1 
+  4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.00..." 1 
+  5    query  (2024.01.04;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0 
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
 label                                 n  pct      req lo       hi       ok ba..
 -----------------------------------------------------------------------------..
@@ -885,11 +837,7 @@ two readings of my own contract, settled for the system, four steps long, found 
 ### Entry 23: run 2 passes, with renames, and the machine can see
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -898,11 +846,7 @@ q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
 ok 100 tests (seed 7)
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -924,11 +868,7 @@ keeps only the old name's position (a fill under each name, then the close); a r
 quote under each end of the chain, and the close that merges them):
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -950,11 +890,7 @@ N0   value 1 2
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 0 0 0 0 1 1 3]
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -975,11 +911,7 @@ path   why   a b
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3]
 ```
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -1014,11 +946,7 @@ hundred tests each, seeded from the clock as a CI run would be. Its first run fa
 `0.5000000000000004`; the property gains a tolerance. And the machine, at a seed that seed 7 and its neighbours
 had not been:
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -1031,13 +959,13 @@ path           why   a b
 `trades `bid 0 value 1  
 `trades `ask 0 value 1  
 0:
-  step cmd    arg                                      res                                                                                                                                                                                                     ok
-  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::                                                                                                                                                                                                      1 
-  1    rename (`A;`N0;2024.01.03)                      ::                                                                                                                                                                                                      1 
-  2    eod    ::                                       ::                                                                                                                                                                                                      1 
-  3    late   (2024.01.02D09:30:00.000000000;`A;1f;1)  +`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.02D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)                                                                                                                   1 
-  4    query  (2024.01.02;`N0;0;0)                     `bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,2024.01.02D09:30:00.000000000;,1f;,1f;,1f;,1f;,1;,1);1f;+`seq`time`sym`px`qty`bid`ask!(`s#,1;,2024.01.02D09:30:00.000000000;,`N0;,1f;,1;,1f;,1f)) 0 
+  step cmd    arg                                      res                                                            ok
+  ----------------------------------------------------------------------------------------------------------------------
+  0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::                                                             1 
+  1    rename (`A;`N0;2024.01.03)                      ::                                                             1 
+  2    eod    ::                                       ::                                                             1 
+  3    late   (2024.01.02D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.02D09:30:00.00..." 1 
+  4    query  (2024.01.02;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0 
 rerun: .qc.again[]  or  .qc.recheck[spec;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 5 0 0 0 1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 3 0 0]
 ```
 
@@ -1048,11 +976,7 @@ trade with the names it had when the trade arrived; the oracle used the names of
 a trade that arrives on its own day the two are the same, which is why three hundred runs at three seeds had
 agreed. Step 24 gives the model's trades their arrival day and enriches each under that day's names:
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -1079,11 +1003,7 @@ its day lives, a rename must be in `ren` with the new name inheriting the instru
 yesterday on disk as well as today in memory.
 
 ```q
-q)system"l examples/mdp/steps/02_ref.q"
-q)system"l examples/mdp/steps/06_quotes.q"
-q)system"l examples/mdp/steps/07_bars.q"
-q)system"l examples/mdp/steps/10_pos.q"
-q)system"l examples/mdp/steps/13_eod.q"
+q)system"l examples/mdp/steps/load_pieces.q"
 q)system"l examples/mdp/steps/16_upd.q"
 q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
@@ -1171,7 +1091,8 @@ is `nyi`; `\l dir` makes `dir` the working directory; a functional delete with n
 (pitfall 43); `each` over an empty typed list returns a general one (pitfall 45); and `c0*a+b` is `c0*(a+b)`.
 
 **The final system** is `examples/mdp/mdp.q` (the last step of each piece, and step 25 after the review), its
-properties `props.q`, the machine `sm.q` (step 25 of the machine), and `run.q`, which runs both under `.qc.main` and is run by the test suite; the steps stay, because every
+properties `props.q`, the machine `sm.q` (step 25 of the machine), and `run.q`, which runs both under `.qc.main`
+and is run by the test suite; the steps stay, because every
 transcript above is executed against them by `t/doctest.q`, and a buggy step that stopped failing as logged would
 fail the suite.
 
