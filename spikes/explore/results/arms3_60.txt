@@ -1,0 +1,47 @@
+encgated: 48 s
+tiered: 46 s
+fine: 43 s
+
+the share of 60 seeds at which each arm ended on the simplest counterexample any arm found:
+name| encgated tiered fine
+----| --------------------
+(the other 49 cases are 1 in every arm)
+
+all 49 cases:
+arm      cases always atref attempts ms   
+------------------------------------------
+encgated 49    49     1     250073   48144
+tiered   49    49     1     248345   45974
+fine     49    49     1     233065   42914
+
+the 42 cases that the library already gets right (the cost where nothing is needed):
+arm      cases always attempts
+------------------------------
+encgated 42    42     150997  
+tiered   42    42     150626  
+fine     42    42     140661  
+
+which stage made a shrink, in how many runs of the hard cases:
+arm      name    | shift repair box window
+-----------------| -----------------------
+encgated run3    | 18    0      0   0     
+encgated run3_neg| 51    0      0   0     
+encgated run4    | 12    0      0   0     
+encgated sm_alias| 0     11     0   0     
+encgated sm_chain| 0     0      0   0     
+encgated sm_kv   | 0     20     19  0     
+encgated sm_lg   | 0     0      0   0     
+fine     run3    | 18    0      0   0     
+fine     run3_neg| 51    0      0   0     
+fine     run4    | 12    0      0   0     
+fine     sm_alias| 0     11     0   0     
+fine     sm_chain| 0     0      0   0     
+fine     sm_kv   | 0     20     19  0     
+fine     sm_lg   | 0     0      0   0     
+tiered   run3    | 18    0      0   0     
+tiered   run3_neg| 51    0      0   0     
+tiered   run4    | 12    0      0   0     
+tiered   sm_alias| 0     11     0   0     
+tiered   sm_chain| 0     0      0   0     
+tiered   sm_kv   | 0     20     19  0     
+tiered   sm_lg   | 0     0      0   0     

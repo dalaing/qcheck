@@ -1,0 +1,72 @@
+diff --git a/qc.q b/qc.q
+index fcee591..6c4b4e3 100644
+--- a/qc.q
++++ b/qc.q
+@@ -5,7 +5,7 @@
+ \d .qc
+ 
+ / ---- configuration ----------------------------------------------------------------------------------
+-cfg:`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v!(100;0N;0Ni;100;2000;10;50;200;8192;1b;1b;`:.qc;`;20;1)
++cfg:`n`nmax`seed`sz`shrinks`finish`disc`tries`depth`choices`same`clamp`db`name`rows`v!(100;0N;0Ni;100;2000;500;10;50;200;8192;1b;1b;`:.qc;`;20;1)
+ cf:cfg                                                / effective config of the current run
+ 
+ / ---- engine state: global, reset per example --------------------------------------------------------
+@@ -528,6 +528,49 @@ ptr:{cp::`trade; p:0b; ii:0; while[ii<count[cv]-1;
+ / runs: any one or two choices in a row deleted, where pdel deletes whole spans. Two sibling lists become one by
+ / losing the stop bit of the first and the continue bit before the second (Hypothesis's node programs, which go to five)
+ pnd:{cp::`run; p:0b; k:2; while[k>0; ii:0; while[ii<=count[cv]-k; $[try dl[cv;ii;ii+k]; p:1b; ii+:1]]; k-:1]; p}
++/ finish: when every pass has stalled, a search that is exhaustive within bounds, the simplest candidate first, so
++/ that the first to fail is the simplest within them. The passes move one choice or two; this moves any number
++/ together. Its four stages, each given up to cfg`finish attempts, and the passes run again after any that finds
++/ something:
++/   box     every candidate in which each choice is as simple as it is now or simpler, where there are no more of
++/           them than cfg`finish. Three keys k, k+1, k become 0, 1, 0
++/   group   the same over the choices of one generator and one range, where the whole box is too large: the items
++/           of a list without its continue bits. 1 2 3 4 becomes 0 1 2 3
++/   trade   a choice and its next two partners: it as simple as now or simpler, they anything simpler or up to FR
++/           places further out. -1 0 1 becomes 0 1 2, which is simpler because its first is
++/   repair  a span deleted, and then one of the next FW choices, if its range is small, set to each other value
++/           it can take. A step of a state machine goes, and the index that a later step chose is put right
++/ A choice a long way from its origin offers the places 0 to 4, half way, and the two before it, not every place
++FR:4
++FW:16
++plc:{[j;v] d:1152921504606846976&"j"$9e18&abs first dst[v;cC[`o] j]; $[d=0; 0; (2*d)-v>cC[`o] j]}   / the place of a value of choice j: 0 1 2 3 4 for o, o+1, o-1, o+2, o-2
++lxl:{[a;b] $[a~b; 0b; (a<b) first where not a=b]}                       / lexicographically less
++fvl:{[j] k:plc[j;cv j]; ks:$[k<9; til k; distinct asc (til 5),(k div 2),k-2 1];
++  w:vat[j]'[1 -1 (0=ks mod 2);(ks+1) div 2]; (w where not null w),cv j}
++/ fsr: the candidates that take their values at ix from the sets vl, in order of simplicity, up to the current one
++fsr:{[ix;vl;n0] pv:{[j;w] plc[j] each w}'[ix;vl]; od:iasc each pv; vl:vl@'od; pv:pv@'od; p0:plc'[ix;cv ix];
++  c:count each vl; m:count ix; k:m#0; s0:ns; v0:cv; go:1b;
++  while[go; $[lxl[pv@'k;p0]; tst @[v0;ix;:;vl@'k]; go:0b];
++    j:m-1; while[$[j<0; 0b; (c[j]-1)=k j]; k[j]:0; j-:1];
++    $[j<0; go:0b; ns>s0; go:0b; cf[`finish]<=na-n0; go:0b; k[j]+:1]];
++  ns>s0}
++frp:{n0:na; s0:ns; tb:spans[]; j:0;
++  while[$[ns>s0; 0b; j>=count tb; 0b; cf[`finish]>na-n0]; s:tb[j;`s]; e:tb[j;`e]; v:dl[cv;s;e]; lw:dl[cC`lo;s;e]; hg:dl[cC`hi;s;e]; q:s;
++    while[$[ns>s0; 0b; q>=count v; 0b; q>=s+FW; 0b; cf[`finish]>na-n0];
++      if[8>hg[q]-lw q; xs:(lw[q]+til 1+hg[q]-lw q) except v q; m:0; while[$[ns>s0; 0b; m<count xs]; tst @[v;q;:;xs m]; m+:1]];
++      q+:1];
++    j+:1];
++  ns>s0}
++pfin:{cp::`finish; if[1>cf`finish; :0b]; ix:where not cv=cC`o; if[0=count ix; :0b]; s0:ns;
++  vl:fvl each ix; big:cf[`finish]<prd "f"$count each vl; if[not big; fsr[ix;vl;na]];
++  if[ns>s0; :1b];
++  if[big; lb:clb[]; g:value group flip (lb ix;cC[`lo] ix;cC[`hi] ix); g:g where 1<count each g; n0:na; w:0;
++    while[$[ns>s0; 0b; w>=count g; 0b; cf[`finish]>na-n0]; if[cf[`finish]>=prd "f"$count each vl g w; fsr[ix g w;vl g w;n0]]; w+:1]];
++  if[ns>s0; :1b];
++  n0:na; w:0; while[$[ns>s0; 0b; w>=count ix; 0b; cf[`finish]>na-n0]; ii:ix w; js:prt[ii;2];
++    if[count js; fsr[ii,js;(enlist fvl ii),{[j] distinct fvl[j],ring[j;cv j;FR;1b]} each js;n0]]; w+:1];
++  if[ns>s0; :1b];
++  frp[]}
+ / blocks (M8): a blk span is a length choice k followed by m blocks of k values (one for bulk, one per column for
+ / btab). Delete the same chunk from every block and lower k (ddmin: g chunks; a hit keeps g, a miss doubles it),
+ / so a block reaches a minimum that is not a prefix.
+@@ -540,7 +583,7 @@ pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
+ / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
+ shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
+   K::(enlist 0#0)!enlist 0N; H::0#H; bs::cf`sz;
+-  while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;ppr;ptr;pnd); 0b]];   / cond, not and: passes are not free
++  while[$[na>=cf`shrinks; 0b; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;ppr;ptr;pnd); 1b; pfin[]]];   / cond, not and: passes are not free; the finish only when a whole cycle of them has made nothing
+   co,`shrinks`attempts`hist!(ns;na;H)}
+ / failure database: one file per (gen;prop) under cfg`db, keyed by cfg`name or a hash of their source
+ dbf:{[gen;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(gen;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console

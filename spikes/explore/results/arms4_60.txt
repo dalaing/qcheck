@@ -1,0 +1,86 @@
+none: 26 s
+fine25: 38 s
+fine50: 40 s
+fine100: 42 s
+fine200: 42 s
+fine500: 43 s
+
+the share of 60 seeds at which each arm ended on the simplest counterexample any arm found:
+name    | none       fine25    fine50    fine100 fine200 fine500
+--------| ------------------------------------------------------
+fprod   | 0.03333333 1         1         1       1       1      
+nested  | 0.2666667  1         1         1       1       1      
+prod    | 0.25       1         1         1       1       1      
+prod_pos| 0.5333333  1         1         1       1       1      
+run3    | 0.7        0.9666667 1         1       1       1      
+run3_neg| 0.15       0.8833333 1         1       1       1      
+run4    | 0.7857143  1         1         1       1       1      
+sm_alias| 0.8166667  0.8166667 0.8166667 1       1       1      
+sm_kv   | 0.4333333  0.9666667 1         1       1       1      
+(the other 40 cases are 1 in every arm)
+
+all 49 cases:
+arm     cases always atref     attempts ms   
+---------------------------------------------
+none    49    40     0.8973275 113577   26236
+fine25  49    45     0.992517  176393   37849
+fine50  49    48     0.9962585 186095   39673
+fine100 49    49     1         205341   41821
+fine200 49    49     1         211800   42123
+fine500 49    49     1         233065   42863
+
+the 42 cases that the library already gets right (the cost where nothing is needed):
+arm     cases always attempts
+-----------------------------
+none    42    38     86660   
+fine25  42    42     125492  
+fine50  42    42     129091  
+fine100 42    42     134661  
+fine200 42    42     140661  
+fine500 42    42     140661  
+
+which stage made a shrink, in how many runs of the hard cases:
+arm     name    | shift repair box window
+----------------| -----------------------
+fine100 run3    | 18    0      0   0     
+fine100 run3_neg| 51    0      0   0     
+fine100 run4    | 12    0      0   0     
+fine100 sm_alias| 0     11     0   0     
+fine100 sm_chain| 0     0      0   0     
+fine100 sm_kv   | 0     20     19  0     
+fine100 sm_lg   | 0     0      0   0     
+fine200 run3    | 18    0      0   0     
+fine200 run3_neg| 51    0      0   0     
+fine200 run4    | 12    0      0   0     
+fine200 sm_alias| 0     11     0   0     
+fine200 sm_chain| 0     0      0   0     
+fine200 sm_kv   | 0     20     19  0     
+fine200 sm_lg   | 0     0      0   0     
+fine25  run3    | 16    0      0   0     
+fine25  run3_neg| 44    0      0   0     
+fine25  run4    | 12    0      0   0     
+fine25  sm_alias| 0     0      0   0     
+fine25  sm_chain| 0     0      0   0     
+fine25  sm_kv   | 0     20     17  0     
+fine25  sm_lg   | 0     0      0   0     
+fine50  run3    | 18    0      0   0     
+fine50  run3_neg| 51    0      0   0     
+fine50  run4    | 12    0      0   0     
+fine50  sm_alias| 0     0      0   0     
+fine50  sm_chain| 0     0      0   0     
+fine50  sm_kv   | 0     20     19  0     
+fine50  sm_lg   | 0     0      0   0     
+fine500 run3    | 18    0      0   0     
+fine500 run3_neg| 51    0      0   0     
+fine500 run4    | 12    0      0   0     
+fine500 sm_alias| 0     11     0   0     
+fine500 sm_chain| 0     0      0   0     
+fine500 sm_kv   | 0     20     19  0     
+fine500 sm_lg   | 0     0      0   0     
+none    run3    | 0     0      0   0     
+none    run3_neg| 0     0      0   0     
+none    run4    | 0     0      0   0     
+none    sm_alias| 0     0      0   0     
+none    sm_chain| 0     0      0   0     
+none    sm_kv   | 0     0      0   0     
+none    sm_lg   | 0     0      0   0     

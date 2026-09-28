@@ -1,0 +1,76 @@
+lib: 36 s
+both: 50 s
+gated: 49 s
+enc: 36 s
+encboth: 48 s
+encgated: 48 s
+
+the share of 60 seeds at which each arm ended on the simplest counterexample any arm found:
+name    | lib       both      gated     enc       encboth encgated
+--------| --------------------------------------------------------
+run3    | 0.7       1         1         0.7       1       1       
+run3_neg| 0.15      1         1         0.15      1       1       
+run4    | 0.7857143 1         1         0.7857143 1       1       
+sm_alias| 0.2333333 0.3833333 0.3833333 0.8166667 1       1       
+sm_chain| 0.2833333 0.2833333 0.2833333 1         1       1       
+sm_kv   | 0.5166667 1         1         0.4333333 1       1       
+(the other 43 cases are 1 in every arm)
+
+all 49 cases:
+arm      cases always atref     attempts ms   
+----------------------------------------------
+lib      49    43     0.9320214 161298   35727
+both     49    47     0.9727891 271615   49887
+gated    49    47     0.9727891 254865   49278
+enc      49    44     0.9568513 160779   35604
+encboth  49    49     1         266823   48208
+encgated 49    49     1         250073   47590
+
+the 42 cases that the library already gets right (the cost where nothing is needed):
+arm      cases always attempts
+------------------------------
+lib      42    42     120960  
+both     42    42     167711  
+gated    42    42     151081  
+enc      42    42     120816  
+encboth  42    42     167627  
+encgated 42    42     150997  
+
+which stage made a shrink, in how many runs of the hard cases:
+arm      name    | shift repair box window
+-----------------| -----------------------
+both     run3    | 18    0      0   0     
+both     run3_neg| 51    0      0   0     
+both     run4    | 12    0      0   0     
+both     sm_alias| 0     9      0   0     
+both     sm_chain| 0     0      0   0     
+both     sm_kv   | 0     20     14  0     
+both     sm_lg   | 0     0      0   0     
+enc      run3    | 0     0      0   0     
+enc      run3_neg| 0     0      0   0     
+enc      run4    | 0     0      0   0     
+enc      sm_alias| 0     0      0   0     
+enc      sm_chain| 0     0      0   0     
+enc      sm_kv   | 0     0      0   0     
+enc      sm_lg   | 0     0      0   0     
+encboth  run3    | 18    0      0   0     
+encboth  run3_neg| 51    0      0   0     
+encboth  run4    | 12    0      0   0     
+encboth  sm_alias| 0     11     0   0     
+encboth  sm_chain| 0     0      0   0     
+encboth  sm_kv   | 0     20     19  0     
+encboth  sm_lg   | 0     0      0   0     
+encgated run3    | 18    0      0   0     
+encgated run3_neg| 51    0      0   0     
+encgated run4    | 12    0      0   0     
+encgated sm_alias| 0     11     0   0     
+encgated sm_chain| 0     0      0   0     
+encgated sm_kv   | 0     20     19  0     
+encgated sm_lg   | 0     0      0   0     
+gated    run3    | 18    0      0   0     
+gated    run3_neg| 51    0      0   0     
+gated    run4    | 12    0      0   0     
+gated    sm_alias| 0     9      0   0     
+gated    sm_chain| 0     0      0   0     
+gated    sm_kv   | 0     20     14  0     
+gated    sm_lg   | 0     0      0   0     
