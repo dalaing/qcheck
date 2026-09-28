@@ -24,7 +24,7 @@ about state machines, where deleting a step can change what later steps mean?
 | `arms3_tiers_and_gates.q` | one gate, tiers, a gate for each dear pass |
 | `arms4_budget.q` | the budget for the dear passes: 25, 50, 100, 200, 500 |
 | `instr.q` | attempts and shrinks counted pass by pass |
-| `mdp.q` | six real bugs and sabotages of `examples/mdp` (LOG.md entries 20 to 23), one process each: `q spikes/explore/mdp.q 0` to `5` |
+| `mdp.q` | six real bugs and sabotages of `examples/mdp` (LOG.md entries 20 to 23), one process each: `q spikes/explore/mdp.q 0` to `5`, with arms named after the number if not all are wanted |
 | `first_finish_in_the_library.diff` | the finish as it was first built into `qc.q`, before it was taken out again |
 | `results/` | what each of these printed |
 
@@ -76,10 +76,23 @@ against them; the pipeline has causes that the sweep does not contain. Two were 
   the lesser key as a block, which puts the shorter first. It never tries the swap that would bring the
   lesser command number forward.
 
+## The recording change by itself
+
+Run afterwards (`q spikes/explore/mdp.q 0 lib fix`, and so on to 5; `results/mdp_fix.txt`): the library's
+shrinker unchanged, and only the recording of a state machine's command changed.
+
+| | kinds, summed over the six cases | attempts, mean |
+|---|---|---|
+| library | 23 | 202 |
+| recording changed | 20 | 218 |
+| the whole scheme | 19 | 332 |
+| the whole scheme, duplicates by value and generator | 15 | 326 |
+
+Six kinds would be one counterexample for each case. The recording change gives three of the four kinds that
+the whole scheme gains, for 8% more attempts where the scheme costs 64% more. It made no case worse.
+
 ## What to do next
 
-- Run the recording change by itself on `mdp.q`. It has not been isolated there, so how much of the
-  improvement above is its doing is not known.
 - Put the pipeline's cases, or state machines like them, into the sweep before using it to choose between
   schemes again.
 - Try the two fixes to passes: duplicates across ranges, and every swap of neighbouring steps.

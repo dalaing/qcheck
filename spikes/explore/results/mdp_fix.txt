@@ -1,0 +1,12 @@
+amend_without_bars fix| 6 2 1 148 3.027747
+amend_without_bars lib| 6 2 1 113 2.964476
+merge_loses_pnl fix| 6 4 3.166667 242 4.046475
+merge_loses_pnl lib| 6 4 3.333333 253 5.078797
+oracle_by_stored fix| 6 4 1 365 6.90588 
+oracle_by_stored lib| 6 5 1 362 8.344844
+merge_keeps_old fix| 6 3 1 203 3.737168
+merge_keeps_old lib| 6 4 1 171 3.18076 
+roll_forgets_cache fix| 6 3 1 103 1.540847
+roll_forgets_cache lib| 6 3 1 91 1.497314
+cache_keeps_older fix| 6 4 1 250 3.547701
+cache_keeps_older lib| 6 5 1 223 3.515105
