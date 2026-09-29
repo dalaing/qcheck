@@ -17,11 +17,12 @@ trace:{[o] n:o`notes; if[98h=type n; n:enlist n]; w:where {$[98h=type x; all `st
 c0:cases "J"$first .z.x
 L each c0 1; if[count c0 2; value c0 2];
 one:{[c;a;s]
-  $[a=`lib; [.qc.shr:.qc.shr0; .qc.smloop:.qc.smloop0]; a=`fix; [.qc.shr:.qc.shr0; .qc.smloop:.qc.smloop1]; [.qc.shr:.qc.shr1; .qc.smloop:.qc.smloop1; .qc.pdup:$[a=`new2; .qc.pdupv; .qc.pdup1]; .qc.PS:(.qc.pblk;.qc.pdisc;.qc.pdel;.qc.pzero;.qc.pdesc;.qc.psort;.qc.pdup;.qc.pmin;.qc.ppr); .qc.FT:FINE; .qc.FB:100]];
+  .qc.pdup:$[a in `fixdup`fixdupswap`new2; .qc.pdupv; .qc.pdup1]; .qc.psort:$[a=`fixdupswap; .qc.psortv; .qc.psort1]; .qc.smloop:$[a=`lib; .qc.smloop0; .qc.smloop1];
+  $[a in `lib`fix`fixdup`fixdupswap; .qc.shr:.qc.shr0; [.qc.shr:.qc.shr1; .qc.PS:(.qc.pblk;.qc.pdisc;.qc.pdel;.qc.pzero;.qc.pdesc;.qc.psort;.qc.pdup;.qc.pmin;.qc.ppr); .qc.FT:FINE; .qc.FB:100]];
   t0:.z.p; o:.qc.chk[`n`seed`v`db!(300;s;0;`);.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds;::];
   `name`arm`seed`why`tests`steps`attempts`s`found!(c 0;a;s;o`why;o`n;$[`falsified=o`why; count " ; " vs trace o; 0N];o`attempts;(.z.p-t0)%1e9;$[`falsified=o`why; trace o; ""])}
-seeds:"i"$7,1+til 5
-ARMS:$[1<count .z.x; `$1_.z.x; `lib`fix`new`new2]   / fix: the library's shrinker, the command recorded as its place among all the commands
+seeds:"i"$7,1+til $[count getenv`NS; -1+"J"$getenv`NS; 5]   / NS=12 q spikes/explore/mdp.q 0 lib fix fixdup
+ARMS:$[1<count .z.x; `$1_.z.x; `lib`fix`fixdup`new`new2]   / fix: the library's shrinker, the command recorded as its place among all the commands; fixdup: and duplicates grouped by value and generator, whatever their ranges
 R:raze {[a] one[c0;a] each seeds} each ARMS
 system"c 100 250"
 show select failed:sum why=`falsified, kinds:count distinct found where why=`falsified, steps:avg steps, attempts:"j"$avg attempts where why=`falsified, secs:avg s by name,arm from R

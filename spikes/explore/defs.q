@@ -67,6 +67,16 @@ shr1:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o
   while[$[na>=cf`shrinks; 0b; any {x[]} each PS; 1b; tier[]]];
   co,`shrinks`attempts`hist!(ns;na;H)}
 pdup1:pdup
+/ psortv: psort, trying every swap of neighbouring siblings and not only those that bring the lesser block forward:
+/ try takes a swap only if the whole is simpler, which a longer block with a lesser first choice can make it
+psort1:psort
+psortv:{cp::`sort; p:0b; j:0;
+  while[j<count tb:`s xasc cE; c:chain[tb[j;`s];tb[j;`l];tb[j;`d]];
+    $[2>count c; j+:1;
+      [ks:bkey'[c`s;c`e]; ix:ordr ks; ok:0b;
+       if[not ix~til count ix; ok:try pt[cv;c[0;`s];last c`e;blk[c;ix]]];
+       ii:0; while[$[ii>=count[c]-1; 0b; not ok]; ok:try pt[cv;c[ii;`s];c[ii+1;`e];blk[c;(ii+1;ii)]]; ii+:1];
+       $[ok; p:1b; j+:1]]]]; p}
 pdupv:{cp::`dup; p:0b; lb:clb[]; ix:where cv<>cC`o; g:ix each value group (flip (cv;lb)) ix; g:g where 1<count each g; j:0;
   while[j<count g; ps:g j; ok:try @[cv;ps;:;cC[`o] ps];
     if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[go and all 1<abs d; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];

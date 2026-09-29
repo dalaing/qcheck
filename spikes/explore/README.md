@@ -23,6 +23,7 @@ about state machines, where deleting a step can change what later steps mean?
 | `arms2_recording.q` | the same with a state machine's command recorded as its place among all the commands |
 | `arms3_tiers_and_gates.q` | one gate, tiers, a gate for each dear pass |
 | `arms4_budget.q` | the budget for the dear passes: 25, 50, 100, 200, 500 |
+| `arms5_fix_and_duplicates.q` | the three changes that held up on the pipeline, over the sweep |
 | `instr.q` | attempts and shrinks counted pass by pass |
 | `mdp.q` | six real bugs and sabotages of `examples/mdp` (LOG.md entries 20 to 23), one process each: `q spikes/explore/mdp.q 0` to `5`, with arms named after the number if not all are wanted |
 | `first_finish_in_the_library.diff` | the finish as it was first built into `qc.q`, before it was taken out again |
@@ -91,11 +92,39 @@ shrinker unchanged, and only the recording of a state machine's command changed.
 Six kinds would be one counterexample for each case. The recording change gives three of the four kinds that
 the whole scheme gains, for 8% more attempts where the scheme costs 64% more. It made no case worse.
 
+## The three changes that held up, at twelve seeds (2026-09-30)
+
+`NS=12 q spikes/explore/mdp.q 0 lib fix fixdup fixdupswap` and so on to 5 (`results/mdp_fixdup_12.txt`,
+`results/mdp_swap_12.txt`), and `q spikes/explore/arms5_fix_and_duplicates.q 60` for the sweep
+(`results/arms5_60.txt`, `results/arms5_swap_60.txt`). The library's shrinker with nothing else changed but:
+
+- **fix**: a state machine's command recorded as its place among all the commands (`smloop1`);
+- **dup**: duplicates grouped by value and generator, whatever their ranges (`pdupv`);
+- **swap**: every swap of neighbouring siblings tried, not only those that bring the lesser block forward
+  (`psortv`).
+
+| | pipeline: kinds, summed over six cases | pipeline: attempts, mean | pipeline: seconds, mean | sweep: cases always right | sweep: attempts |
+|---|---|---|---|---|---|
+| library | 32 | 204 | 3.89 | 43 of 49 | 161,298 |
+| fix | 26 | 224 | | 44 | 160,779 |
+| fix, dup | 20 | 221 | 3.65 | 44 | 161,206 |
+| fix, dup, swap | 14 | 215 | 3.55 | 44 | 165,918 |
+
+Six kinds would be one counterexample for each case, and is not to be had: some seeds find a different
+failure of the same system (the step with the merge that loses PnL also has the oracle that joins by stored
+names), and a shrink keeps to the failure it began with. By case, with all three changes: 3, 3, 3, 2, 1, 2.
+
+The three together more than halve the kinds on the pipeline for 5% more attempts and no more time, change
+nothing that the sweep had right, and cost 3% more attempts on the sweep. The hard cases of the sweep that
+they do not touch (`run3`, `run3_neg`, `run4`, `sm_kv`) are the ones that need three or more choices moved
+together, which is the question of the finish and is still open.
+
 ## What to do next
+
 
 - Put the pipeline's cases, or state machines like them, into the sweep before using it to choose between
   schemes again.
-- Try the two fixes to passes: duplicates across ranges, and every swap of neighbouring steps.
+- Adopt the three changes above, if they are wanted: they are the part of this that held up.
 - Only then return to the question of the finish and its cost.
 
 ## If the recording change is adopted

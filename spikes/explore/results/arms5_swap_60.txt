@@ -1,0 +1,21 @@
+lib: 34 s
+fixdup: 35 s
+fixdupswap: 35 s
+
+the share of 60 seeds at which each arm ended on the simplest counterexample any arm found:
+name    | lib       fixdup    fixdupswap
+--------| ------------------------------
+run3    | 0.7       0.7       0.7       
+run3_neg| 0.15      0.15      0.15      
+run4    | 0.7857143 0.7857143 0.7857143 
+sm_alias| 0.2333333 0.8166667 0.8166667 
+sm_chain| 0.2833333 1         1         
+sm_kv   | 0.5166667 0.4333333 0.4333333 
+(the other 43 cases are 1 in every arm)
+
+all 49 cases:
+arm        cases always atref     kinds attempts ms   
+------------------------------------------------------
+lib        49    43     0.9320214 87    161298   34239
+fixdup     49    44     0.9568513 73    161206   34373
+fixdupswap 49    44     0.9568513 73    165918   35281
