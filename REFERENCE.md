@@ -29,14 +29,14 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `small`, `sized` | `.qc.small g`, `.qc.sized f` | `g` at half the size budget; `f` of the size, returning a generator |
 | `list`, `lst` | `.qc.list g`, `.qc.lst[r] g` | a list of `g`, length in `r` (default `0 0W`, capped by size); homogeneous atoms become a vector |
 | `vec` | `.qc.vec[r] c` | a typed vector of `.qc.t c`, typed even when empty |
-| `tab`, `tabr`, `ktab` | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, row count in `r`, keyed on `k`; in the empty table a column of atoms has its type |
+| `tab`, `tabr`, `ktab` | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a column dictionary of generators, row count in `r`, keyed on `k` (a compound key's combinations are distinct; a key column may repeat); in the empty table a column of atoms has its type |
 | `mono`, `uniq`, `dep` | `.qc.mono[base;delta]`, `.qc.uniq g`, `.qc.dep f` | column constraints `tab` recognises: non-decreasing from `base` by `delta`; distinct; `f` of the row so far |
 | `atr` | `.qc.atr[a] g` | the value with attribute `a` (`s`, `u`, `p`, `g`), sorted first where the attribute needs it |
-| `schema` | `.qc.schema t` | a generator read from a sample table: types, enumerations, attributes, keys, typed empties |
+| `schema` | `.qc.schema t` | a generator read from a sample table: types, enumerations (a symbol domain; a foreign key, drawn from the key table's keys; a link, drawn as a row index), attributes, keys, typed empties |
 | `bulk`, `btab` | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | a long vector or a table of a length in `nr`, capped at 1000 times the size above its lower end, drawn as blocks: a million values in milliseconds |
 | `rec`, `recb` | `.qc.rec[k;leaf;node]`, `.qc.recb[k;leaf;node]` | a recursive structure: `k` children per node, `leaf` a generator, `node` a function of the children; `recb` splits the budget uniformly |
 | `val` | `.qc.val` | an arbitrary q value: atoms of every type, lists, dicts, tables, keyed tables |
-| `sm` | `.qc.sm[h] cmds` | the generator of a stateful test (`README.md`, "Stateful testing"): drawing from it runs one sequence of the commands in the table `cmds` (`cmd pre gen run post upd w`) with hooks `h` (`m0 init fini steps inv`), and yields the trace |
+| `sm` | `.qc.sm[h] cmds` | the generator of a stateful test (`README.md`, "Stateful testing"): drawing from it runs one sequence of the commands in the table `cmds` (`cmd pre gen run post upd w`; a cell may be a symbol naming a function, looked up at each call) with hooks `h` (`m0 init fini steps inv`), and yields the trace |
 | `lin` | `.qc.lin[lo;hi]` | not a generator: a range that widens with size, for `int`, `lst` and the others that take a range `r`, `flt` excepted |
 
 ## Running properties
@@ -46,7 +46,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `check`, `chk` | `.qc.check[g;prop]`, `.qc.chk[cfg;g;prop]` | run `prop` over draws of `g`, shrink a failure, print and return the result dict; `cfg` a dict of settings or a test count |
 | `checks`, `chks` | `.qc.checks d`, `.qc.chks[cfg;d]` | a suite: `d` is name → `(g;prop)`; one table |
 | `must`, `mustc` | `.qc.must[g;prop]`, `.qc.mustc[cfg;g;prop]` | `check` that prints nothing, returns the result when the property passes, and signals the report on anything else: for a test in another framework |
-| `main` | `.qc.main d` | `checks d`, then exit with the number of failures: a CI script |
+| `main` | `.qc.main d` | `checks d`, then exit with the number of failures (at most 255): a CI script; settings given on its command line override the defaults, `q suite.q -seed 7 -tests 1000 -size 50 -verbose 0` (`n`, `sz` and `v` are spelled out, since q keeps the one-letter options) |
 | `draw`, `minimal` | `.qc.draw g`, `.qc.minimal g` | one value of a generator; its simplest value |
 | `replay`, `strict` | `.qc.replay[choices;g]`, `.qc.strict[choices;g]` | the value a recorded choice vector produces; the same, refusing to draw past it |
 | `recheck`, `again` | `.qc.recheck[g;prop;choices]`, `.qc.again[]` | run the property on recorded choices; rerun the last failure |
@@ -74,7 +74,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 |---|---|---|
 | `n` | 100 | the number of tests |
 | `nmax` | `0N`, for 10 times `n` | the most tests a run may take when a `cover` requirement keeps it going |
-| `seed` | `0Ni`, for one taken from the clock | the seed of the run, an int that is not 0 |
+| `seed` | `0Ni`, for one taken from the clock | the seed of the run, an int that is not 0; on q 4.1 and later the process's random state is put back after the run |
 | `sz` | 100 | the size that examples grow to over a run; lists, tables and recursive structures are capped by it |
 | `shrinks` | 2000 | the most attempts the shrinker may make; 0 turns shrinking off |
 | `disc` | 10 | the run gives up when its discards pass `disc` times `n` |
@@ -83,7 +83,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `choices` | 8192 | how many draws an example may make before it is discarded as too large |
 | `same` | `1b` | a shrunk example must fail with the same message as the example it came from |
 | `clamp` | `1b` | a replayed choice that is out of range is moved into range; `0b` refuses it |
-| `db` | `` `:.qc `` | the directory of the failure database; the null symbol for none |
+| `db` | `` `:.qc `` | the directory of the failure database, a relative path being relative to where q was started (not to a directory a later `\l` moved to); the null symbol for none |
 | `name` | `` ` `` | the name a failure is saved under; null for a hash of the generator and the property |
 | `rows` | 20 | how many rows of a table a report shows |
 | `v` | 1 | 0 prints nothing, 1 the report, 2 adds the backtrace of an error |

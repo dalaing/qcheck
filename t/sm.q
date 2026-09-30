@@ -138,3 +138,14 @@ r:.qc.chk[q;.qc.sm[`m0`init`steps!(0;{swk+::1};0 2)] swc12;::]
 .qc.strict[1 2 0] .qc.sm[enlist[`m0]!enlist 0] swc7; .qc.cv:.qc.C`v; .qc.cC:.qc.C; .qc.cD:.qc.DV; .qc.cDv:.qc.cv
 .t.t["sm: a candidate's number for a command that cannot run stands for the next that can"; (1 2 0~.qc.can 1 1 0) and 1 0 0~.qc.can 1 0 0]
 .qc.tidy[]
+/ a cell of pre gen run post upd may be a symbol naming a function, looked up when it is called: a fix to the function
+/ is seen by again[], where a function held by value is not
+swi:0
+swinc:{[a] swi+:1; $[swi>3; 0; swi]}
+swrd:{[a] swi}
+swc13:([cmd:`inc`get] run:`swinc`swrd; post:(`swpost;{[m;a;o] o=m}); upd:({[m;a;o] m+1};{[m;a;o] m}))
+swpost:{[m;a;o] o=m+1}
+r:.qc.chk[q;.qc.sm[`m0`init!(0;{swi::0})] swc13;::]
+swinc:{[a] swi+:1; swi}
+.t.t["sm: a symbol names a command's function, looked up at each call, so again[] sees a fix"; (`falsified=r`why) and `ok=(.qc.again[])`why]
+.t.t["sm: a symbol that names nothing is refused by name"; (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] ([cmd:enlist `z] run:enlist `nosuch);{x}]) like "qc: nosuch*"]

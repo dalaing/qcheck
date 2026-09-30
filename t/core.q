@@ -151,3 +151,23 @@ nn:{.qc.draw x} each 300#enlist .qc.rec[2 2;0;{1+sum x}]
 .t.t["C17 rec at size 30: under 20% leaves, median node count >= 8"; (0.2>avg 0=nn) and 8<=med nn]
 .t.sz 100
 .t.t["C17 flt 0 1 hits both bounds"; (any v=0) and any 1=v:.qc.draw 1000#enlist .qc.flt 0 1]
+/ a property whose parameters carry patterns (q 4.1) keeps their names: the pattern leaves a place number in the
+/ function's parameter list and the name at the head of its locals
+.t.t["pars: a plain function's parameters"; .qc.pars[{[a;b] c:a+b; c}]~`a`b]
+.t.t["pars: parameters with patterns keep their names"; $[.z.K<4.1; 1b; (.qc.pars[value "{[a:`j;b:`j] a+b}"]~`a`b) and (.qc.pars[value "{[a;b:`j] a}"]~`a`b) and `a`b~key (.qc.chk[q;`a`b!(.qc.int 0 9;.qc.int 0 9);value "{[a:`j;b:`j] a<=b}"])`x]]
+/ a check puts the process's random state back (q 4.1 and later), on the way out of a pass and of an error alike
+rs:{[s] $[-2h=type @[system;"S 0N";{(::)}]; s; 1b]}
+system"S 11"; a:5?100; system"S 11"; r:.qc.chk[q;.qc.int 0 9;{x<20}]
+.t.t["check: the caller's random state is put back after a pass"; rs a~5?100]
+system"S 11"; r:@[.qc.chk[q;.qc.int 0 9];{'"boom"};{x}]
+.t.t["check: and after a property that raises"; rs a~5?100]
+/ the failure database is relative to where q was started, not to a directory a later \l moved to
+.t.t["db: a relative database path is anchored at the starting directory"; (.qc.dbd[`:.qc]~`$":",(system"cd"),"/.qc") and (.qc.dbd[`:/tmp/x]~`:/tmp/x) and .qc.dbd[`.qc]~`$":",(system"cd"),"/.qc"]
+/ two floats that print alike at the console's precision are shown at full precision in a diff
+.t.t["eq: floats that differ past the seventh digit are told apart in the diff"; not (~/) (.qc.diff[0.1234567;0.12345671])[0;`a`b]]
+/ the backtrace at v 2 keeps the property's frames and drops the library's
+r:.qc.chk[q,enlist[`v]!enlist 0;.qc.int 0 9;{[x] y:x+`a; y}]
+.t.t["check: the backtrace has the property's frame and none of the library's"; ((r`bt) like "*x+`a*") and not (r`bt) like "*qc.q:*"]
+.t.t["eq: floats in a vector that print alike are told apart too"; not (~/) (.qc.diff[0.1234567 1;0.12345671 1])[0;`a`b]]
+.t.t["cfg: a seed of 0 is refused by name"; (@[.qc.conf;enlist[`seed]!enlist 0i;{x}]) like "qc: cfg: the seed*"]
+.t.t["db: ~ is expanded, since q does not"; .qc.dbd[`$":~/x"]~`$":",getenv[`HOME],"/x"]

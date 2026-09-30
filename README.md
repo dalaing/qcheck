@@ -119,9 +119,9 @@ itself.
 .qc.flt 0 1                            / a float in a range; .qc.dbl is any finite double
 .qc.str                                / a string; .qc.sym a symbol over a bounded alphabet
 .qc.vec[0 5]"d"                        / a typed vector, here of dates
-.qc.tab `a`b!(.qc.int 0 9; .qc.sym)    / a table; .qc.ktab[`a;0 9] cols keyed (keys distinct)
+.qc.tab `a`b!(.qc.int 0 9; .qc.sym)    / a table from a column dictionary of generators; .qc.ktab[`a`b;0 9] cols keyed (key combinations distinct)
 .qc.tab `t`k`v!(.qc.mono[.qc.int 0 9;.qc.int 1 9]; .qc.uniq .qc.elem `a`b`c; .qc.dep {[r] .qc.int (r`t;99)})   / a sorted column, distinct keys, a column that sees the row
-.qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations
+.qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations, foreign keys
 .qc.atr[`s] .qc.list .qc.int 0 9         / a sorted vector carrying s#
 .qc.bulk[0 99;0 1000000]                 / a long vector drawn as one block, for large data; .qc.btab[nr] cols a table of them
 .qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
@@ -182,8 +182,9 @@ signals the whole report as one error (`'qc: FAIL falsified after 3 tests…`), 
 `examples/frameworks/` has a test file each for k4unit, qspec and QUnit, and `EXAMPLES.md` says what a failing
 property looks like in each. `.qc.main d` runs a suite and exits with the number of failures, for CI.
 
-A check sets the seed of the process (`\S`), and the state it had before cannot be put back. If your process
-depends on its own stream of random numbers, set `\S` again after a check.
+A check sets the seed of the process (`\S`) and, on q 4.1 and later, puts the random state back when it returns,
+so your own stream of random numbers goes on as if the check had not run. On older q the earlier state cannot be
+recovered: set `\S` again after a check. `-S` on the command line does not pin a check; the `seed` setting does.
 
 ## Stateful testing
 
@@ -266,6 +267,9 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 - **`init` must reset everything.** It runs before every example, every shrink attempt and every replay, and a
   failure that depends on state left over from an earlier sequence cannot be replayed. A system in another
   process is reset over its handle (`examples/sm_ipc.q`).
+- **Name the functions you mean to fix.** A cell of `pre`, `gen`, `run`, `post` or `upd` may be a symbol, `` run:`push`pop ``,
+  and the function of that name is looked up each time it is called. A function given by value is captured as it
+  was, so after you fix it `.qc.again[]` would still run the old one.
 - **Start with two commands** and add the rest once those pass. The table needs only the columns that some
   command uses, and a column left out is the default for every command: `pre` always, `gen` no input, `run` no
   call, `post` true, `upd` the model unchanged. A `w` column weights the choice, so that a `clear` can be rare.

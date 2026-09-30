@@ -61,3 +61,24 @@ r:.qc.chk[q;pair;{if[not all (x[`q;`sym],x[`t;`sym]) in x`s; bad+:1]; (aj[`sym`t
 m:r[`x]`x
 .t.t["aj: the planted bug shrinks to one symbol, two quotes at one time with two prices, one trade; every candidate referentially valid"; (2=count m`q;1=count m`t;1=count m`s;1=count distinct m[`q]`time;2=count distinct m[`q]`px;0=bad)]   / (a list of conjuncts: a failure names which)
 .t.t["aj: within 300 attempts"; r[`attempts]<=300]
+/ compound keys are distinct as combinations, not column by column (A30): a bar table keyed on sym and minute holds
+/ many minutes for one sym. The plain key columns are drawn as one tuple through uniq
+kt2:.qc.ktab[`a`b;0 30] `a`b`v!(.qc.elem `x`y;.qc.int 0 2;.qc.int 0 9); d2:.t.D[kt2;100]
+.t.t["ktab: compound keys are distinct as pairs, the rows fit the product (6), and a key column may repeat"; (all {u:0!x; ((count u)=count distinct flip u`a`b) and 6>=count u} each d2) and any {(count x)>count distinct (0!x)`a} each d2]
+d3:.t.D[.qc.ktab[`a`b;0 30] `a`b`v!(.qc.int 0 1000000;.qc.int 0 1000000;.qc.bool);50]
+.t.t["ktab: compound keys over open generators are distinct and not capped"; (all {u:0!x; (count u)=count distinct flip u`a`b} each d3) and 6<max count each d3]
+.t.t["ktab: a key column with a constraint of its own keeps it, and the pairs are distinct"; all {u:0!x; ((count u)=count distinct flip u`s`t) and u[`t]~asc u`t} each .t.D[.qc.ktab[`s`t;0 20] `s`t`v!(.qc.elem `x`y;.qc.mono[.qc.int 0 9;.qc.int 0 3];.qc.bool);50]]
+bad:0; r:.qc.chk[q;kt2;{u:0!x; if[(count u)<>count distinct flip u`a`b; bad+:1]; 12>sum u`v}]
+.t.t["ktab: a planted bug shrinks to two rows and no candidate had a repeated key pair"; (2=count r[`x]`x) and 0=bad]
+.t.t["ktab: the minimal compound-keyed table is empty, typed and keyed"; (0=count m) and (`a`b~keys m) and "sjj"~exec t from meta m:.qc.minimal kt2]
+sk:([s:`a`a`b;m:1 2 1] v:1 2 3); d6:.t.D[.qc.schema sk;100]
+.t.t["schema: compound keys are distinct as tuples and a key column may repeat"; (all {u:0!x; ((count u)=count distinct flip u`s`m) and (meta sk)~meta x} each d6) and any {(count x)>count distinct (0!x)`s} each d6]
+/ an enumerated column may be a foreign key (its domain a keyed table) or a link (a table): schema draws one of the
+/ key table's keys, or a row index, and both come back as the enumeration they were
+fkt:([k:`a`b`c] v:1 2 3); lkt:([]s:`a`b;n:1 2); smp:([]f:`fkt$`a`b;l:`lkt!0 1); d8:.t.D[.qc.schema smp;30]
+.t.t["schema: a foreign key draws the key table's keys, a link a row index, and meta round-trips"; (all {(meta smp)~meta x} each d8) and (all {all (value x`f) in key[fkt]`k} each d8) and all {all (value x`l) within 0 1} each d8]
+/ a row built as a dict loses an atom's enumeration, so a keyed or constrained sample used to come back as plain
+/ symbols and longs: the enumerations are put back from the typed empties
+dom:`p`q; kfk:([s:1 2] f:`fkt$`a`b;l:`lkt!0 1;e:`dom$`p`q); d9:.t.D[.qc.schema kfk;30]
+.t.t["schema: a keyed sample keeps its foreign key, link and enumeration"; (all {(meta kfk)~meta x} each d9) and all {all (value (0!x)`f) in key[fkt]`k} each d9]
+.t.t["schema: a sample with a u# column keeps its foreign key"; all {(meta x)~meta ([]f:`fkt$`a`b;u:`u#1 2)} each .t.D[.qc.schema ([]f:`fkt$`a`b;u:`u#1 2);30]]

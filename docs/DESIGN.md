@@ -144,7 +144,7 @@ count, `small`'s halving) obey it, and `t/core.q` checks every library generator
 | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a dict of column generators, drawn as rows so a row is one span (C13); row-count range `r`; keyed on columns `k`. an empty draw's columns are typed from a probe of one minimal row (M7's limitation, removed at M12) |
 | `.qc.mono[b;g]`, `.qc.uniq g`, `.qc.dep f` | **constrained columns**, recognised by `tab`: the first row draws `b` and each later row adds a delta drawn from `g`, which must be non-negative — a negative delta is a usage error, never a quietly unsorted column (sorted by construction, so sorted under every shrink, A18); distinct values — over an `elem` or a small constant `int` range by indexing the values not yet used, capping the rows to the set (A19), otherwise by retrying and discarding; `f` receives the row so far (the columns before it) and returns a generator. On their own each is its plain part |
 | `.qc.atr[a] g` | the drawn value with attribute `a` (`s` and `p` after a sort); attributes survive every engine path, `~` ignores them (A23) |
-| `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key`, attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
+| `.qc.schema t` | a constructor (as `lin` is): reads a sample table once — types, an enumeration's domain from `key` (a symbol list; a keyed table for a foreign key, whose keys are drawn; a table for a link, a row index), attributes, typed empties from `0#`, keys — and returns a generator of tables shaped like it (A21). `meta` alone cannot see enumerations; a `p#` and an `s#` column together are refused |
 | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | **bulk data** (M8, A22): a long vector of a length in `nr` with values in `r`, recorded as one block by `chn` — a million values in milliseconds, one unit of the choice budget; a table of blocks over one drawn row count, a column a range or `(type char; range)`. A block shrinks by chunk deletion (`pblk`) as well as by its values. Lengths cap at `lo+1000*size` |
 | `.qc.tf c` | the **finite** domain of an atom type: no null, no infinity (`h i j` stop one short of their infinities, `e` fits a real, `c` has no space, `s` no empty symbol, `g` a last byte that is not 0, since sixteen zero bytes are the null guid); `t c` is `tf c` wrapped in `spc` with the specials (M10) |
 | `.qc.ts[from;to]`, `.qc.dates[from;to]` | one timestamp or date in a window, the start simplest (dates accepted as timestamp bounds); a monotone series is `mono[ts[a;b];int 0 60000000000]` in a table or `atr[`s] list ts[a;b]` (A26) |
@@ -267,8 +267,12 @@ forever: 1e5 unbounded symbols cost 5.4 MB that is never reclaimed (A11).
 `tab` recognises the latter (`mark`) and then draws each row column by column, in column order, with three pieces
 of per-table state — the previous value of each `mono` column, the candidates not yet used and the values used so
 far of each `uniq` column — saved and restored around the table so tables nest. Rows remain spans (C13); the
-constraints live in the choices, which is why they hold on every shrink candidate (A18, A19, A20). `ktab` sends
-its key columns through `uniq`, so keys are distinct. An empty `tab` has typed columns: `tab` probes one minimal
+constraints live in the choices, which is why they hold on every shrink candidate (A18, A19, A20). `ktab` draws
+the plain key columns as one tuple through `uniq` (`ukey` on the first, `skip` on the rest, the tuple's
+generator `ktup`), so key *combinations* are distinct and a key column may repeat, as `sym` does in a bar table
+keyed on `sym` and `minute`; a key column with a constraint of its own keeps it, and the others are then distinct
+one by one (A30: before it, each key column was distinct alone, and such a table could not have two rows for one
+sym). An empty `tab` has typed columns: `tab` probes one minimal
 row of its column generators outside the example (`probe`, C22's state saved and restored) and types the empty
 columns from what they would have drawn; `schema` knows from `0#` of the sample. A `uniq` over a generator whose
 space is smaller than the rows discards (`sym` has 85 values; a `u#` column with 100 rows cannot be drawn).
@@ -349,7 +353,10 @@ outcome and `.j.k` reads it back (A25; symbols become strings, `::` null, the in
 source). `checks` returns an `ms` column per property and prints the table without it, so transcripts stay exact.
 
 Seeds are 32-bit ints, because that is what `\S` takes and `system"S"` returns (A3): `cfg`seed` of `0N`
-becomes `"i"$1+.z.p mod 2147483646`, never 0, and is printed and accepted as an int.
+becomes `"i"$1+.z.p mod 2147483646`, never 0, and is printed and accepted as an int. On q 4.1 and later
+`system"S 0N"` returns the generator's state as a guid; `chk` takes it before it seeds and `tidy` puts it back
+on every way out, so a check leaves the caller's own stream of `rand` and `?` where it found it (`RS`; on older
+q the call returns nothing and nothing is restored).
 
 Defaults in `.qc.cfg`: `n` 100 (tests) · `nmax` `0N` (the cap when coverage extends a run; `0N` is 10×`n`) ·
 `seed` `0N` (from the clock) · `sz` 100 · `shrinks` 2000 · `disc` 10 (the run gives up when its discards pass `disc`×`n`) ·
@@ -611,7 +618,8 @@ that tries every input tries the same ones.
   tables, cut to `cfg`rows` with an explicit `... n more rows`. It widens the console to 400 columns for the
   duration and restores it, because `.Q.s` and `.Q.s1` both truncate to `\c` and `.Q.s` prints a table
   nested in a dict in flip notation (A9).
-- **The counterexample** is a dict keyed by the property's parameter names (`(value prop)[1]`, A1) or by the
+- **The counterexample** is a dict keyed by the property's parameter names (`pars prop`: `(value prop)[1]`, except
+  that a parameter with a q 4.1 pattern leaves its place number there and its name at the head of slot 2, A1) or by the
   generator's own keys, printed by the formatter.
 - **`.qc.diff[a;b]`** returns a table `([] path; why; a; b)`, `why` one of `` `type`count`value`key`order ``,
   built type-first, then count, then values, never comparing values of different types (C2, C3). `a`/`b` hold
@@ -682,7 +690,10 @@ input, output → model after). `pop` has a planted bug: it returns the first it
 `h` holds `m0` (the model), `init` and `fini` (run before and after every example *and every replay*, so the
 real system must be resettable), and `steps` (a range, default `0 0W`, capped by size). `cmds` is a keyed
 table, or a table with a `cmd` column; missing columns take the defaults (`pre` always, `gen` `::`, `run`
-`::`, `post` true, `upd` identity). Each step draws a command among those whose `pre` holds, draws its input
+`::`, `post` true, `upd` identity). A cell of those columns may also be a symbol naming a function, looked up
+at each call (`fnv`), so that `again[]` runs the function as it is now: a function held by value is captured
+as it was when the table was built, and a fix to it would not be seen (A30). Each step draws a command among
+those whose `pre` holds, draws its input
 from `gen m`, runs it, checks `post`, applies `upd`, and appends a row `step cmd arg res model ok` (the model
 *after* the step; `in`/`out` are reserved words). Because execution is interleaved with generation
 (Hypothesis-style, not Hedgehog's generate-then-execute) outputs are concrete at generation time: **no
@@ -1006,6 +1017,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 | A27 | An arbitrary q value from `rec` over the zoo with list, dict, table and keyed-table nodes | `a27_value.q` 5/5 | ✅ | At size 30, 1000 draws reach every one of the 18 atom types, typed vectors, general lists, dicts, tables and keyed tables (depth quartiles 5/7/10; 11/16/21 at size 100), and `-9!-8!x` round-trips every value. Two library facts surfaced: children that are dicts with different keys made `sub` and `lst` fail with `mismatch` (pitfall 30, fixed), and a node function receives conforming dict children as a table. |
 | A28 | A shrink ends on the same counterexample, the simplest, whatever the seed | `a28_sweep.q` 4/4; `shrink_arms.q` by hand | ✅ | 42 cases at 60 seeds. The passes as they were: 28 cases always right, 88.7% of runs. With each side of the origin searched, Hypothesis's two passes for pairs, a trade, partners and duplicates by generator, and runs of one or two choices deleted: 42 of 42 and 100%, for half as many attempts again (table in §1.5). Distances are exact wherever the long difference does not wrap: in floats a timestamp and the one a nanosecond later were the same. |
 | A29 | A state machine on a real system ends on few counterexamples: the record of a command, duplicates whatever their ranges, swaps of neighbours | `a28_sweep.q` 4/4 with `sm_chain`; `spikes/explore/` by hand | ✅ | Six bugs and sabotages of the pipeline at 12 seeds: 32 kinds of counterexample before, 14 after, for 6% fewer attempts. The sweep with `sm_chain`, 43 cases at 60 seeds: 42 always right before (`sm_chain` at 17 seeds of 60), 43 after, for 1% fewer attempts. The A8 suite is unchanged. A scheme of searches, gates and budgets that got a harder sweep wholly right gained little on the pipeline for 64% more attempts, and is not in the library; nor is a pass that drops the steps a deletion leaves unable to run, which saved 13% of the attempts on the pipeline and nothing on the sweep. State machine choices saved before the change do not replay (table and account in §1.5). |
+| A30 | What Q for Mortals says the library is missing: a reading of the book against the generators, the runner and the documents | by hand, six readers over the book's chapters; `t/tables.q`, `t/core.q`, `t/sm.q` | ✅ | Three defects: compound keys were distinct column by column, not as combinations (a keyed table on `sym`minute` could not hold two minutes for one sym); `schema` refused a foreign-key column (`'qc: elem takes a list`) or a link column (`'type`), and lost every enumeration when the sample was keyed or had a constrained column; a property with q 4.1 pattern parameters lost their names. Four claims of the documents false or unsafe: `again[]` could not confirm a fix to a stateful test (functions captured by value: symbols naming them are now accepted); `S::0#S` as a reset defines a view at the console; the random state "cannot be put back" (it can, since 4.1, and is); the failure database followed `\l` (it is anchored where q started). Also: two floats alike at `\P 7` in a diff; the backtrace at `v` 2 was mostly the library's frames; `.qc.main` ignored the command line. The book's idioms and the recipes it suggests are in the cookbook's later sections. |
 | A21 | A generator from a schema | `a21_meta.q` 3/3 | ✅ after a redesign | Reading `meta` fails on enumerations: its `f` names only keyed-table foreign keys, so an enumerated column looks plain. Reading a *sample table* works: the type from `type`, the enumeration domain from `key`, the attribute from `attr`, typed empties from `0#`, keys from `keys`. Six shapes (plain, keyed, nested, attributed, general, enumerated) round-trip `meta` and the enumerated column stays `20h`. `0#` of a table drops attributes while `0#` of a vector keeps them, so an empty table carries none. For M7: the schema generator takes a table; `tabr`'s own empty table has untyped columns, which a schema fixes. Spike lessons: `like` and `vs` are keywords; a lambda does not capture the enclosing locals. |
 
 ---
@@ -1085,9 +1097,9 @@ For the implementer:
 31. `in` and `?` compare within one type: `.Q.t?"j"` is a long and `type x` a short, so
     `(neg .Q.t?c) in type each xs` is a type error where `=` would have coerced; cast one side.
 
-32. `.qc.chk` reseeds the process RNG with `\S` (a random seed unless `cfg`seed` is pinned), and q cannot save or
-    restore an RNG *state*, only reseed. A process whose own `rand` stream matters — a simulation, a sampler —
-    should pin `cfg`seed` or expect its stream to move after every check.
+32. `.qc.chk` reseeds the process RNG with `\S` (a random seed unless `cfg`seed` is pinned). Before q 4.1 q could
+    not save or restore an RNG *state*, only reseed, and a process whose own `rand` stream mattered had to expect
+    it to move after every check; since 4.1 `system"S 0N"` returns the state and `chk` puts it back (A30).
 33. `f'[a;b]` over a three-argument `f` is a projection of the each, not a list of results: `count` of it is 1.
     Wrap `f` in a two-argument lambda first (`t`'s construction over `spc`).
 34. `0#` of a table drops its columns' attributes; `0#` of a vector keeps its attribute. An empty table generated
@@ -1118,5 +1130,16 @@ For the implementer:
 45. `f each` (and `f'[xs;a]`) over an *empty* typed list returns a general empty list, `()`, not a typed one: a
     column mapped that way loses its type on the empty table, and two empty dicts then differ in key type (which
     `eq` now names). Leave an empty table alone: `$[count t; update c:f'[c] from t; t]` (`LOG.md` entry 21).
+46. `(value f)[1]` is not always the parameter names. A parameter with a q 4.1 pattern (`{[a:`j;b:`j] ...}`) is
+    recorded there as its place, `` `0`1 ``, and the names come first in slot 2, before the locals; a mixed list
+    `{[a;b:`j] ...}` gives `` `a`1 `` and `` `b`c ``. `pars` puts the names back, one per place; a destructuring
+    pattern `{[(a;b):`j`j;c] ...}` binds two names at one place and is beyond it (the arity is still right). Found by reading Q for Mortals'
+    chapter on patterns against `byname` (A30).
+47. q 5.0 keeps every one-letter command-line option for itself: `q script.q -n 20` stops with `'n invalid`
+    before the script runs, and `-v 0` with `'error loading config`. Options a script reads through `.Q.opt` must
+    have longer names (`-tests`, `-size`, `-verbose`, `-seed`).
+48. Printing two floats that differ past the seventh significant digit gives the same text at the console's
+    default precision (`\P 7`), so a diff of `0.1234567` and `0.12345671` looked like no difference; `dat` prints
+    such a pair at `\P 17` (A30).
 ---
 

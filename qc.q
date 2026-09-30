@@ -42,6 +42,7 @@ new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
 / the implicit d is never supplied by users, so a non-null d means one argument too many (C1)
 dd:{[d;n] if[not (::)~d; '"qc: too many arguments; ",$[n like "* *"; "the configurable form is ",n; n," takes none"]]}   / a form with a space is configurable
 fn:{$[(::)~x; 0b; type[x] within 100 112]}              / callable? the library never applies what is not (C20); :: is 101h but is not a function (pitfall 10)
+fnv:{$[-11h<>type x; x; count key x; get x; '"qc: ",string[x]," is not defined"]}   / a symbol names a function, looked up when it is called (so a fix to it is seen by again[]); anything else is itself
 need:{[f;what] if[not fn f; '"qc: ",what," must be a function"]}
 dct:{$[99h<>type x; 0b; not 98h=type key x]}              / a dict, and not a keyed table, which is 99h too (pitfall 28)
 
@@ -224,51 +225,62 @@ cands:{[g] $[104h<>type g; ::; (f:first value g)~elem; (),value[g] 1; not f~int;
 / per-table state: mono's last value, uniq's remaining candidates, uniq's used values. CS and each US entry grow behind
 / a :: seed: a dict amended with one long has a typed value list and refuses the next timestamp (pitfall 6, dict form)
 CS:(enlist `)!enlist (::); UR:(0#`)!(); US:(0#`)!()
-udraw:{[k;g] $[k in key UR; [rem:UR k; v:rem ch[(0;-1+count rem;0);`u]; UR[k]:rem except v; v];
+KK:`symbol$()                                             / the plain key columns of a keyed table, drawn as one tuple so that their combinations are distinct (a key column may repeat)
+ktup:{[cg;d] value draw cg}      / the key tuple: the key columns' generators drawn in column order
+kcands:{[d] cd:cands each value d; $[any (::)~/:cd; ::; 1024<prd count each cd; ::; (cross/) cd]}   / the finite product of the key columns' sets, or ::
+udraw:{[k;g] $[k in key UR; [rem:UR k; v:rem ch[(0;-1+count rem;0);`u]; UR[k]:rem except enlist v; v];   / (enlist: v may be a tuple)
   [n:0; while[n<cf`tries; v:draw g; if[not any v~/:1_US k; US[k]:US[k],enlist v; :v]; n+:1]; '"qc.discard"]]}   / (match, not in: a dict has no place on in's left; 1_: the seed)
 mdel:{[g] v:draw g; if[v<0; '"qc: mono: the delta must be non-negative"]; v}   / a mono column's step
 / one row: the columns in order, a constrained column with the state and the row so far. The row grows behind a ::
 / seed (a dict amended with one symbol has a typed value list and refuses the next long: pitfall 6). d: via draw
-rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
-  while[j<count c; k:c j; g:cg k; a:$[`=ks k; ::; value g];
-    v:$[`mono=ks k; $[k in key CS; CS[k]+mdel a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; draw g];
+rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0; kv:();
+  while[j<count c; k:c j; g:cg k; a:$[(ks k) in ``ukey`skip; ::; value g];
+    v:$[`mono=ks k; $[k in key CS; CS[k]+mdel a 2; draw a 1]; `uniq=ks k; udraw[k;a 1]; `dep=ks k; draw (a 1) 1_r; `ukey=ks k; [kv:udraw[k;ktup KK#cg]; kv KK?k]; `skip=ks k; kv KK?k; draw g];   / ukey: the first key column draws the whole key tuple; skip: the others take their part of it
     if[`mono=ks k; CS[k]:v]; r[k]:v; j+:1]; 1_r}
 / probe g: its minimal value, drawn outside the example (choices, spans, cursor and mode saved and restored), so a
 / table with no rows can still type its columns from what they would have drawn. A generator that cannot give a
 / minimal value (a dep over an empty row, a filter) leaves its column untyped.
-probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US;sz;bs;N;LX;DV); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
-unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11; sz::s 12; bs::s 13; N::s 14; LX::s 15; DV::s 16;}   / what probe saved (the size too: a small that raises inside the probe would leave it halved; and the notes and labels, which a probe must not add to)
+probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US;sz;bs;N;LX;DV;KK); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
+unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11; sz::s 12; bs::s 13; N::s 14; LX::s 15; DV::s 16; KK::s 17;}   / what probe saved (the size too: a small that raises inside the probe would leave it halved; and the notes and labels, which a probe must not add to)
 empties:{[xs] {[v] $[(::)~v; (); 0>type v; 0#enlist v; ()]} each xs}      / each probed value: an atom's typed empty (0# of a symbol atom is nyi; of a 1-vector it is fine), else general. (xs, not vs: vs is a keyword)
 emtab:{[cg;p] key[cg]!$[(::)~p; count[cg]#enlist (); empties value p]}     / typed empties from a probed row, or untyped when the probe failed
 / the table core: rows through lst; em gives typed empty columns (a schema knows them; a column dict probes them, so
 / tab's empty table is typed where a minimal draw is possible); at (col -> attribute) is applied after the rows,
 / sorting by the p then s columns
-uinit:{CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!();}   / the uniq columns' state: seeds (pitfall 6), candidate lists, values used
-urest:{[s0] CS::s0 0; UR::s0 1; US::s0 2;}                / and its restoration around a nested table
-tabx:{[r;cg;em;at] ks:key[cg]!mark each value cg; r:rng r;
+uinit:{CS::(enlist `)!enlist (::); UR::(0#`)!(); US::(0#`)!(); KK::`symbol$();}   / the uniq columns' state: seeds (pitfall 6), candidate lists, values used, the key tuple's columns
+urest:{[s0] CS::s0 0; UR::s0 1; US::s0 2; KK::s0 3;}      / and its restoration around a nested table
+/ kk: the key columns of a keyed table. Those without a constraint of their own are drawn as one tuple through uniq,
+/ so that the combinations are distinct and a column may repeat (a bar table keyed on sym and minute holds many
+/ minutes for one sym); a key column with a constraint keeps it, and the others are distinct one by one (A30)
+tabx:{[r;cg;em;at;kk] ks:key[cg]!mark each value cg; r:rng r; kc:key[cg] where key[cg] in kk; grp:(1<count kc) and all `=ks kc;
+  $[grp; ks[kc]:`ukey,(count[kc]-1)#`skip; [cg:@[cg;kc;ukey]; ks:key[cg]!mark each value cg]];
   $[all `=value ks; [if[(::)~em; em:emtab[cg;probe cg]]; rs:draw lst[r] cg];   / the probe is one minimal row: a dep sees the columns before it
-    [s0:(CS;UR;US); uinit[]; uc:where ks=`uniq; cd:cands each {value[x] 1} each cg uc; h:not (::)~/:cd; UR::(uc where h)!cd where h; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
+    [s0:(CS;UR;US;KK); uinit[]; KK::$[grp; kc; `symbol$()]; uc:where ks in `uniq`ukey; cd:{[cg;ks;k] $[`ukey=ks k; kcands KK#cg; cands value[cg k] 1]}[cg;ks] each uc; h:not (::)~/:cd; UR::(uc where h)!cd where h; US::uc!count[uc]#enlist enlist (::);   / the generator inside each uniq; used values behind a :: seed
      if[count UR; r[1]&:min count each UR];                                                          / the rows fit the candidates
-     if[(::)~em; p:probe rowd[cg;ks]; if[(::)~p; p:key[cg]!{[ks;k;g] $[`=ks k; probe g; `dep=ks k; ::; probe value[g] 1]}[ks]'[key cg;value cg]]; em:emtab[cg;p]];   / a row whose dep fails: type the other columns alone
+     if[(::)~em; p:probe rowd[cg;ks]; if[(::)~p; p:key[cg]!{[ks;k;g] $[(ks k) in ``ukey`skip; probe g; `dep=ks k; ::; probe value[g] 1]}[ks]'[key cg;value cg]]; em:emtab[cg;p]];   / a row whose dep fails: type the other columns alone
      rs:@[{[r;cg;ks] draw lst[r] rowd[cg;ks]}[r;cg];ks;{[s0;e] urest s0; 'e}[s0]]; urest s0]];
   tb:$[count rs; flip key[cg]!flip value each rs; flip em];
+  if[count rs; tb:{[em;tb;c] $[(type tb c) within 20 76h; tb; @[tb;c;$[98h=type value f:key em c; f!; f$]]]}[em]/[tb;key[em] where (type each value em) within 20 76h]];   / a row built as a dict (rowd) loses an atom's enumeration: put the column's back, as its typed empty has it (a link with !, a domain or foreign key with $)
   if[count[at] and count rs; tb:((where at=`p),where at=`s) xasc tb; tb:{[at;tb;c] @[tb;c;(at c)#]}[at]/[tb;key at]]; tb}   / parted columns sort first; an empty table carries none, as 0# of a table drops them
-tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; tabx[r;cg;::;(0#`)!`symbol$()]}
+tabr:{[r;cg;d] dd[d;".qc.tabr[r] cols"]; if[not dct cg; '"qc: tab needs a dict of column generators"]; tabx[r;cg;::;(0#`)!`symbol$();`symbol$()]}
 tab:tabr[0 0W]
-ukey:{$[`=mark x; uniq x; x]}                            / a key column is uniq unless already constrained
+ukey:{$[`=mark x; uniq x; x]}                            / a lone key column, or a u# column, is uniq unless already constrained
 ktab:{[k;r;cg;d] dd[d;".qc.ktab[k;r] cols"]; if[not dct cg; '"qc: ktab needs a dict of column generators"]; k:(),k;
-  if[count k except key cg; '"qc: ktab: key columns must be columns"]; k xkey tabx[r;@[cg;k;ukey];::;(0#`)!`symbol$()]}   / keys are distinct (A19)
+  if[count k except key cg; '"qc: ktab: key columns must be columns"]; k xkey tabx[r;cg;::;(0#`)!`symbol$();k]}   / keys are distinct as combinations (A19, A30)
 / schema t: a generator of tables shaped like t — the column types from the values (an enumeration's domain from
 / key, nested columns from the first element, a general column as a mix), attributes and keys as t has them,
 / typed empties from 0# (an empty table carries no attributes, as 0# of a table does not, A21)
-colg:{[c] tc:type c; $[tc within 20 76h; {[f;d] f$draw elem value f}[key c]; 10h=tc; str; tc within 1 19h; t .Q.t tc;   / enumerations are 20h-76h; a table or dict value (98h 99h) is a general column
+/ an enumerated column's draw, its domain read as it is at the time: a symbol list (a plain enumeration), a keyed table
+/ (a foreign key: one of its keys) or a table (a link: a row index)
+enu:{[f;d] dm:value f; $[98h=type dm; [if[0=count dm; '"qc: schema: a link to an empty table"]; f!ch[(0;-1+count dm;0);`u]]; $[99h<>type dm; 0b; 98h=type key dm]; f$draw elem (key dm) first cols key dm; f$draw elem dm]}
+colg:{[c] tc:type c; $[tc within 20 76h; enu[key c]; 10h=tc; str; tc within 1 19h; t .Q.t tc;   / enumerations are 20h-76h; a table or dict value (98h 99h) is a general column
   $[0h<>tc; 0b; 0=count c; 0b; all (type each c) within 1 19h]; vec[0 3] .Q.t abs type first c; one (int 0 9;sym;str)]}
 / schema t is a constructor (as lin is): it reads t once and returns the generator schx[k;cg;em;at]
 schema:{[x] if[not type[x] in 98 99h; '"qc: schema takes a table"]; k:keys x; u:0!x; cs:cols u; vals:value flip u;
-  cg:cs!colg each vals; cg:@[cg;k,cs where `u=attr each vals;ukey]; at:cs!attr each vals; at:where[not null at]#at;
+  cg:cs!colg each vals; cg:@[cg;cs where `u=attr each vals;ukey]; at:cs!attr each vals; at:where[not null at]#at;
   if[(`p in at) and `s in at; '"qc: schema: a table with both a p# and an s# column cannot be reproduced row by row (sort by one or the other)"];
   schx[k;cg;cs!`#'0#'vals;at]}
-schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k xkey tb; tb]}
+schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at;k]; $[count k; k xkey tb; tb]}
 
 
 / ---- state machines ---------------------------------------------------------------------------------
@@ -298,7 +310,7 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"];
   if[count k:key[h] except key smh; '"qc: sm: unknown hook ",", " sv string k]; h:smh,h;
   c:$[98h=type cmds; cmds; 99h<>type cmds; '"qc: cmds must be a table (or keyed table) of commands, got type ",string type cmds; 98h=type key cmds; 0!cmds; '"qc: cmds must be a table of commands, not a dict"];
   if[not `cmd in cols c; '"qc: cmds needs a cmd column; columns are "," " sv string cols c]; miss:key[smd] except cols c; if[count miss; c:c,'flip miss!{[n;f] n#enlist f}[count c] each smd miss];
-  if[not all fn each raze c key smd; '"qc: cmds: pre gen run post upd must be functions"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
+  if[not all fn each fnv each raze c key smd; '"qc: cmds: pre gen run post upd must be functions, or symbols naming them"]; need[h`init;"init"]; need[h`fini;"fini"]; need[h`inv;"inv"];
   if[not `w in cols c; c:update w:1f from c]; if[$[not type[c`w] in 5 6 7 8 9h; 1b; any c[`w]<=0]; '"qc: cmds: w must be positive weights"]; c:update w:"f"$w from c;
   r:rng h`steps; lo:r 0; mx:"j"$("f"$r 1)&("f"$lo)+sz;   / (cap in floats, C21)
   r:@[smloop[h;c;lo];mx;{[h;e] h[`fini][]; 'e}[h]]; h[`fini][]; r}   / fini on every way out: the one trap around the whole run (C9)
@@ -306,15 +318,15 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"];
 / failing step included; a false post or inv notes the trace and signals its stem; an error in pre, gen or upd is
 / the harness's and propagates as itself
 smloop:{[h;c;lo;mx] m:h`m0; h[`init][]; R:(); n:0; go:1b;
-  while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
+  while[go; beg`step; av:where {[f;m] fnv[f] m}[;m] each c`pre;
     go:$[0=count av; 1=ch[0 0 0;::]; more[n;lo;mx]];
     $[go; [en:$[mn; i<count P; 0b]; DV[count C]:til[count c] except av;   / which commands cannot run: a run that is trying every input does not try them, and the shrinker spends no attempt on a number that stands for the command it has
         k:ch[(0;-1+count c;first av);$[1=count av; first av; @[count[c]#0f;av;:;c[av;`w]]]]; if[$[en; not k in av; 0b]; '"qc.discard"];   / weighted over the commands that can run (and if it tries one all the same, the commands that can run having changed between two runs of one prefix, the branch is dead)
         j:$[k in av; k; count nx:av where av>k; first nx; first av]; if[not j=k; .[`.qc.C;(count[C]-1;`v);:;j]];   / the record says what ran: a number that stood for another command would change its meaning in its turn
-        a:draw c[j;`gen] m; end[];   / (a, not i: i is the cursor)
-        o:@[c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
-        ok:@[c[j;`post][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
-        m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
+        a:draw fnv[c[j;`gen]] m; end[];   / (a, not i: i is the cursor)
+        o:@[fnv c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
+        ok:@[fnv[c[j;`post]][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
+        m2:fnv[c[j;`upd]][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
         if[not ok; note smnote R; '"qc.post"];
         iv:@[h`inv;m2;{[R;e] note smnote R; '"qc.inv ",e}[R]]; if[not $[(::)~iv; 1b; all iv]; note smnote R; '"qc.inv"];   / the invariant, on the model after the step
         m:m2; n+:1];
@@ -334,11 +346,15 @@ eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:flip `path`why`a`b!(enlist 
 shape:{$[99h=type x; key x; 98h=type x; cols x; x]}
 
 / ---- the runner -------------------------------------------------------------------------------------
-conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg must be a dict of settings or a test count, got type ",string type x; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; cfg,x]}
-byname:{[p;x] $[100h<>type p; 0b; 99h<>type x; 0b; 98h=type key x; 0b; all (value p)[1] in key x]}   / a keyed table is 99h too (C3); a cond chain, not and (C2)
-app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x (value p)[1]; p @ x]}
+conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg must be a dict of settings or a test count, got type ",string type x; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; $[`seed in key x; 0=x`seed; 0b]; '"qc: cfg: the seed must not be 0"; cfg,x]}
+pars:{[f] a:(value f)[1]; if[count w:where a in `$string til count a; a[w]:(count w)#(value f)[2]]; a}   / a function's parameter names: a parameter with a pattern (q 4.1) leaves its place number in slot 1 and its name at the head of slot 2, before the locals
+byname:{[p;x] $[100h<>type p; 0b; 99h<>type x; 0b; 98h=type key x; 0b; all pars[p] in key x]}   / a keyed table is 99h too (C3); a cond chain, not and (C2)
+app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x pars p; p @ x]}
 pass:{$[(::)~x; 1b; type[x] in -1 1h; all x; ()~x; 1b; '"qc: property returned ",-3!x]}   / () is vacuously true, as all () is
-trap:{[f;x] .Q.trp[{[f;x] `ok`r!(1b;f x)}[f];x;{[e;bt] `ok`e`bt!(0b;e;.Q.sbt bt)}]}
+trap:{[f;x] .Q.trp[{[f;x] `ok`r!(1b;f x)}[f];x;{[e;bt] `ok`e`bt!(0b;e;sbt bt)}]}
+/ the backtrace without the library's own frames (those in qc.q, and .Q.trp): what is left is the property's or the
+/ generator's, which is what the reader of a report at v 2 is after. Each frame is a block of lines that begins "  [n]"
+sbt:{[bt] l:"\n" vs .Q.sbt bt; b:where l like "  [[]*"; g:b cut l; "\n" sv raze g where not {(x like "*/qc.q:*") or x like "*(.Q.trp)*"} each first each g}
 ENG:("qc.discard";"qc.overrun";"qc.toodeep";"qc.toolarge";"qc.misaligned")   / the engine's own signals: never a counterexample
 FS:("qc.eq";"qc.post";"qc.run";"qc.inv")              / failure-signal stems: qc.<stem>[ detail] is a falsification wherever raised (C14)
 fsg:{[e] any {[e;s] s~count[s]#e}[e] each FS}
@@ -351,7 +367,7 @@ run1:{[gen;prop]
   $[not r`ok; $[r[`e] in ENG; `st`why!(`disc;`$3_r`e); `st`x`err`bt`ph`notes`choices!(`fail;x;r`e;r`bt;`prop;N;C`v)];   / an engine signal is a discard in either phase
     r`r; `st`x!(`pass;x); `st`x`err`bt`ph`notes`choices!(`fail;x;"false";"";`prop;N;C`v)]}
 named:{[gen;prop;x] $[99h=type gen; x; 0h=type gen; pnames[prop;count x]!x; enlist[`x]!enlist x]}
-pnames:{[p;n] $[100h=type p; $[n=count a:(value p)[1]; a; `$"x",/:string til n]; `$"x",/:string til n]}
+pnames:{[p;n] $[100h=type p; $[n=count a:pars p; a; `$"x",/:string til n]; `$"x",/:string til n]}
 / Wilson 95% upper bound of a rate: a requirement fails only when the run is confident the rate is below it (C15)
 wils:{[sg;n;nn] z:1.96; p:n%nn; (p+(z*z%2*nn)+sg*z*sqrt((p*1-p)%nn)+z*z%4*nn*nn)%1+z*z%nn}   / the Wilson bound, sg 1 upper, -1 lower
 wil:wils[1]; wlo:wils[-1]
@@ -394,10 +410,11 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
 / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sgen::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; cD::0#DV; cDv::`long$(); co::()!();}
-chk:{[c;gen;prop] if[run; '"qc: nested check"]; r:@[chk1[c;gen];prop;{tidy[]; 'x}]; tidy[]; r}
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sgen::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; cD::0#DV; cDv::`long$(); co::()!(); if[-2h=type RS; system"S ",string RS]; RS::(::);}
+RS:(::)                                                     / the caller's random state, taken as a check begins and put back by tidy (q 4.1 and later; :: where S 0N is not understood)
+chk:{[c;gen;prop] if[run; '"qc: nested check"]; RS::@[system;"S 0N";{(::)}]; r:@[chk1[c;gen];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;gen;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
-  if[(100h=type prop) and 0h=type gen; if[count[gen]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the generator has ",string count gen]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
+  if[(100h=type prop) and 0h=type gen; if[count[gen]<>count pars prop; '"qc: the property takes ",string[count pars prop]," arguments, the generator has ",string count gen]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
   LB::(`symbol$())!`long$(); RQ::(`symbol$())!`float$(); n:c`n; nmax:$[null c`nmax; 10*n; c`nmax]; dc:(`symbol$())!`long$();
   tests:0; nd:0; o:(`symbol$())!(); k:0; en:1b; ext:0b; tnew[]; run::1b;
   f:dbf[gen;prop]; if[not null f; if[count key f; reset[get f;c`sz;0b;0b]; r:run1[gen;prop]; $[`fail=r`st; o:r; hdel f]]];
@@ -429,7 +446,14 @@ checks:chks[::]
 / error whose first line is the verdict (A24). The spelling "qc: FAIL …" keeps the error vocabulary (C14).
 mustc:{[c;gen;prop] c:conf c; c[`v]:0; r:chk[c;gen;prop]; if[not r`ok; '"qc: ","\n" sv report r]; r}
 must:mustc[::]
-main:{[d] r:checks d; exit "i"$sum not r`ok}                  / a suite as a CI script: prints the table, exits with the failure count
+/ a suite as a CI script: prints the table, exits with the failure count (capped at 255, what a shell sees). The settings
+/ may be given on the command line, q suite.q -seed 7 -tests 1000 -size 50 -verbose 0: the one-letter names n, sz and v
+/ are spelled out, since q keeps the one-letter options for itself
+OPT:`tests`size`verbose!`n`sz`v
+main:{[d] o:.Q.opt .z.x; o:(key[o]^OPT key o)!value o; o:(key[cfg] inter key o)#o; v:key[o]#.Q.def[cfg] o;
+  b:key[o] where (0=count each value o) or (null each value v) and not null each cfg key o;
+  if[count b; nm:first b; if[nm in value OPT; nm:key[OPT] value[OPT]?nm]; '"qc: the option -",string[nm]," needs a value like ",.Q.s1 cfg first b];
+  r:chks[v;d]; exit "i"$255&sum not r`ok}
 / exact replay of a recorded choice vector; stale when the generator no longer consumes it as recorded
 recheck:{[gen;prop;p] if[run; '"qc: nested check"]; if[not (::)~prop; need[prop;"the property"]]; r:@[recheck1[gen;prop];p;{tidy[]; 'x}]; tidy[]; r}
 recheck1:{[gen;prop;p] cf::cfg; reset[p;cfg`sz;0b;0b]; run::1b; o:run1[gen;prop]; run::0b;
@@ -574,7 +598,9 @@ shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; cD::DV; cDv::$[
   while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;ppr;ptr;pnd); 0b]];   / cond, not and: passes are not free
   co,`shrinks`attempts`hist!(ns;na;H)}
 / failure database: one file per (gen;prop) under cfg`db, keyed by cfg`name or a hash of their source
-dbf:{[gen;prop] $[null cf`db; `; ` sv (cf`db;$[null cf`name; `$raze string md5 "c"$-8!(gen;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console
+ROOT:system"cd"                                          / where q was started (qc.q loaded): a relative db is relative to it, not to a directory a later \l moved to
+dbf:{[gen;prop] $[null cf`db; `; ` sv (dbd cf`db;$[null cf`name; `$raze string md5 "c"$-8!(gen;prop); cf`name])]}   / exact bytes: .Q.s1 truncates to the console
+dbd:{[d] s:string d; s:$[":"=first s; 1_s; s]; $["~"=first s; `$":",getenv[`HOME],1_s; "/"=first s; `$":",s; `$":",ROOT,"/",s]}   / (a symbol without a leading colon, `.qc, is a relative path too; q does not expand ~, so it is expanded here; not for Windows paths)
 
 / ---- formatting: a total dispatch over the nine shapes kind names (C3) -------------------------------------------
 kind:{ty:type x; $[(::)~x; `null; ty within 100 112; `fn; ty<0; `atom; ty within 1 19; `vec; 0h=ty; `list; 98h=ty; `tab;
@@ -595,9 +621,10 @@ dft:([]path:();why:`symbol$();a:();b:())
 diff:{[a;b] r:df[();a;b]; $[count r; flip `path`why`a`b!flip r; dft]}
 df:{[p;a;b] ta:type a; tb:type b; if[not ta=tb; :enlist (p;`type;ta;tb)]; k:kind a;   / one shape dispatch, kind's (a string compares whole, like an atom)
   $[10h=ta; dat[p;a;b]; k=`vec; dvec[p;a;b]; k=`list; dlist[p;a;b]; k=`tab; dtab[p;a;b]; k=`ktab; dtab[p;0!a;0!b]; k=`dict; ddict[p;a;b]; dat[p;a;b]]}
-dat:{[p;a;b] $[a~b; (); enlist (p;`value;a;b)]}
+dat:{[p;a;b] $[a~b; (); $[(type a) in -8 -9h; (.Q.s1 a)~.Q.s1 b; 0b]; enlist (p;`value;fp a;fp b); enlist (p;`value;a;b)]}   / two floats that print alike at the console's precision (\P, 7 by default) are shown at full precision
+fp:{[x] p:system"P"; system"P 17"; r:@[.Q.s1;x;{[p;e] system"P ",string p; 'e}[p]]; system"P ",string p; r}
 dcnt:{[p;a;b] $[count[a]=count b; (); enlist (p;`count;count a;count b)]}
-dvec:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],{[p;a;b;ii] (p,ii;`value;a ii;b ii)}[p;a;b] each where (n#a)<>n#b}
+dvec:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],raze {[p;a;b;ii] dat[p,ii;a ii;b ii]}[p;a;b] each where (n#a)<>n#b}
 dlist:{[p;a;b] n:count[a]&count b; dcnt[p;a;b],raze {[p;a;b;ii] df[p,ii;a ii;b ii]}[p;a;b] each til n}
 ddict:{[p;a;b] ka:key a; kb:key b; if[not type[ka]=type kb; :enlist (p;`keytype;type ka;type kb)];   / (two empty dicts can differ only there; without this row the diff is empty and eq says order)
   ({[p;k] (p,k;`key;k;::)}[p] each ka except kb),({[p;k] (p,k;`key;::;k)}[p] each kb except ka),
