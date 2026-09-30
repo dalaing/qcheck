@@ -1,4 +1,4 @@
-/ the two changes that held up on the pipeline, by themselves and together, over the sweep. Everything else is
+/ the changes that held up on the pipeline, by themselves and together, over the sweep. Everything else is
 / the library's shrinker as committed.
 /   lib     the library
 /   fix     a state machine's command recorded as its place among all the commands

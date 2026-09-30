@@ -1,0 +1,52 @@
+name               arm | failed kinds steps    attempts secs     drops
+-----------------------| ---------------------------------------------
+amend_without_bars drop| 12     3     3.416667 113      5.328457 4    
+amend_without_bars lib | 12     3     3.416667 136      5.895729 0    
+  drop 8x  qc.post qc.eq : eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`A;0;0)
+  drop 3x  qc.post qc.eq : trade (2024.01.02D09:30:00.000000000;`A;1f;1) ; eod ; bust 0 ; query (2024.01.02;`A;0;0)
+  drop 1x  qc.post qc.eq : eod ; eod ; eod ; late (2024.01.04D09:30:00.000000000;`A;1f;1) ; query (2024.01.04;`A;0;0)
+  lib 8x  qc.post qc.eq : eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`A;0;0)
+  lib 3x  qc.post qc.eq : trade (2024.01.02D09:30:00.000000000;`A;1f;1) ; eod ; bust 0 ; query (2024.01.02;`A;0;0)
+  lib 1x  qc.post qc.eq : eod ; eod ; eod ; late (2024.01.04D09:30:00.000000000;`A;1f;1) ; query (2024.01.04;`A;0;0)
+name            arm | failed kinds steps attempts secs     drops
+--------------------| ------------------------------------------
+merge_loses_pnl drop| 12     3     4.25  215      9.523938 3    
+merge_loses_pnl lib | 12     3     4.25  240      7.757315 0    
+  drop 9x  qc.inv : fill (`A;`buy;1;1f) ; rename (`A;`N0;2024.01.03) ; fill (`N0;`sell;1;2f) ; eod
+  drop 2x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`A;1f;1) ; query (2024.01.03;`N0;0;0)
+  drop 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+  lib 9x  qc.inv : fill (`A;`buy;1;1f) ; rename (`A;`N0;2024.01.03) ; fill (`N0;`sell;1;2f) ; eod
+  lib 2x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`A;1f;1) ; query (2024.01.03;`N0;0;0)
+  lib 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+name             arm | failed kinds steps    attempts secs     drops
+---------------------| ---------------------------------------------
+oracle_by_stored drop| 12     3     5.083333 219      9.555767 7    
+oracle_by_stored lib | 12     3     5.083333 305      13.09046 0    
+  drop 9x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`A;1f;1) ; query (2024.01.03;`N0;0;0)
+  drop 2x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+  drop 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`B;1f;0f) ; rename (`A;`N0;2024.01.03) ; rename (`B;`N1;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`B;1f;1) ; query (2024.01.03;`N1;0;0)
+  lib 9x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`A;1f;1) ; query (2024.01.03;`N0;0;0)
+  lib 2x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+  lib 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`B;1f;0f) ; rename (`A;`N0;2024.01.03) ; rename (`B;`N1;2024.01.03) ; eod ; trade (2024.01.03D09:30:00.000000000;`B;1f;1) ; query (2024.01.03;`N1;0;0)
+name            arm | failed kinds steps    attempts secs     drops
+--------------------| ---------------------------------------------
+merge_keeps_old drop| 12     2     4.083333 163      5.84943  2    
+merge_keeps_old lib | 12     2     4.083333 177      5.987732 0    
+  drop 11x  qc.inv qc.eq : fill (`A;`buy;1;1f) ; rename (`A;`N0;2024.01.03) ; fill (`N0;`buy;1;1f) ; eod
+  drop 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+  lib 11x  qc.inv qc.eq : fill (`A;`buy;1;1f) ; rename (`A;`N0;2024.01.03) ; fill (`N0;`buy;1;1f) ; eod
+  lib 1x  qc.post qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod ; late (2024.01.02D09:30:00.000000000;`A;1f;1) ; query (2024.01.02;`N0;0;0)
+name               arm | failed kinds steps attempts secs     drops
+-----------------------| ------------------------------------------
+roll_forgets_cache drop| 12     1     3     92       2.916011 0    
+roll_forgets_cache lib | 12     1     3     91       2.742153 0    
+  drop 12x  qc.inv qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod
+  lib 12x  qc.inv qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; eod
+name              arm | failed kinds steps    attempts secs     drops
+----------------------| ---------------------------------------------
+cache_keeps_older drop| 12     2     4.333333 201      6.946377 2    
+cache_keeps_older lib | 12     2     4.333333 201      6.287813 0    
+  drop 8x  qc.inv qc.eq : rename (`A;`N0;2024.01.03) ; quote (2024.01.02D09:30:00.000000000;`N0;1f;0f) ; quote (2024.01.02D09:30:00.000000000;`A;1f;1f) ; eod
+  drop 4x  qc.inv qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; quote (2024.01.02D09:30:00.000000000;`N0;1f;1f) ; rename (`N0;`N1;2024.01.03) ; eod
+  lib 8x  qc.inv qc.eq : rename (`A;`N0;2024.01.03) ; quote (2024.01.02D09:30:00.000000000;`N0;1f;0f) ; quote (2024.01.02D09:30:00.000000000;`A;1f;1f) ; eod
+  lib 4x  qc.inv qc.eq : quote (2024.01.02D09:30:00.000000000;`A;1f;0f) ; rename (`A;`N0;2024.01.03) ; quote (2024.01.02D09:30:00.000000000;`N0;1f;1f) ; rename (`N0;`N1;2024.01.03) ; eod

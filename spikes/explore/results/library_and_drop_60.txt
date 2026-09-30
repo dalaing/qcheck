@@ -1,0 +1,46 @@
+lib: 73 s
+drop: 63 s
+orig: 103 s
+
+the share of 60 seeds at which each arm ended on the simplest counterexample any arm found:
+name    | lib       drop      orig      
+--------| ------------------------------
+fprod   | 1         1         0.06666667
+fsum    | 1         1         0.08333333
+run3    | 0.7       0.7       0.7       
+run3_neg| 0.15      0.15      0.15      
+run4    | 0.7857143 0.7857143 0.7857143 
+sm_kv   | 0.5166667 0.5166667 0.6       
+(the other 43 cases are 1 in every arm)
+
+all 49 cases:
+arm  cases always atref     kinds attempts ms    
+-------------------------------------------------
+lib  49    45     0.9622935 71    160626   72841 
+drop 49    45     0.9622935 71    160381   62676 
+orig 49    43     0.9262391 179   292073   102593
+
+the state machines:
+name     arm  kinds atref     attempts
+--------------------------------------
+sm_alias lib  1     1         9054    
+sm_chain lib  1     1         7503    
+sm_ctr   lib  1     1         1646    
+sm_kv    lib  9     0.5166667 5205    
+sm_lg    lib  1     1         1827    
+sm_stack lib  1     1         4025    
+sm_tp    lib  1     1         3370    
+sm_alias drop 1     1         9256    
+sm_chain drop 1     1         7596    
+sm_ctr   drop 1     1         1646    
+sm_kv    drop 9     0.5166667 5181    
+sm_lg    drop 1     1         1855    
+sm_stack drop 1     1         3481    
+sm_tp    drop 1     1         3370    
+sm_alias orig 1     1         10270   
+sm_chain orig 1     1         6822    
+sm_ctr   orig 1     1         1646    
+sm_kv    orig 9     0.6       5340    
+sm_lg    orig 1     1         1827    
+sm_stack orig 1     1         4025    
+sm_tp    orig 1     1         3370    
