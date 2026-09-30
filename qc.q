@@ -287,8 +287,8 @@ schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at;k]; $[count k; 
 / sm[h] cmds: a generator whose value is the executed trace. h: `m0 the model, `init/`fini run before and after every
 / example and replay (the real system must be resettable), `steps a range (default 0 0W, capped by size).
 / cmds: a keyed table (or a table with a cmd column) with any of pre gen run post upd; missing columns take
-/ the defaults. Each step's span holds its decision bit, command index and input draw and nothing else (C13);
-/ run, post and upd happen after it, then inv on the new model. A failed postcondition notes the trace and raises
+/ the defaults. Each step's span holds its decision bit, command index and input draw, and whatever run, post, upd
+/ and inv draw, and nothing else (C13); run, post and upd happen inside it, then inv on the new model. A failed postcondition notes the trace and raises
 / qc.post, a failed invariant qc.inv: failure signals. A w column weights the choice among the available commands.
 / The command a step chose is recorded as its place among ALL the commands, with the first that can run as its
 / origin, and a command that cannot run stands for the next that can (the first, after the last). Recorded as a place among those that can run now, a number
@@ -323,13 +323,13 @@ smloop:{[h;c;lo;mx] m:h`m0; h[`init][]; R:(); n:0; go:1b;
     $[go; [en:$[mn; i<count P; 0b]; DV[count C]:til[count c] except av;   / which commands cannot run: a run that is trying every input does not try them, and the shrinker spends no attempt on a number that stands for the command it has
         k:ch[(0;-1+count c;first av);$[1=count av; first av; @[count[c]#0f;av;:;c[av;`w]]]]; if[$[en; not k in av; 0b]; '"qc.discard"];   / weighted over the commands that can run (and if it tries one all the same, the commands that can run having changed between two runs of one prefix, the branch is dead)
         j:$[k in av; k; count nx:av where av>k; first nx; first av]; if[not j=k; .[`.qc.C;(count[C]-1;`v);:;j]];   / the record says what ran: a number that stood for another command would change its meaning in its turn
-        a:draw fnv[c[j;`gen]] m; end[];   / (a, not i: i is the cursor)
-        o:@[fnv c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
-        ok:@[fnv[c[j;`post]][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
-        m2:fnv[c[j;`upd]][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
-        if[not ok; note smnote R; '"qc.post"];
-        iv:@[h`inv;m2;{[R;e] note smnote R; '"qc.inv ",e}[R]]; if[not $[(::)~iv; 1b; all iv]; note smnote R; '"qc.inv"];   / the invariant, on the model after the step
-        m:m2; n+:1];
+        a:draw fnv[c[j;`gen]] m;   / (a, not i: i is the cursor)
+        o:@[fnv c[j;`run];a;{[R;e] note smnote R; end[]; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
+        ok:@[fnv[c[j;`post]][m;a;];o;{[R;e] note smnote R; end[]; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
+        m2:@[fnv[c[j;`upd]][m;a;];o;{end[]; 'x}]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
+        if[not ok; note smnote R; end[]; '"qc.post"];
+        iv:@[h`inv;m2;{[R;e] note smnote R; end[]; '"qc.inv ",e}[R]]; if[not $[(::)~iv; 1b; all iv]; note smnote R; end[]; '"qc.inv"];   / the invariant, on the model after the step
+        end[]; m:m2; n+:1];   / the step's span closes after run, post, upd and inv, on every way out: a draw any of them makes belongs to the step (C13)
       end[]]];
   smtab R}
 

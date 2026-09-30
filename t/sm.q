@@ -149,3 +149,9 @@ r:.qc.chk[q;.qc.sm[`m0`init!(0;{swi::0})] swc13;::]
 swinc:{[a] swi+:1; swi}
 .t.t["sm: a symbol names a command's function, looked up at each call, so again[] sees a fix"; (`falsified=r`why) and `ok=(.qc.again[])`why]
 .t.t["sm: a symbol that names nothing is refused by name"; (@[.qc.draw;.qc.sm[enlist[`m0]!enlist 0] ([cmd:enlist `z] run:enlist `nosuch);{x}]) like "qc: nosuch*"]
+/ a draw inside run belongs to the step (A31): clear's run draws a value that could never pass for a decision bit, its
+/ two inputs are timed from the model's clock, and it resets the counter, so it can neither be swapped past an inc nor
+/ dropped from the tail; a counter planted to fail at three increments shrinks to three steps (before A31, at 4 seeds of 10)
+swc4:([cmd:`clear`nop`inc] w:2 1 1f; gen:({[m] (.qc.int (m`t;(m`t)+5); .qc.int 0 9)};{[m] ::};{[m] .qc.const 1}); run:({[a] swn4::0; .qc.draw .qc.int 100 1000};{[a] ::};{[a] swn4+:1; swn4}); post:({[m;a;o] 1b};{[m;a;o] 1b};{[m;a;o] o<3}); upd:({[m;a;o] m[`t]:a 0; m[`n]:0; m};{[m;a;o] m};{[m;a;o] m[`n]+:1; m}))
+swt4:{[s] r:.qc.chk[q,`seed`n!(s;100);.qc.sm[`m0`init`steps!(`n`t!0 0;{swn4::0};6 30)] swc4;::]; $[`falsified=r`why; exec cmd from first r`notes; `$()]}
+.t.t["sm: a draw inside run is the step's own, and the steps around it are deleted whole"; all {`inc`inc`inc~swt4 x} each "i"$1+til 10]

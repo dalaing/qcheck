@@ -283,7 +283,9 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 - **Keep the model simpler than the system.** A model that is a second implementation has the same bugs. It
   can leave out whatever is not being tested: storage, attributes, the order of rows.
 - **`pre` and `gen` work from the model**, not from the real system. Where an input must be valid, `gen` draws a
-  valid one (`{.qc.int 0,x`balance}` for a withdrawal) instead of drawing anything and filtering.
+  valid one (`{.qc.int 0,x`balance}` for a withdrawal) instead of drawing anything and filtering. Draw a step's
+  inputs in `gen`, where the model sees them; a `.qc.draw` inside `run`, `post` or `upd` still belongs to the step
+  and shrinks with it, but the model then learns what the step did only from the result.
 - **`post` checks one answer; an invariant checks the system.** `h` may carry an `inv`, a function of the model
   that is checked after every step, which is where "the table has as many rows as the model has counted" goes:
   `` `m0`init`inv!(0; {`TBL set 0#TBL}; {[m] m=count TBL}) ``. A false one reports `qc.inv` with the trace.

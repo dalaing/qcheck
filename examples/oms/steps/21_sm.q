@@ -36,7 +36,7 @@ sys.canf:{[m] exec id from m[`o] where not null .oms.o.nx[st;`fill], not null .o
 sys.cmds:([cmd:`fx`quote`new`ack`cancel`fill`split`eod]
   w:   2 4 3 3 1 3 1 1f;
   pre: ({[m] 1b}; {[m] 1b}; {[m] 0<count sys.qs m}; {[m] 0<count sys.can[m;`ack]}; {[m] 0<count sys.can[m;`cxl]}; {[m] 0<count sys.canf m}; {[m] m`fresh}; {[m] not m`fresh});
-  gen: ({[m] (sys.tg m; .qc.elem g.ccys)};
+  gen: ({[m] (sys.tg m; .qc.elem g.ccys)};                                           / (the rate itself is drawn in run: step 24 moves it here)
         {[m] (sys.tg m; .qc.elem g.syms)};
         {[m] {[m] sy:.qc.draw .qc.elem sys.qs m; (sys.tg m; .qc.const (sy; .qc.draw g.side; g.qty sy; g.lim sy))}[m]};   / (drawn as the generator is built, as in the lifecycle test)
         {[m] sys.pick[m;`ack]}; {[m] sys.pick[m;`cxl]};

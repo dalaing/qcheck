@@ -165,7 +165,7 @@ q)system"l examples/oms/steps/05_quotes.q"
 q)system"l examples/oms/steps/05_gen.q"
 q)system"l examples/oms/steps/06_sm.q"
 q).qc.check[.qc.sm[.oms.q.hooks] .oms.q.cmds; ::];
-FAIL falsified after 6 tests, 27 shrinks (95 attempts, seed 7)
+FAIL falsified after 6 tests, 27 shrinks (96 attempts, seed 7)
 qc.post
 step cmd   arg                                 res                                      ok
 ------------------------------------------------------------------------------------------
@@ -693,7 +693,7 @@ q).oms.hdb:hsym `$first system"mktemp -d"
 q)system"l examples/oms/steps/20_eod.q"
 q)system"l examples/oms/steps/21_sm.q"
 q).qc.check[.qc.sm[.oms.sys.hooks] .oms.sys.cmds; ::];
-FAIL falsified after 12 tests, 16 shrinks (237 attempts, seed 7)
+FAIL falsified after 12 tests, 13 shrinks (151 attempts, seed 7)
 qc.inv qc.eq
 path why   a b
 --------------
@@ -701,13 +701,11 @@ path why   a b
 0:
   step cmd   arg                                             res                                         ok
   ---------------------------------------------------------------------------------------------------------
-  0    fx    (2024.01.02D09:30:00.000000000;`EUR)            (2024.01.02D09:30:00.000000000;1.125)       1
-  1    quote (2024.01.02D09:30:00.000000000;`A)              (2024.01.02D09:30:00.000000000;10f;10f)     1
-  2    new   (2024.01.02D09:30:00.000000000;(`A;`buy;1;10f)) (2024.01.02D09:30:00.000000000;0;10f)       1
-  3    ack   0                                               `ack                                        1
-  4    fx    (2024.01.02D09:30:00.000000000;`EUR)            (2024.01.02D09:30:00.000000000;1.125)       1
-  5    fill  (2024.01.02D09:30:00.000000000;0;1;10f)         (2024.01.02D09:30:00.000000000;(`filled;0)) 1
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 3 9 1 1 757503000000000000 0 0 0 10 0 0 0 1 2 0 1000 1 0 757503000000000000 1 3 0 1 0 757503000000000000 0 0 3 9 1 5 0 757503000000000000 1 0 0 10]
+  0    quote (2024.01.02D09:30:00.000000000;`A)              (2024.01.02D09:30:00.000000000;10f;10f)     1
+  1    new   (2024.01.02D09:30:00.000000000;(`A;`buy;1;10f)) (2024.01.02D09:30:00.000000000;0;10f)       1
+  2    ack   0                                               `ack                                        1
+  3    fill  (2024.01.02D09:30:00.000000000;0;1;10f)         (2024.01.02D09:30:00.000000000;(`filled;0)) 1
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 757503000000000000 0 0 0 10 0 0 0 1 2 0 1000 1 0 757503000000000000 1 3 0 1 5 0 757503000000000000 1 0 0 10]
 q)system"rm -rf ",1_string .oms.hdb
 
 ```
@@ -731,7 +729,7 @@ q).oms.hdb:hsym `$first system"mktemp -d"
 q)system"l examples/oms/steps/20_eod.q"
 q)system"l examples/oms/steps/21_sm.q"
 q).qc.check[.qc.sm[.oms.sys.hooks] .oms.sys.cmds; ::];
-FAIL falsified after 33 tests, 100 shrinks (766 attempts, seed 7)
+FAIL falsified after 33 tests, 71 shrinks (358 attempts, seed 7)
 qc.inv qc.eq
 path why   a     b
 ------------------
@@ -740,31 +738,21 @@ path why   a     b
   step cmd   arg                                               res                                       ok
   ---------------------------------------------------------------------------------------------------------
   0    fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  1    fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  2    quote (2024.01.02D09:30:00.000000000;`B)                (2024.01.02D09:30:00.000000000;100f;100f) 1
-  3    fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  4    new   (2024.01.02D09:30:00.000000000;(`B;`buy;10;100f)) (2024.01.02D09:30:00.000000000;0;100f)    1
-  5    quote (2024.01.02D09:30:00.000000000;`A)                (2024.01.02D09:30:00.000000000;10f;10f)   1
-  6    fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  7    ack   0                                                 `ack                                      1
-  8    quote (2024.01.02D09:30:00.000000000;`A)                (2024.01.02D09:30:00.000000000;10f;10f)   1
-  9    fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  10   fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  11   fx    (2024.01.02D09:30:00.000000000;`EUR)              (2024.01.02D09:30:00.000000000;1.125)     1
-  12   quote (2024.01.02D09:30:00.000000000;`A)                (2024.01.02D09:30:00.000000000;10f;10f)   1
-  13   fill  (2024.01.02D09:30:00.000000000;0;1;100f)          (2024.01.02D09:30:00.000000000;(`part;9)) 1
-  14   quote (2024.01.02D09:30:00.000000000;`A)                (2024.01.02D09:30:00.000000000;10f;10f)   1
-  15   fx    (2024.01.02D09:30:00.000000001;`EUR)              (2024.01.02D09:30:00.000000001;1.0625)    1
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 3 9 1 0 757503000000000000 0 0 3 9 1 1 757503000000000000 1 0 0 100 0 0 0 1 0 757503000000000000 0 0 3 9 1 2 0 2000 1 0 757503000000000000 1 1 757503000000000000 0 0 0 10 0 0 0 1 0 757503000000000000 0 0 3 9 1 3 0 1 1 757503000000000000 0 0 0 10 0 0 0 1 0 757503000000000000 0 0 3 9 1 0 757503000000000000 0 0 3 9 1 0 757503000000000000 0 0 3 9 1 1 757503000000000000 0 0 0 10 0 0 0 1 5 0 757503000000000000 1 0 0 100 1 1 757503000000000000 0 0 0 10 0 0 0 1 0 757503000000000001 0 0 6 68]
+  1    quote (2024.01.02D09:30:00.000000000;`B)                (2024.01.02D09:30:00.000000000;100f;100f) 1
+  2    new   (2024.01.02D09:30:00.000000000;(`B;`buy;10;100f)) (2024.01.02D09:30:00.000000000;0;100f)    1
+  3    ack   0                                                 `ack                                      1
+  4    fill  (2024.01.02D09:30:00.000000000;0;1;100f)          (2024.01.02D09:30:00.000000000;(`part;9)) 1
+  5    fx    (2024.01.02D09:30:00.000000001;`EUR)              (2024.01.02D09:30:00.000000001;1.0625)    1
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 3 9 1 1 757503000000000000 1 0 0 100 0 0 0 1 2 0 2000 1 0 757503000000000000 1 3 0 1 5 0 757503000000000000 1 0 0 100 1 0 757503000000000001 0 0 6 68]
 q)system"rm -rf ",1_string .oms.hdb
 
 ```
 The failure entry 9 predicted. `B` is in euros: a buy of one at 100 with the euro at 1.125 costs 112.50 dollars;
 the euro falls to 1.0625 and the desk holds 106.25 dollars of stock, a loss of 6.25; the system marks in euros,
-finds nothing to convert, and says 0. But the trace is sixteen steps, eleven of which do nothing (rates that do not
-move, quotes for `A`), after a hundred shrinks in 766 attempts. The rate and the quote were drawn in `run`,
-`.qc.draw g.rate a 1`, after the step's own draws were over; deleting a step then leaves its draws behind, and
-every step after it changes. Everything a step draws is drawn in `gen`:
+finds nothing to convert, and says 0. Six steps, and one thing to put right in the test before going on: the `fx`
+and `quote` commands draw their values in `run`, `.qc.draw g.rate a 1`, so the model learns what a step did only
+from the result, and `post` and `upd` are written backwards to read it. A step's inputs are what `gen` draws, where
+the model can see them:
 
 ```q
 q)system"l examples/oms/steps/04_ref.q"
@@ -799,7 +787,7 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 757503000000000000 0 3 9 1 1 
 q)system"rm -rf ",1_string .oms.hdb
 
 ```
-Six steps, nothing spare. Now the decision the whole-system test was kept for. The rule the desk counts by is
+The same six steps. Now the decision the whole-system test was kept for. The rule the desk counts by is
 cash: what was paid, at the rate of the day it was paid, against what the position is worth now. So the position
 keeps `costb`, what its open quantity cost in the base, converted as of each fill; a fill that reduces it realises
 what it brings in, less the share of `costb` it releases; unrealised is the open quantity marked and converted,

@@ -1,6 +1,6 @@
 / oms: a stateful test of the whole system. step 24: the rate and the quote a step sends are drawn in gen, not in
-/ run, so that each step's draws are its own and the shrinker can delete a step whole (entry 12). Step 21 describes
-/ the test.
+/ run, so that the model sees a step's inputs and post and upd need not read them back from the result (entry 12).
+/ Step 21 describes the test.
 \d .oms
 sys.o0:([id:`long$()] sym:`symbol$(); side:`symbol$(); qty:`long$(); px:`float$(); st:`symbol$(); leaves:`long$(); arr:`float$())
 sys.f0:([]day:`date$(); time:`timestamp$(); id:`long$(); sym:`symbol$(); side:`symbol$(); qty:`long$(); px:`float$(); arr:`float$(); adj:`long$())   / adj: the split factor applied since
