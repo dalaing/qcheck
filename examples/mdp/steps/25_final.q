@@ -9,7 +9,8 @@
 .mdp.remap:{system"l ",1_string .mdp.hdb;}   / \l dir makes dir the working directory, and the mapped tables need it to stay so: everything else the system loads is by absolute path (mdp.q's root; pitfall 44)
 .mdp.ondisk:{[d] $[`trade in key `.; d in .Q.pv; 0b]}                                                          / a closed day the HDB holds
 .mdp.past:{[d] $[.mdp.ondisk d; .mdp.dq select from trade where date=d; 0#.mdp.trade]}
-.mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; .mdp.save1[d;`bar;0!.mdp.barsb t]; .mdp.remap[];}
+.mdp.parted:{[d] `p=attr exec sym from select from trade where date=d}   / a day on disk has sym parted (defined here, at the root: inside .mdp, trade would be today's table)
+.mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; .mdp.save1[d;`bar;0!.mdp.barsb t]; .mdp.remap[];}   / a late trade goes on the end and barsb takes first px in table order; save1 sorts by sym alone (stable), so within a sym the trades keep arrival order and a bar's open is the first trade to arrive, not the earliest timed
 .mdp.eod:{[d] .mdp.save1[d]'[`trade`quote`bar;(.mdp.trade;.mdp.quote;.mdp.bar)]; .mdp.trade:0#.mdp.trade; .mdp.quote:0#.mdp.quote; .mdp.bar:0#.mdp.bar;
   .mdp.remap[]; .mdp.today:d+1; .mdp.roll[]}
 .mdp.ontrade:{[t] e:.mdp.enrich1 t; dd:"d"$e`time; if[any dd>.mdp.today; '"mdp: a trade timed after today: ",.Q.s1 e where dd>.mdp.today];

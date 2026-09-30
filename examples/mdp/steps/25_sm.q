@@ -20,7 +20,7 @@ cur:{[m;t] named[t;m`day]}                                                      
 opos:{[m] exec sum qty*1 -1 `buy`sell?side by sym from cur[m;m`f]}
 olq:{[m] select last bid,last ask by sym from cur[m;m`q]}
 live:{[m] exec seq from m[`t] where not seq in m`bust}                                / the trade ids that can still be busted
-row:{[ks;xs] flip ks!enlist each xs}                                                 / one row from atoms (vs is a keyword: xs)
+row:{[ks;xs] enlist ks!xs}                                                           / one row from atoms: a list of one record is a table (vs is a keyword: xs)
 cmds:([cmd:`quote`trade`late`fill`eod`query`bust`rename]
   w:   4 4 1 2 1 2 1 1f;
   pre: ({[m] 1b}; {[m] 1b}; {[m] m[`day]>day0}; {[m] 1b}; {[m] 1b}; {[m] 1b}; {[m] 0<count live m}; {[m] 3>count[m`names]-count syms});
@@ -63,6 +63,8 @@ invar:{[m] d:m`day; mk:(m[`names]!count[m`names]#1f),exec sym!0.5*bid+ask from 0
    .qc.eq[`sym`minute xasc 0!bar; `sym`minute xasc obars[m;d]];
    .qc.eq[`sym xasc select sym,bid,ask from 0!qcache; `sym xasc 0!olq m];
    1e-6>abs ((exec sum real from pos)+unreal mk)-(exec sum mu[sym]*qty*px*-1 1 `buy`sell?side from m`f)+exec sum mu[sym]*qty*mk sym from pos;
-   $[d>day0; all {[m;d;s] (count qtrades[d;s])=count select from otr[m;d] where sym=s}[m;d-1] each m`names; 1b])}   / yesterday, on disk, has the oracle's trades
+   $[d>day0; all {[m;d;s] (count qtrades[d;s])=count select from otr[m;d] where sym=s}[m;d-1] each m`names; 1b];   / yesterday, on disk, has the oracle's trades
+   $[d>day0; [s:get ` sv hdb,`sym; (s~distinct s) and all raze (`trade`quote`bar) in/: {[d] key ` sv hdb,`$string d} each .Q.pv]; 1b];   / the sym file has no duplicates, and every partition holds every table
+   $[d>day0; all parted each .Q.pv; 1b])}   / on disk, sym is parted
 hooks:`m0`init`inv`steps!(m0;init;invar;0 20)   / (inv is a keyword: the hook is invar)
 \d .

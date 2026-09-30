@@ -1046,7 +1046,8 @@ q).mdp.upd[`trade; ([]time:enlist .mdp.opn[.mdp.today+1]; sym:enlist `A; px:enli
 
 The stateful test's postconditions were made stronger at the same time. A fill must move the position by its signed
 quantity. A trade must carry both bid and ask, at a price on the tick. A busted trade must be gone from wherever
-its day lives. The invariant checks yesterday on disk as well as today in memory. The stronger test found
+its day lives. The invariant checks yesterday on disk as well as today in memory, and the disk itself: `sym` parted
+in every partition, every partition holding every table, a `sym` file without duplicates. The stronger test found
 nothing that the weaker one had missed, which is what one hopes for and cannot know without asking.
 
 ## The finished suite
@@ -1145,6 +1146,12 @@ was a case the contract had not covered.
 `round`. A bug in one of those is on both sides of every comparison, and passes. That is defensible only because
 the rules of the pieces test each of them against something else. The stateful test checks the seams between
 incremental and batch and between live and closed. It does not check the batch definitions themselves.
+
+**Three choices of shape** a kdb+ programmer may find unusual. Trades carry their bid and ask, joined on the
+way in, where the more common arrangement keeps quotes apart and joins them at query time with `aj`; the bar
+table's key is a column named `minute` typed as a timestamp; and within a symbol, a day's trades keep the order
+they arrived in, on disk too, so a bar's open is the first trade to arrive in its minute, not the earliest
+timed. Each was a choice made as its piece was written, and the rules test the piece as chosen.
 
 **And some things are not wrong answers.** A trade that is stored nowhere and an instrument made of nulls were
 found by reading the code. A property-based test does not replace that.
