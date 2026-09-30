@@ -36,7 +36,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `bulk`, `btab` | `.qc.bulk[r;nr]`, `.qc.btab[nr] cols` | a long vector or a table of a length in `nr`, capped at 1000 times the size above its lower end, drawn as blocks: a million values in milliseconds |
 | `rec`, `recb` | `.qc.rec[k;leaf;node]`, `.qc.recb[k;leaf;node]` | a recursive structure: `k` children per node, `leaf` a generator, `node` a function of the children; `recb` splits the budget uniformly |
 | `val` | `.qc.val` | an arbitrary q value: atoms of every type, lists, dicts, tables, keyed tables |
-| `sm` | `.qc.sm[h] cmds` | a state-machine run over the command table `cmds` (`cmd pre gen run post upd w`) with hooks `h` (`m0 init fini steps inv`); yields the trace |
+| `sm` | `.qc.sm[h] cmds` | the generator of a stateful test (`README.md`, "Stateful testing"): drawing from it runs one sequence of the commands in the table `cmds` (`cmd pre gen run post upd w`) with hooks `h` (`m0 init fini steps inv`), and yields the trace |
 | `lin` | `.qc.lin[lo;hi]` | not a generator: a range that widens with size, for `int`, `lst` and the others that take a range `r`, `flt` excepted |
 
 ## Running properties
@@ -100,14 +100,14 @@ The result of a check is a dict:
 | `n` | the number of tests that passed |
 | `shrinks`, `attempts` | how many times the counterexample was made simpler, and how many candidates were tried |
 | `seed` | the seed of the run |
-| `x` | the counterexample, as a dict: under `x` for one generator, under the names of the property's parameters for a list of generators, under its keys for a dict of them; `::` when no input was drawn, as in a failure of a state machine, whose trace is in `notes` |
+| `x` | the counterexample, as a dict: under `x` for one generator, under the names of the property's parameters for a list of generators, under its keys for a dict of them; `::` when no input was drawn, as in a failure of a stateful test, whose trace is in `notes` |
 | `err`, `bt` | the message of the failure, and the backtrace of an error |
 | `notes` | what `.qc.note` and `.qc.eq` added |
 | `cover` | the table of labels |
 | `choices` | the choices that reproduce the counterexample |
 | `hist` | the shrinks, in order |
 | `disc` | the discards, counted by cause |
-| `stale` | from `recheck`: `1b` when the choices given are not what the generator records for them: it has changed since they were recorded, or they name a command of a state machine that could not run where they name it |
+| `stale` | from `recheck`: `1b` when the choices given are not what the generator records for them: it has changed since they were recorded, or, in a stateful test, they name a command at a step where it could not run |
 
 Signals that begin `qc.eq`, `qc.post`, `qc.run` or `qc.inv` are falsifications wherever they are raised. Five
 signals, spelled exactly, are the library's own, and each discards the example and is counted in `disc` under

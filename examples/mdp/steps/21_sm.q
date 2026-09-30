@@ -1,4 +1,4 @@
-/ mdp: the state machine, run 2 with renames. step 21: a rename command (an existing name to a fresh one, effective
+/ mdp: the stateful test, run 2 with renames. step 21: a rename command (an existing name to a fresh one, effective
 / tomorrow); the feed keeps using any name it has ever seen. The model stores each event under the name current when
 / it arrived, as the system's contract says; the oracle's live state (positions, the quote cache, today's marks)
 / uses today's names for everything. Needs the pieces, 16_upd.q, 17_amend.q and 20_rename.q loaded.

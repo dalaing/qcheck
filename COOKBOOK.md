@@ -18,7 +18,7 @@ requires the output shown.
 | [An as-of join against a naive one](#an-as-of-join-against-a-naive-one) | an oracle | tables that share a drawn symbol list; `mono` |
 | [Upsert on keyed tables](#upsert-on-keyed-tables) | an oracle | `ktab` |
 | [A splayed table reads back changed](#a-splayed-table-reads-back-changed) | a round trip | `schema` |
-| [A tickerplant handler as a state machine](#a-tickerplant-handler-as-a-state-machine) | a model and an invariant | `sm`; a table as a command's input |
+| [A stateful test of a tickerplant handler](#a-stateful-test-of-a-tickerplant-handler) | a model and an invariant | `sm`; a table as a command's input |
 | [Serialisation, over any value](#serialisation-over-any-value) | a round trip | `val`; narrowing a generator to what a rule covers |
 | [Per-minute bars](#per-minute-bars) | an oracle | `ts`, `mono` over timestamps |
 | [A sorted vector and its attribute](#a-sorted-vector-and-its-attribute) | an oracle, then an invariant | `atr` |
@@ -202,12 +202,12 @@ with what it wrote.
 compares against `value sym`, and the second check passes. A failing property does not always mean the code is
 wrong; sometimes it means the rule said more than you meant, and finding that out is worth as much.
 
-## A tickerplant handler as a state machine
+## A stateful test of a tickerplant handler
 
 **The rule.** `upd` has no answer to check. It changes a table, and what matters is the table after many calls.
-That calls for a state machine (`README.md` explains them). The *model* is the simplest thing that can say what
-the table should hold: here, a count of the rows that have been fed. The rule is an *invariant*, checked after
-every call: the table has as many rows as the model has counted.
+That calls for a stateful test (`README.md` explains these, under "Stateful testing"). The *model* is the simplest
+thing that can say what the table should hold: here, a count of the rows that have been fed. The rule is an
+*invariant*, checked after every call: the table has as many rows as the model has counted.
 
 This `upd` upserts by symbol, so the table keeps one row for each symbol, and a symbol that appears twice, in
 one batch or in two, loses a row.

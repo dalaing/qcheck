@@ -13,7 +13,8 @@ inputs are drawn from is now *generator*, and its rerun line says `gen`, so the 
 and the way a state machine records its commands have both been improved since, so in each report the counts
 of shrinks and attempts and the numbers of the rerun line are those of the library as it now is; the counts of
 tests are as they were. Two traces are a step shorter than they were, in entries 22 and 23, and are marked.
-Nothing else has been changed.
+What the log calls the state machine, or the machine, the other documents call a stateful test, and its entry
+in the suite is now named `stateful_60_steps`. Nothing else has been changed.
 
 ## Piece 1 — reference data
 

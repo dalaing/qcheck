@@ -1,4 +1,4 @@
-/ mdp: the state machine, run 2. step 19: two commands more — bust a trade by id, and a late trade is one reported
+/ mdp: the stateful test, run 2. step 19: two commands more — bust a trade by id, and a late trade is one reported
 / for the day before, timed anywhere in that day's session (step 18 timed it up to eighteen hours back, which at the
 / first day's open is a day nobody queries). The model keeps the busted ids; the oracle leaves them out.
 / Needs the pieces, 16_upd.q and 17_amend.q loaded.

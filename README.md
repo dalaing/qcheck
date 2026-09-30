@@ -185,12 +185,12 @@ property looks like in each. `.qc.main d` runs a suite and exits with the number
 A check sets the seed of the process (`\S`), and the state it had before cannot be put back. If your process
 depends on its own stream of random numbers, set `\S` again after a check.
 
-## State machines
+## Stateful testing
 
 A property tests a function: one input, one answer. A system that keeps state — a table that `upd` appends to, a
 cache, a process on the other end of a handle — has no single input. What it answers depends on the calls it has
-already had, and its bugs live in particular sequences of them: the `pop` after the third `push`. A state-machine
-test draws *sequences of calls*, makes them on the real system, and checks every answer against a **model**.
+already had, and its bugs live in particular sequences of them: the `pop` after the third `push`. A *stateful
+test* draws *sequences of calls*, makes them on the real system, and checks every answer against a **model**.
 
 The model is a plain q value that holds what the system ought to contain, in the simplest form that can answer
 the questions asked of it: a list for a stack kept in a table, a dict for a keyed table, a row count for a
@@ -219,11 +219,12 @@ cmds:([cmd:`push`pop]
 .qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::]
 ```
 
-`.qc.sm[h] cmds` is a generator like any other, and drawing an example from it runs one sequence. `init` resets the
-real system and the model starts as `m0`; then, step by step, a command is chosen among those whose `pre` holds,
-its input is drawn from `gen`, `run` makes the call, `post` checks the output and `upd` moves the model on. The
-example is the *trace*, a table with a row for each step. The postconditions are the test, which is why the
-property given to `check` is `::` — there is nothing left to assert.
+`.qc.sm[h] cmds` is a generator like any other, and drawing an example from it runs one sequence. `init` resets
+the real system and the model starts as `m0`; then, step by step, a command is chosen among those whose `pre`
+holds, its input is drawn from `gen`, `run` makes the call, `post` checks the output and `upd` moves the model
+on. The example is the *trace*, a table with a row for each step. The postconditions are the test, which is why
+the property given to `check` is `::` — there is nothing left to assert. (The name `sm` is short for *state
+machine*, which is what a test of this kind is called elsewhere.)
 
 This stack is right, and the check prints `ok 100 tests`. Break `pop`, so that it returns the first item once
 three are stacked, and the same commands find it (`examples/sm_table.q` is this as a script):
@@ -253,7 +254,7 @@ A sequence shrinks as a list does — steps are deleted and inputs lowered for a
 every row still there is needed. There are three pushes because the bug needs three items, and the last of them
 pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 
-### Writing one
+### Writing a stateful test
 
 - **Keep the model simpler than the system.** A model that is a second implementation has the same bugs. It
   can leave out whatever is not being tested: storage, attributes, the order of rows.
@@ -269,7 +270,8 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
   command uses, and a column left out is the default for every command: `pre` always, `gen` no input, `run` no
   call, `post` true, `upd` the model unchanged. A `w` column weights the choice, so that a `clear` can be rare.
 
-`COOKBOOK.md` has a tickerplant handler tested this way, and `WALKTHROUGH.md` a machine over a whole pipeline.
+`COOKBOOK.md` has a tickerplant handler tested this way, and `WALKTHROUGH.md` a stateful test of a whole
+pipeline.
 
 ## Where to go next
 
@@ -277,7 +279,7 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
 |---|---|
 | `EXAMPLES.md` | a tour of the library a piece at a time, from drawing one value to testing a system in another process |
 | `COOKBOOK.md` | recipes for kdb+ tasks: an as-of join, an upsert, a splayed table, a tickerplant handler, serialisation, bars, a sorted vector; most find a planted bug and then show the fix |
-| `WALKTHROUGH.md` | the long example: a market data pipeline built in five pieces and tested as it was written, wrong turns included, with a state machine over the whole |
+| `WALKTHROUGH.md` | the long example: a market data pipeline built in five pieces and tested as it was written, wrong turns included, with a stateful test of the whole |
 | `REFERENCE.md` | every public name and every setting, a line each |
 | `examples/` | the scripts that the tour and the cookbook talk through, to run and to change; `examples/frameworks/` has tests for k4unit, qspec and QUnit; `examples/mdp/` is the pipeline |
 

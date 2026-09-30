@@ -1,4 +1,4 @@
-/ q examples/sm_ipc.q — a state machine test of a system in another q process, driven over IPC. Run it from the
+/ q examples/sm_ipc.q — a stateful test of a system in another q process, driven over IPC. Run it from the
 / repository root, with q on the PATH; EXAMPLES.md ("A system in another process") talks through the output.
 \l qc.q
 .qc.cfg[`db]:`                                   / no failure database: every run of this script searches afresh

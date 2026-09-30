@@ -1,4 +1,4 @@
-/ mdp: the state machine after the review. step 25: the postconditions say more — a fill moves the position by its
+/ mdp: the stateful test after the review. step 25: the postconditions say more — a fill moves the position by its
 / signed quantity, a trade is enriched with bid and ask and rounded to the tick, a bust leaves the id nowhere the
 / queries can see, a rename is in ren and the new name inherits the instrument — and the invariant checks yesterday on
 / disk as well as today in memory. The HDB root and the day constants come from 25_final.q. Needs the pieces, 16_upd.q,

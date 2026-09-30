@@ -1,4 +1,4 @@
-/ mdp: the state machine, run 2 with renames. step 24: the oracle enriches each trade from the instrument's quotes under
+/ mdp: the stateful test, run 2 with renames. step 24: the oracle enriches each trade from the instrument's quotes under
 / the names of the day the trade *arrived* — the names the cache had when it enriched — so the model's trades carry
 / their arrival day. Step 23 used the names of the trade's own day, which is wrong for a late trade arriving after a
 / rename; step 21 used the stored names. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.

@@ -17,4 +17,4 @@ r:ex "sm_ipc.q"
 $[any r like "could not start a child q*"; .t.t["examples/sm_ipc.q: skipped, no child q could be started (recorded, not hidden)"; 1b];
   et["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; r; (0=code r) and 1=sum r like "qc.post"]]
 r:ex "mdp/run.q"
-et["examples/mdp/run.q: exits 0; every property and the state machine pass (LOG.md's final system)"; r; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*state_machine_60_steps*"]
+et["examples/mdp/run.q: exits 0; every property and the stateful test pass (LOG.md's final system)"; r; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*stateful_60_steps*"]

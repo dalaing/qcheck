@@ -29,7 +29,7 @@ to, and a counterexample that changes with the seed is worth reporting.
 | `examples/tree.q` | [Trees](#trees) |
 | `examples/suite.q` | [A suite](#a-suite) |
 | `examples/aj.q` | [A generator of your own](#a-generator-of-your-own) |
-| `examples/sm_table.q` | [A state machine against a table](#a-state-machine-against-a-table) |
+| `examples/sm_table.q` | [A stateful test of a table](#a-stateful-test-of-a-table) |
 | `examples/sm_ipc.q` | [A system in another process](#a-system-in-another-process) |
 
 ## Drawing values
@@ -503,9 +503,9 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;3 0]
 
 `ok 2 tests, exhausted` is a proof and not a sample: there are two booleans and both passed. `.qc.one` draws from
 one of several generators, here a boolean or a long from 0 to 9, which is twelve values. This covers lists of a
-bounded length, alternatives, and short state machines, because what is enumerated is the choices. When the
-space is too large to try in the number of tests allowed, or the run cannot tell early on that it is small
-enough, the run samples, and the report does not say `exhausted`.
+bounded length, alternatives, and stateful tests whose sequences are short ([below](#a-stateful-test-of-a-table)),
+because what is enumerated is the choices. When the space is too large to try in the number of tests allowed, or
+the run cannot tell early on that it is small enough, the run samples, and the report does not say `exhausted`.
 
 ## What the examples looked like
 
@@ -908,9 +908,9 @@ Two quotes for one symbol at one time, with different prices, and one trade. Wit
 are the same quote; with the same price twice, the wrong quote gives the right answer. The diff says the price
 of row 0 is 1 from `aj` and 0 from the naive join.
 
-## A state machine against a table
+## A stateful test of a table
 
-*As a script: `examples/sm_table.q`. `README.md` explains the idea and how to read the trace.*
+*As a script: `examples/sm_table.q`. `README.md` ("Stateful testing") explains the idea and how to read the trace.*
 
 The system is a stack kept in a table. The model is a list. Each command says when it can run, what its input
 is, how to call the system, what the answer should have been, and how the model moves on:
@@ -951,7 +951,7 @@ is the simplest three values that do, and the script ends on them whatever its s
 
 *As a script: `examples/sm_ipc.q`, which is not run as a session here because it starts a second q.*
 
-Nothing about a state machine needs the system to be in the same process. The commands of this one send their
+Nothing about a stateful test needs the system to be in the same process. The commands of this one send their
 calls down a handle, to a counter that wraps to zero when it passes three:
 
 ```

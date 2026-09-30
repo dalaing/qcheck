@@ -1,4 +1,4 @@
-/ mdp: the state machine, run 2 with renames. step 23: the oracle enriches a day's trades from the instrument's quotes
+/ mdp: the stateful test, run 2 with renames. step 23: the oracle enriches a day's trades from the instrument's quotes
 / under that day's names, whatever name they arrived under — step 21 joined by the stored names, and disagreed with
 / the cache, which follows the rename as the contract says. Needs the pieces, 16_upd.q, 17_amend.q and 22_rename.q loaded.
 / (the piece is described at the top of 15_sm.q)

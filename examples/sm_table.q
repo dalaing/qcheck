@@ -1,5 +1,5 @@
-/ q examples/sm_table.q — a state machine test of a stack kept in a table, with a bug planted in pop. Run it from
-/ the repository root; README.md ("State machines") and EXAMPLES.md talk through the output.
+/ q examples/sm_table.q — a stateful test of a stack kept in a table, with a bug planted in pop. Run it from
+/ the repository root; README.md ("Stateful testing") and EXAMPLES.md talk through the output.
 \l qc.q
 .qc.cfg[`db]:`                                   / no failure database: every run of this script searches afresh
 

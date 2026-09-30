@@ -650,6 +650,10 @@ bytes and a log file may not be UTF-8; plain words are safer in the one line peo
 
 ### 1.7 State machines
 
+The documents for users call this *stateful testing*, and a test of this kind a *stateful test*: the name that
+Hypothesis gives the technique, and one that does not suggest that there are states and transitions to design.
+This document, the code and the history keep the older name; `.qc.sm` is named for it.
+
 A state machine is a **keyed table of commands**. `.qc.sm[h] cmds` is a *generator* whose value is the executed
 trace, so it composes with `.qc.check` like any other generator, and the property `::` reads as "run the
 machine; the postconditions are the property":

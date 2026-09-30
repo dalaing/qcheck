@@ -1,4 +1,4 @@
-/ mdp: the state machine over the assembled system. step 15. Needs the pieces and 14_upd.q loaded.
+/ mdp: the stateful test of the assembled system. step 15. Needs the pieces and 14_upd.q loaded.
 / Three instruments, a clock that starts at the open of day0 and moves with each quote and trade, and a model
 / that is the event log itself: quotes and trades in arrival order with the feed's sequence number, and the fills.
 / The oracle recomputes everything from the log — the trades of a day are those whose time falls on it, enriched

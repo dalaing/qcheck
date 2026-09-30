@@ -2,21 +2,21 @@
 
 `README.md` explains property-based testing on lists and a stack, and `COOKBOOK.md` on problems of a page each.
 This is the long example: a small market data system, the kind a kdb+ programmer has built before, written a
-piece at a time and tested with qcheck as it was written. There are five pieces, then the assembly, then a state
-machine over the whole.
+piece at a time and tested with qcheck as it was written. There are five pieces, then the assembly, then a stateful
+test of the whole.
 
 It is told in the order it happened, wrong turns included. Several of the failures below are mistakes in the
 tests and not in the system, and one of the longest stretches ends with the discovery that the test had passed
 a system known to be broken. That is what using a property-based testing library is like, and it is more use to see
 it than to see a tidy result.
 
-You need q and `README.md`, its section on state machines included. Nothing here depends on knowing the library
+You need q and `README.md`, its section on stateful testing included. Nothing here depends on knowing the library
 well.
 
 **The code.** Every change made along the way is kept as a file under `examples/mdp/steps/`, numbered in the
 order of the changes: `01_ref.q` is reference data as first written and `02_ref.q` as corrected. The versions
 with bugs are kept on purpose, so that every session below still runs and still fails as shown. The finished
-system is `examples/mdp/mdp.q`, its properties `examples/mdp/props.q`, its state machine `examples/mdp/sm.q`, and
+system is `examples/mdp/mdp.q`, its properties `examples/mdp/props.q`, its stateful test `examples/mdp/sm.q`, and
 `q examples/mdp/run.q` runs them all. `examples/mdp/LOG.md` is the log that was kept during the work, entry by
 entry; this document is the same story told for a reader.
 
@@ -691,11 +691,12 @@ anything was run, and four mistakes in the tests. Every rule so far has been abo
 
 `upd[table;rows]` is what a feed handler calls. It routes quotes, trades and fills to the pieces, rounding the
 price of a trade to the tick on the way in. A system like this has no single input to draw. What it answers
-depends on everything it has been sent, so the test is a state machine.
+depends on everything it has been sent, so the test is a stateful one: sequences of commands, made on the system
+and checked against a model.
 
 ### The model and the oracle
 
-The machine runs three instruments through six commands:
+The stateful test runs three instruments through six commands:
 
 | command | what it does | how often |
 |---|---|---|
@@ -738,7 +739,7 @@ invar:{[m] d:m`day; mk:(syms!count[syms]#1f),exec sym!0.5*bid+ask from 0!qcache;
    1e-6>abs ((exec sum real from pos)+unreal mk)-(exec sum mu[sym]*qty*px*-1 1 `buy`sell?side from m`f)+exec sum mu[sym]*qty*mk sym from pos)}
 ```
 
-The whole machine is `examples/mdp/steps/15_sm.q`, some sixty lines. Three slips in it came first, none of them
+The whole test is `examples/mdp/steps/15_sm.q`, some sixty lines. Three slips in it came first, none of them
 in the system: a parameter called `vs`, which is a keyword; a lookup into a table that had no key; and a model
 that numbered events from one where the feed counts from zero. Then the first run that reached the system:
 
@@ -794,24 +795,24 @@ reached:{[tr] c:tr`cmd;
   1b}
 ```
 
-Four of the five were reached, in between a tenth and a half of the runs, give or take. One label is missing from the table
-because no trace ever had it: `late_timed_yesterday`. It cannot happen. The clock starts at the open, a late
-trade reaches thirty minutes back, and the close moves the clock to the *next* open, so a late trade is always
-timed today. A late trade for a day already closed is the case most likely to go wrong, and the machine as built
+Four of the five were reached, in between a tenth and a half of the runs, give or take. One label is missing from
+the table because no trace ever had it: `late_timed_yesterday`. It cannot happen. The clock starts at the open, a
+late trade reaches thirty minutes back, and the close moves the clock to the *next* open, so a late trade is always
+timed today. A late trade for a day already closed is the case most likely to go wrong, and the stateful test as built
 could never produce it.
 
 **The generator decides what a test can find.** A passing run is a statement about the inputs that were drawn,
 and the only way to know what those were is to count.
 
-So the machine was given more to do: corrections, and late trades that fall on a day already closed.
+So the stateful test was given more to do: corrections, and late trades that fall on a day already closed.
 
 ## Corrections
 
-Two operations that a real feed needs. `bust[id]` removes a trade by its sequence number and recomputes the bar
-of its minute from what is left. A trade timed on a day already closed goes into that day's partition. On a day
-already closed, both go through `amend`, which reads the closed day's trades back, changes them, recomputes the day's bars, writes both
-again and maps the HDB again. The machine gains a `bust` command, and its late trades may now be timed on the
-day before.
+Two operations that a real feed needs. `bust[id]` removes a trade by its sequence number and recomputes the bar of
+its minute from what is left. A trade timed on a day already closed goes into that day's partition. On a day
+already closed, both go through `amend`, which reads the closed day's trades back, changes them, recomputes the
+day's bars, writes both again and maps the HDB again. The stateful test gains a `bust` command, and its late trades
+may now be timed on the day before.
 
 ### The test system has state too
 
@@ -850,8 +851,8 @@ the `pre` of `late` is `{[m] m[`day]>day0}`.
 
 ### Testing the test
 
-With that, the machine passed. A state machine is only as good as its oracle, so the next step was to break
-the system on purpose and see whether the machine noticed. Four sabotages were tried. Three were caught at once,
+With that, the stateful test passed. A stateful test is only as good as its oracle, so the next step was to break
+the system on purpose and see whether the test noticed. Four sabotages were tried. Three were caught at once,
 each shrunk to two steps or fewer: a bust that does not recompute the bar; a late trade kept in memory; a close
 that clears the quote cache. The fourth was `amend` rewriting a day's trades and not its bars:
 
@@ -878,7 +879,7 @@ bars count 0 1
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 4 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
 ```
 
-**The machine passed a system that was known to be broken.** A hundred sequences of up to twenty steps did not
+**The test passed a system that was known to be broken.** A hundred sequences of up to twenty steps did not
 find it. Three hundred of up to sixty did, and shrank it to the three steps that are the bug: close the day,
 report a trade for it, ask for its bars. The bars come back empty where there should be one.
 
@@ -887,18 +888,18 @@ answer to the query had no `bars` and the oracle had one. The trace has no `mode
 holds tables is left out of the print.)
 
 The bug needs three particular commands in order, with a late trade and a query that name the same day and
-symbol, and at the default budget the machine did not happen to roll them. A machine over a system that has
-days in it wants longer sequences, and more of them, than a stack does. From here on the machine runs at three
+symbol, and at the default budget the test did not happen to roll them. A stateful test of a system that has
+days in it wants longer sequences, and more of them, than one of a stack does. From here on the pipeline's test runs at three
 hundred sequences of up to sixty steps.
 
 ## Renames
 
 The last piece of scope, and the one that found what the whole exercise was for.
 
-A rename takes effect from a day. The contract is the one most kdb+ shops live with. An event is stored under
-the name that is current when it arrives, so a closed day keeps the names it had, and nothing on disk is ever
-rewritten. The live state, which is the quote cache and the positions, follows the rename at the close that
-rolls into the effective day: the old name's entry is merged into the new name's. The machine gains a `rename`
+A rename takes effect from a day. The contract is the one most kdb+ shops live with. An event is stored under the
+name that is current when it arrives, so a closed day keeps the names it had, and nothing on disk is ever
+rewritten. The live state, which is the quote cache and the positions, follows the rename at the close that rolls
+into the effective day: the old name's entry is merged into the new name's. The stateful test gains a `rename`
 command. The feed goes on using every name it has ever seen, so old names keep arriving after their rename.
 
 The merge of two positions was written the way one writes it first. Add the quantities, average the costs, add
@@ -943,13 +944,13 @@ invariant, and the part of it that failed is the balance of the book from piece 
 part is a single boolean.
 
 Every piece is right on its own. Positions realise PnL correctly on every fill log. Renames to a fresh name,
-which are the ones the machine makes, resolve correctly.
+which are the ones the stateful test makes, resolve correctly.
 The close writes and clears correctly. The merge is a *new* operation, which exists only because renames and
 positions and the day boundary meet, and as written it is right when the two positions point the same way and
 wrong when they do not. An opposite position under the new name is a partial close, and a close realises PnL.
 
 No rule of piece 4 could have seen this, because piece 4 has no renames. No rule of piece 1 could, because
-piece 1 has no positions. The machine reached it in the 118th sequence and shrank it to the four steps that
+piece 1 has no positions. The stateful test reached it in the 118th sequence and shrank it to the four steps that
 define it.
 
 ```q
@@ -987,23 +988,22 @@ path           why   a b
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 7 0 0 0 1 4 1 1 757589400000000000 0 0 0 1 1 1 5 0 3 0 0]
 ```
 
-With the merge fixed the machine ran further and stopped on enrichment. On the first day, a quote for `A`, and a
-rename of `A` to `N0` in effect from the second. After the close, on the second day, a trade under the old name
-`A`. The system stores it as `N0` and enriches it from the cache, whose entry for `A` was rolled into `N0` at
-the close, as the
-contract says. The oracle's batch join went by the names the events were stored under, found no quote for `N0`,
-and said null.
+With the merge fixed the stateful test ran further and stopped on enrichment. On the first day, a quote for `A`,
+and a rename of `A` to `N0` in effect from the second. After the close, on the second day, a trade under the old
+name `A`. The system stores it as `N0` and enriches it from the cache, whose entry for `A` was rolled into `N0` at
+the close, as the contract says. The oracle's batch join went by the names the events were stored under, found no
+quote for `N0`, and said null.
 
 The system did what the contract says: the cache follows the rename, so an instrument's last quote is its last
 quote whatever it was called at the time. The oracle had been written to a different reading of the same
 contract. This one was settled for the system, and the oracle now enriches a day's trades from the instrument's
 quotes under that day's names.
 
-It happened once more. Run with seeds taken from the clock, as a CI run would be, the machine stopped on a late
-trade. A quote under `A`; a rename of `A` to `N0` from tomorrow; the close; a late trade under `A`, timed
-yesterday. The system enriched it with the names in force when it *arrived*. The oracle used the names of the
-day the trade was *timed*. For a trade that arrives on its own day the two are the same, which is why the runs
-at seed 7 had agreed. The model now records the day each trade arrived.
+It happened once more. Run with seeds taken from the clock, as a CI run would be, the stateful test stopped on a
+late trade. A quote under `A`; a rename of `A` to `N0` from tomorrow; the close; a late trade under `A`, timed
+yesterday. The system enriched it with the names in force when it *arrived*. The oracle used the names of the day
+the trade was *timed*. For a trade that arrives on its own day the two are the same, which is why the runs at seed
+7 had agreed. The model now records the day each trade arrived.
 
 The same run failed a rule of piece 1 as well, the one that says rounding moves a price by no more than half a
 tick. At a price of 117.625 the distance came out a hair over half a tick, as it will with floats. The rule in
@@ -1012,7 +1012,7 @@ passed at one seed had simply not yet met the price that breaks it.
 
 A disagreement between the system and the oracle is a question, and the answer is not always that the system
 is wrong. Both of these were cases that the contract, as first written down, had not covered. Finding the
-questions nobody asked is the other thing a state machine is for.
+questions nobody asked is the other thing a stateful test is for.
 
 ## What the tests could not find
 
@@ -1025,8 +1025,8 @@ them is a *wrong answer*, which is why no rule that compares answers could see t
 - "is this day on disk?" was answered by "is there a table called `trade`?", the test that the stale map had
   already fooled once.
 
-The generators only ever drew names that exist and times that are not in the future, so the machine never asked
-these questions. The system now refuses the first three, and asks the HDB which days it holds:
+The generators only ever drew names that exist and times that are not in the future, so the stateful test never
+asked these questions. The system now refuses the first three, and asks the HDB which days it holds:
 
 ```q
 q)system"l examples/mdp/steps/load_pieces.q"
@@ -1044,51 +1044,51 @@ q).mdp.upd[`trade; ([]time:enlist .mdp.opn[.mdp.today+1]; sym:enlist `A; px:enli
 'mdp: a trade timed after today: +`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.03D09:30:00.000000000;,`A;,1f;,1;,..
 ```
 
-The machine's postconditions were made stronger at the same time. A fill must move the position by its signed
+The stateful test's postconditions were made stronger at the same time. A fill must move the position by its signed
 quantity. A trade must carry both bid and ask, at a price on the tick. A busted trade must be gone from wherever
-its day lives. The invariant checks yesterday on disk as well as today in memory. The stronger machine found
+its day lives. The invariant checks yesterday on disk as well as today in memory. The stronger test found
 nothing that the weaker one had missed, which is what one hopes for and cannot know without asking.
 
 ## The finished suite
 
-`examples/mdp/run.q` runs sixteen of the rules above (the sanity check on the bars is left out) and the machine,
-three hundred tests each, with seeds from the clock, and exits with the number of failures:
+`examples/mdp/run.q` runs sixteen of the rules above (the sanity check on the bars is left out) and the stateful
+test, each three hundred times, with seeds from the clock, and exits with the number of failures:
 
 ```
 $ q examples/mdp/run.q
 ...
---- state_machine_60_steps
-ok 300 tests (seed 897449483)
-label                                 n   pct      req lo       hi       ok bar
------------------------------------------------------------------------------------
-rename_in_effect                      110 36.66667     31.41406 42.25643 1  #######
-old_name_used_after_its_rename        92  30.66667     25.72049 36.10172 1  ######
-bust_of_a_past_day                    86  28.66667     23.84452 34.02827 1  #####
-positions_merged_at_a_close           60  20           15.86562 24.89299 1  ####
-query_of_a_past_day_by_a_renamed_name 40  13.33333     9.946588 17.64726 1  ##
-late_trade_then_query_of_its_day      45  15           11.40319 19.48185 1  ###
+--- stateful_60_steps
+ok 300 tests (seed 1970363203)
+label                                 n  pct      req lo       hi       ok bar
+---------------------------------------------------------------------------------
+rename_in_effect                      97 32.33333     27.29245 37.82095 1  ######
+bust_of_a_past_day                    75 25           20.43691 30.19526 1  #####
+late_trade_then_query_of_its_day      41 13.66667     10.23646 18.01563 1  ##
+old_name_used_after_its_rename        80 26.66667     21.98052 31.94284 1  #####
+positions_merged_at_a_close           54 18           14.06577 22.74341 1  ###
+query_of_a_past_day_by_a_renamed_name 25 8.333333     5.708048 12.01224 1  #
 name                            ok why stop n   shrinks seed
 ------------------------------------------------------------------
-round_idempotent                1  ok  n    300 0       855167359
-round_within_half_a_tick        1  ok  n    300 0       964693359
-lots                            1  ok  n    300 0       1075282359
-canon_idempotent                1  ok  n    300 0       1186412359
-canon_is_a_name_or_a_rename     1  ok  n    300 0       1347224359
-enrich_incremental_equals_batch 1  ok  n    300 0       1511298359
-bid_le_ask                      1  ok  n    300 0       57833713
-bars_fold_equals_batch          1  ok  n    300 0       758226713
-bars_split_anywhere             1  ok  n    300 0       1194988713
-position_is_the_signed_sum      1  ok  n    300 0       1666955713
-book_balances                   1  ok  n    300 0       1997656713
-cost_within_the_fills           1  ok  n    300 0       175427067
-round_trip_realises_nothing     1  ok  n    300 0       499870067
-queries_memory_equals_disk      1  ok  n    300 0       515219067
-two_days_on_disk                1  ok  n    300 0       794362421
-the_cache_survives_the_close    1  ok  n    300 0       1126237129
-state_machine_60_steps          1  ok  n    300 0       897449483
+round_idempotent                1  ok  n    300 0       1662089017
+round_within_half_a_tick        1  ok  n    300 0       1807801017
+lots                            1  ok  n    300 0       1953966017
+canon_idempotent                1  ok  n    300 0       2104836017
+canon_is_a_name_or_a_rename     1  ok  n    300 0       176369371
+enrich_incremental_equals_batch 1  ok  n    300 0       410849371
+bid_le_ask                      1  ok  n    300 0       1371630371
+bars_fold_equals_batch          1  ok  n    300 0       211330725
+bars_split_anywhere             1  ok  n    300 0       841756725
+position_is_the_signed_sum      1  ok  n    300 0       1488150725
+book_balances                   1  ok  n    300 0       1943353725
+cost_within_the_fills           1  ok  n    300 0       254264079
+round_trip_realises_nothing     1  ok  n    300 0       700556079
+queries_memory_equals_disk      1  ok  n    300 0       722890079
+two_days_on_disk                1  ok  n    300 0       472608787
+the_cache_survives_the_close    1  ok  n    300 0       1156884849
+stateful_60_steps               1  ok  n    300 0       1970363203
 ```
 
-The machine's entry carries its labels, so that every passing run says what it reached.
+The stateful test's entry carries its labels, so that every passing run says what it reached.
 
 ## What happened
 
@@ -1104,10 +1104,10 @@ Twelve findings in the system and its oracle:
 | piece 4 | a property | precedence in the average cost |
 | piece 5 | a property | `exec` over a partitioned table |
 | piece 5 | a property | enumerated symbols from disk |
-| the assembly | the state machine | a name inside q-SQL, again |
-| renames, positions and the close | the state machine | merging opposite positions loses the realised PnL |
-| renames and enrichment | the state machine | the oracle joined by the names events were stored under |
-| renames, late trades and enrichment | the state machine | the oracle used the names of the trade's day, not of the day it arrived |
+| the assembly | the stateful test | a name inside q-SQL, again |
+| renames, positions and the close | the stateful test | merging opposite positions loses the realised PnL |
+| renames and enrichment | the stateful test | the oracle joined by the names events were stored under |
+| renames, late trades and enrichment | the stateful test | the oracle used the names of the trade's day, not of the day it arrived |
 
 Beside them were about as many mistakes in the tests: properties with the wrong number of parameters, a vector
 compared with a dict, a lambda reaching for a local it could not see, keywords used as parameter names, a
@@ -1123,15 +1123,15 @@ nanosecond apart, four commands. Every time, reading the counterexample was most
 one while writing a generator, and seven by a rule, four of those on an empty input and three on an input of one
 or two rows. When there are two ways to compute something, say that they agree.
 
-**The state machine finds what lives between the pieces.** The bug that mattered most could not have been found
+**The stateful test finds what lives between the pieces.** The bug that mattered most could not have been found
 by a rule about any piece, because it was in an operation that did not exist until three pieces met. It was
-found by a rule written for piece 4, the balance of the book, carried into the machine as an invariant. An
+found by a rule written for piece 4, the balance of the book, carried into the stateful test as an invariant. An
 identity that holds whatever happens is worth more than it looks.
 
 **Test code is code.** Expect to fix the test about as often as the system. When a rule fails on the simplest
 input, suspect the rule first.
 
-**A pass says what was tried, so count what was tried.** `classify` showed that the first machine could never
+**A pass says what was tried, so count what was tried.** `classify` showed that the first stateful test could never
 produce a late trade for a closed day. A sabotage showed that a hundred short sequences were not enough. Breaking
 the system on purpose, to check that the test notices, is cheap and worth doing before trusting a pass.
 
@@ -1141,10 +1141,10 @@ The unknown instrument was never found, because no generator drew one.
 **A disagreement is a question.** Twice the oracle was the one that was wrong, and both times the real finding
 was a case the contract had not covered.
 
-**What the machine cannot see.** Its oracle borrows from the system: the batch join, the batch bars, `canon`,
+**What the stateful test cannot see.** Its oracle borrows from the system: the batch join, the batch bars, `canon`,
 `round`. A bug in one of those is on both sides of every comparison, and passes. That is defensible only because
-the rules of the pieces test each of them against something else. The machine tests the seams between
-incremental and batch and between live and closed. It does not test the batch definitions themselves.
+the rules of the pieces test each of them against something else. The stateful test checks the seams between
+incremental and batch and between live and closed. It does not check the batch definitions themselves.
 
 **And some things are not wrong answers.** A trade that is stored nowhere and an instrument made of nulls were
 found by reading the code. A property-based test does not replace that.

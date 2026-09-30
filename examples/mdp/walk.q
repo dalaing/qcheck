@@ -61,7 +61,7 @@ twodays:{[e1;e2] reset[]; feed e1; s:exec sym from .mdp.inst;
 / the close empties the day's tables and leaves the quote cache as it was
 closes:{[ev] reset[]; feed ev; c:.mdp.qcache; .mdp.eod day1; (c~.mdp.qcache) and (0=count .mdp.trade) and 0=count .mdp.bar}
 
-/ ---- the state machine ----
+/ ---- the stateful test ----
 / what a trace reached: a property that always passes and counts the traces in which each thing happened
 reached:{[tr] c:tr`cmd;
   .qc.classify[`close; `eod in c];
