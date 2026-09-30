@@ -768,7 +768,7 @@ tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here),
                 AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed
 .qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
-examples/       reverse.q tree.q suite.q sm_table.q sm_ipc.q aj.q, commented as tutorials, each run without a failure
+examples/       reverse.q tree.q suite.q sm_table.q sm_ipc.q aj.q order.q pubsub.q, commented as tutorials, each run without a failure
                 database (sm_ipc.q starts a child q process); frameworks/ has a test file each for k4unit, qspec and
                 QUnit, tried by hand, since those are not part of the repository
 ```

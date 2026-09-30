@@ -17,11 +17,11 @@ database, which is explained [below](#the-failure-database). The test suite runs
 requires the output shown. A report from `check` will match wherever you run it. What `.qc.draw` prints depends
 on what the session has drawn before, so it matches in a fresh session.
 
-Six of the sections are also scripts under `examples/`, with the commentary as comments. Each runs from the
-repository root, for example `q examples/reverse.q`. They take their seed from the clock, so the first line of a
-report (how many tests passed, how many shrinks) differs from run to run and from what is printed here. The
-counterexample should not: shrinking is built to end in the same place wherever it starts. It cannot promise
-to, and a counterexample that changes with the seed is worth reporting.
+Six of the sections are also scripts under `examples/`, with the commentary as comments, as are two cookbook
+recipes. Each runs from the repository root, for example `q examples/reverse.q`. They take their seed from the
+clock, so the first line of a report (how many tests passed, how many shrinks) differs from run to run and from
+what is printed here. The counterexample should not: shrinking is built to end in the same place wherever it
+starts. It cannot promise to, and a counterexample that changes with the seed is worth reporting.
 
 | script | section |
 |---|---|
@@ -31,6 +31,8 @@ to, and a counterexample that changes with the seed is worth reporting.
 | `examples/aj.q` | [A generator of your own](#a-generator-of-your-own) |
 | `examples/sm_table.q` | [A stateful test of a table](#a-stateful-test-of-a-table) |
 | `examples/sm_ipc.q` | [A system in another process](#a-system-in-another-process) |
+| `examples/order.q` | [An order's lifecycle](COOKBOOK.md#an-orders-lifecycle-a-transition-table-as-the-model), in the cookbook |
+| `examples/pubsub.q` | [Asynchronous messages and the close of a handle](COOKBOOK.md#asynchronous-messages-and-the-close-of-a-handle), in the cookbook |
 
 ## Drawing values
 

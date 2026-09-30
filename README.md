@@ -306,7 +306,7 @@ pipeline.
 | read | for |
 |---|---|
 | `EXAMPLES.md` | a tour of the library a piece at a time, from drawing one value to testing a system in another process |
-| `COOKBOOK.md` | recipes for kdb+ tasks: an as-of join, an upsert, a splayed table, a tickerplant handler, serialisation, bars, a sorted vector; most find a planted bug and then show the fix |
+| `COOKBOOK.md` | recipes for kdb+ tasks: joins, an upsert, splayed and partitioned tables, a tickerplant handler, serialisation, bars, a sorted vector, an order's lifecycle as a transition table, a feed that sends the wrong type, text that needs escaping, the first item of `deltas`, `sublist` against take, a pivot, a view as an oracle, asynchronous messages; most find a planted bug and then show the fix |
 | `WALKTHROUGH.md` | the long example: a market data pipeline built in five pieces and tested as it was written, wrong turns included, with a stateful test of the whole |
 | `REFERENCE.md` | every public name and every setting, a line each |
 | `examples/` | the scripts that the tour and the cookbook talk through, to run and to change; `examples/frameworks/` has tests for k4unit, qspec and QUnit; `examples/mdp/` is the pipeline |

@@ -9,6 +9,11 @@ r:ex "tree.q"
 et["examples/tree.q: exits 0, leaves=1+nodes and the classify property pass, depth<4 fails"; r; (0=code r) and (2=sum r like "ok *") and 1=sum r like "FAIL falsified*"]
 r:ex "sm_table.q"
 et["examples/sm_table.q: exits 0 and finds the planted pop bug as a postcondition failure"; r; (0=code r) and (1=sum r like "FAIL falsified*") and 1=sum r like "qc.post"]
+r:ex "order.q"
+et["examples/order.q: exits 0, the planted fill bug is a postcondition failure in three steps, the two table rules pass, one exhausted"; r; (0=code r) and (1=sum r like "FAIL falsified*") and (1=sum r like "qc.post") and (1=sum r like "ok 100 tests*") and 1=sum r like "ok 15 tests, exhausted*"]
+r:ex "pubsub.q"
+$[any r like "could not start a child q*"; .t.t["examples/pubsub.q: skipped, no child q could be started"; 1b];
+  et["examples/pubsub.q: exits 0, the reconnect without a chaser loses a message (postcondition failure), the chaser fixes it"; r; (0=code r) and (1=sum r like "FAIL falsified*") and (1=sum r like "qc.post") and 1=sum r like "ok 100 tests*"]]
 r:ex "aj.q"
 et["examples/aj.q: exits 0 and finds the planted as-of-join bug"; r; (0=code r) and 1=sum r like "FAIL falsified*"]
 r:ex "suite.q"
