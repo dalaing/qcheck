@@ -346,7 +346,8 @@ eq:{[a;b] if[a~b; :1b]; d:diff[a;b]; if[0=count d; d:flip `path`why`a`b!(enlist 
 shape:{$[99h=type x; key x; 98h=type x; cols x; x]}
 
 / ---- the runner -------------------------------------------------------------------------------------
-conf:{$[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg must be a dict of settings or a test count, got type ",string type x; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; $[`seed in key x; 0=x`seed; 0b]; '"qc: cfg: the seed must not be 0"; cfg,x]}
+conf:{dbck $[(::)~x; cfg; type[x] in -6 -7h; cfg,enlist[`n]!enlist x; not dct x; '"qc: cfg must be a dict of settings or a test count, got type ",string type x; count k:key[x] except key cfg; '"qc: cfg: unknown key ",", " sv string k; $[`seed in key x; 0=x`seed; 0b]; '"qc: cfg: the seed must not be 0"; cfg,x]}
+dbck:{[c] if[-11h<>type c`db; '"qc: cfg: db must be a symbol, the failure database's directory, or the null symbol for none"]; c}   / (0b looked like "off" and made a directory named 0)
 pars:{[f] a:(value f)[1]; if[count w:where a in `$string til count a; a[w]:(count w)#(value f)[2]]; a}   / a function's parameter names: a parameter with a pattern (q 4.1) leaves its place number in slot 1 and its name at the head of slot 2, before the locals
 byname:{[p;x] $[100h<>type p; 0b; 99h<>type x; 0b; 98h=type key x; 0b; all pars[p] in key x]}   / a keyed table is 99h too (C3); a cond chain, not and (C2)
 app:{[p;s;x] $[(::)~p; 1b; 0h=type s; p . x; byname[p;x]; p . x pars p; p @ x]}
