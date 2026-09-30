@@ -753,7 +753,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), sweep (A28 and A29 at ten seeds), dist
                 (distributions), reportx,
-                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file and examples/mdp/LOG.md; QC_FAST=1
+                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file, examples/mdp/LOG.md and examples/oms/LOG.md; QC_FAST=1
                 skips the state-machine blocks, most of the suite's time), docs (names in docs exist; WALKTHROUGH's
                 excerpts are in their files),
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
@@ -764,10 +764,13 @@ COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, ever
 WALKTHROUGH.md  the pipeline of examples/mdp/ as a narrative for readers, drawn from its log; doctested
 examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12), left as
                 it was written; walk.q holds what WALKTHROUGH.md's sessions load
+examples/oms/   an execution and positions system (orders, fills, quotes and FX as of a time, positions and PnL in a
+                base currency, a split, end of day to a partitioned database) built the same way from the same brief,
+                for comparison: steps/, LOG.md (doctested), oms.q, props.q, sm.q, run.q; no walkthrough yet
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here),
                 AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed
-.qc/            the failure database a run writes (gitignored); t/ and examples/mdp/run.q run without one
+.qc/            the failure database a run writes (gitignored); t/, examples/mdp/run.q and examples/oms/run.q run without one
 examples/       reverse.q tree.q suite.q sm_table.q sm_ipc.q aj.q order.q pubsub.q, commented as tutorials, each run without a failure
                 database (sm_ipc.q starts a child q process); frameworks/ has a test file each for k4unit, qspec and
                 QUnit, tried by hand, since those are not part of the repository
@@ -911,7 +914,7 @@ promised and never written). The harness fails a test whose result is not a bool
 `all` coerce it — a dozen test bugs across the milestones had passed that way — and evaluates each file one
 top-level statement at a time under a trap, so an assertion that raises (a dependent `and`-chain meeting a
 broken property, C2) fails alone, named by its line, instead of skipping the rest of its file. And every `q)` transcript in
-README.md, EXAMPLES.md, COOKBOOK.md, WALKTHROUGH.md, examples/mdp/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
+README.md, EXAMPLES.md, COOKBOOK.md, WALKTHROUGH.md, examples/mdp/LOG.md, examples/oms/LOG.md and this document is executed by `t/doctest.q` in a fresh q that imitates the REPL
 (seed 7, `\c 25 80`, silent on `;`, assignments and `::`), and must print exactly the text shown. What that cannot
 see, so that nobody relies on it: prose claims outside a fence; timing; stderr from stdout (merged); the child's exit
 code; the value of a statement that ends in `;` or is an assignment (silenced — a wrong value can hide behind a

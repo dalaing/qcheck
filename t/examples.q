@@ -27,3 +27,5 @@ $[any r like "could not start a child q*"; .t.t["examples/sm_ipc.q: skipped, no 
   et["examples/sm_ipc.q: exits 0 (the bug is found over IPC) and reports qc.post"; r; (0=code r) and 1=sum r like "qc.post"]]
 r:ex "mdp/run.q"
 et["examples/mdp/run.q: exits 0; every property and the stateful test pass (LOG.md's final system)"; r; (0=code r) and (0=sum r like "*falsified*") and 0<sum r like "*stateful_60_steps*"]
+r:ex "oms/run.q"
+et["examples/oms/run.q: exits 0; every rule, the two pieces' stateful tests and the whole-system test pass (LOG.md's final system), and a sequence with a split after a fill was reached"; r; (0=code r) and (0=sum r like "*falsified*") and (1=sum (r like "whole_system*") and r like "*ok*") and 1=sum r like "fill_then_split*"]
