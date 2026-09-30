@@ -70,3 +70,71 @@ fc:0; .t.e[.qc.strict[enlist 1];.qc.sm[hf] ([cmd:enlist `a] gen:enlist {[m] .qc.
 .t.t["sm: fini runs when a strict replay runs out of choices"; 1=fc]
 fc:0; .qc.draw .qc.sm[hf] ([cmd:enlist `a] run:enlist {[a] ::})
 .t.t["sm: fini runs exactly once on a clean run"; 1=fc]
+/ a command is recorded as its place among all the commands (A29). Objects are made one at a time and linked by their
+/ numbers, and the system's walk along the links never counts past two. No more than five may be made, so the command
+/ that makes them comes and goes; recorded as a place among the commands that could run, a step after the fifth
+/ object changed its meaning when an earlier one was deleted, and the trace kept objects that it did not need
+swn:`long$()
+sww:{[p;a] n:0; c:a; while[$[c<0; 0b; n<count p]; n+:1; c:p c]; n}
+swc:([cmd:`new`link`walk] pre:({[m] 5>count m};{[m] 1<count m};{[m] 0<count m});
+  gen:({[m] ::};{[m] (.qc.elem til count m;.qc.elem til count m)};{[m] .qc.elem til count m});
+  run:({[a] swn,:-1;};{[a] if[not a[0]=a 1; swn[a 0]:a 1];};{[a] 2&sww[swn;a]});
+  post:({[m;a;o] 1b};{[m;a;o] 1b};{[m;a;o] o=sww[m;a]});
+  upd:({[m;a;o] m,-1};{[m;a;o] $[a[0]=a 1; m; @[m;a 0;:;a 1]]};{[m;a;o] m}))
+swt:{[s] r:.qc.chk[q,`seed`n!(s;100);.qc.sm[`m0`init!(`long$();{swn::`long$()})] swc;::]; $[`falsified=r`why; exec cmd from first r`notes; `$()]}
+.t.t["sm: a machine with a command that comes and goes shrinks to the same trace at every seed"; all {`new`new`new`link`link`walk~swt x} each "i"$1+til 10]
+/ neighbouring steps are swapped where that makes the whole simpler, though the step brought forward is the longer (A29)
+swc2:([cmd:`a`b] gen:({[m] .qc.int 0 3};{[m] ::}); post:({[m;x;o] not `b in m};{[m;x;o] not `a in m}); upd:({[m;x;o] distinct m,`a};{[m;x;o] distinct m,`b}))
+swt2:{[s] r:.qc.chk[q,`seed`n!(s;100);.qc.sm[enlist[`m0]!enlist `symbol$()] swc2;::]; $[`falsified=r`why; exec cmd from first r`notes; `$()]}
+.t.t["sm: two steps that fail in either order end in the order that is simpler"; all {`a`b~swt2 x} each "i"$1+til 10]
+/ on replay a number whose command cannot run stands for the next that can, the first after the last, and the record
+/ says which ran (A29): a cannot run once the model is 2, c cannot run at first
+swc3:([cmd:`a`b`c] pre:({[m] m<2};{[m] 1b};{[m] m>0}); upd:3#enlist {[m;x;o] m+1})
+tr:.qc.strict[1 2 1 2 1 0 1 0 0] .qc.sm[enlist[`m0]!enlist 0] swc3
+.t.t["sm: a number whose command cannot run stands for the next that can, and the last for the first"; `a`c`b`b~tr`cmd]
+.t.t["sm: and the record is of the commands that ran"; 1 0 1 2 1 1 1 1 0~.qc.C`v]
+r:.qc.recheck[.qc.sm[enlist[`m0]!enlist 0] swc3;::;1 0 1 2 1 1 1 1 0]
+.t.t["sm: which replays as itself"; (not r`stale) and 1 0 1 2 1 1 1 1 0~r`choices]
+/ a run that tries every input does not try the commands that cannot run: six commands of which one can run at each
+/ step, up to three steps, are four traces, with nothing discarded
+swc4:([cmd:`a`b`c`d`e`f] pre:{[k;m] k=m mod 6}@/:til 6; upd:6#enlist {[m;x;o] m+1})
+r:.qc.chk[q;.qc.sm[`m0`steps!(0;0 3)] swc4;::]
+.t.t["sm: a machine with one command that can run at each step is exhausted in a trace for each length"; (`exhausted=r`stop) and (4=r`n) and 0=count r`disc]
+/ and a fresh draw is what it was without the commands that cannot run: no random number goes on a choice of one
+swc5:([cmd:`a`b] pre:({[m] 1b};{[m] 0b}); gen:2#enlist {[m] .qc.int 0 99})
+swd:{[cm] system"S 7"; tr:.qc.draw .qc.sm[`m0`steps!(0;5 5)] cm; tr`arg}
+.t.t["sm: a command that can never run changes nothing in what is drawn"; swd[swc5]~swd 1#swc5]
+/ the next that can, not the first that can: b cannot run, and stands for c
+swc7:([cmd:`a`b`c] pre:({[m] 1b};{[m] 0b};{[m] 1b}))
+.t.t["sm: a number whose command cannot run stands for the next that can, where an earlier one can too"; (enlist `c)~(.qc.strict[1 1 0] .qc.sm[enlist[`m0]!enlist 0] swc7)`cmd]
+/ the first command that can run is the origin of the choice, so a step that had no choice is as simple as it can be
+/ and its number is no part of what the steps are sorted by: thirty inputs that must differ end as til 30
+swc8:([cmd:`a`b`c`d`e`f] pre:{[k;m] k=m mod 6}@/:til 6; upd:6#enlist {[m;x;o] m+1}; gen:6#enlist {[m] .qc.int 0 99})
+r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist 0] swc8;{not 30<=count distinct x`arg}]
+.t.t["sm: the inputs of thirty steps that had no choice of command are sorted and lowered"; (til 30)~(r[`x]`x)`arg]
+r:.qc.chk[q;.qc.sm[enlist[`m0]!enlist 0] swc8;{not 20<=count x}]
+.t.t["sm: and twenty such steps cost no attempts on their commands (under 300)"; (20=count r[`x]`x) and 300>r`attempts]
+/ a swap that brings the lesser step forward is tried though the two are less simple as they stand: the replay is shorter
+swc9:([cmd:`a`b] pre:({[m] m=0};{[m] 1b}); gen:({[m] .qc.int 0 1};{[m] ::}); upd:({[m;x;o] m};{[m;x;o] m+1}))
+swt9:{[s] r:.qc.chk[q,enlist[`seed]!enlist s;.qc.sm[enlist[`m0]!enlist 0] swc9;{not (1<count x) and `b=last x`cmd}]; (r[`x]`x)`cmd}
+.t.t["sm: two steps that replay as fewer when swapped are swapped"; all {`b`b~swt9 x} each "i"$1+til 12]
+/ a step's continue bit and its command are both the step's, and are not duplicates of one another
+swc10:([cmd:`a`b`c] gen:3#enlist {[m] ::})
+swt10:{[s] r:.qc.chk[q,`seed`n!(s;300);.qc.sm[enlist[`m0]!enlist 0] swc10;{[x] cm:x`cmd; $[4>count cm; 1b; not 1=count distinct 4#cm]}]; (r[`x]`x)`cmd}
+.t.t["sm: four steps of one command are lowered to the first command together"; all {`a`a`a`a~swt10 x} each "i"$1+til 10]
+/ what a probe notes of the commands that cannot run is not left behind it: a machine in a column of a table of 0 or 1 rows
+swc11:([cmd:`a`b`c] pre:({[m] 0b};{[m] 1b};{[m] 1b}); gen:3#enlist {[m] ::})
+r:.qc.chk[q,enlist[`n]!enlist 2000;.qc.tabr[0 1] `a`b!(.qc.lst[0 1] .qc.int 0 1;.qc.sm[`m0`steps!(0;1 1)] swc11);{1b}]
+.t.t["sm: a machine in a table's column is exhausted as it was (7)"; (`exhausted=r`stop) and 7=r`n]
+/ commands that can run at one visit of a prefix and not at the next (pre looks outside the model): the branch is dead
+swk:0
+swc12:([cmd:`a`b`c] pre:({[m] 0=swk mod 2};{[m] 1b};{[m] 1=swk mod 3}))
+r:.qc.chk[q;.qc.sm[`m0`init`steps!(0;{swk+::1};0 2)] swc12;::]
+.t.t["sm: a command that can run at one visit and not the next is a discard, and the run ends"; 0<sum r`disc]
+/ a long as the hint of a fresh draw is that value, kept within the range
+.t.t["ch: a long hint is the value drawn, within the range"; (7=.qc.draw {.qc.ch[5 9 5;7]}) and 5=.qc.draw {.qc.ch[5 9 5;1]}]
+/ a candidate that gives a step a command that could not run there is put right before it is tried, to the command
+/ that number stands for: the next that can run, and not the first
+.qc.strict[1 2 0] .qc.sm[enlist[`m0]!enlist 0] swc7; .qc.cv:.qc.C`v; .qc.cC:.qc.C; .qc.cD:.qc.DV; .qc.cDv:.qc.cv
+.t.t["sm: a candidate's number for a command that cannot run stands for the next that can"; (1 2 0~.qc.can 1 1 0) and 1 0 0~.qc.can 1 0 0]
+.qc.tidy[]

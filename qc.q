@@ -35,8 +35,9 @@ nch:0                       / draw calls this example (a block counts once): wha
 / input tried. TX: (parent; value) -> node.
 TR:([]p:`long$();v:`long$();lo:`long$();hi:`long$();o:`long$();w:`float$();nc:`long$();nx:`long$();x:`boolean$();c:`symbol$())
 TX:(enlist 0#0)!enlist 0N                             / seeded with an empty vector key (pitfall 19)
+DV:(enlist 0N)!enlist `long$()                        / by the place of a choice: the values in its range that mean nothing there (a state machine's commands that cannot run), which the tree does not try
 
-reset:{[p;s;m;h] if[not abs[type p:(),p] in 1 4 5 6 7h; '"qc: choices must be integers"]; P::"j"$p; i::0; nch::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$();}
+reset:{[p;s;m;h] if[not abs[type p:(),p] in 1 4 5 6 7h; '"qc: choices must be integers"]; P::"j"$p; i::0; nch::0; C::0#C; E::0#E; st::(); dp::0; sz::bs::s; mn::m; sh::h; N::(); LX::`symbol$(); DV::(enlist 0N)!enlist `long$();}
 new:{reset[`long$();cfg`sz;0b;0b]}                    / fresh interactive state
 / the implicit d is never supplied by users, so a non-null d means one argument too many (C1)
 dd:{[d;n] if[not (::)~d; '"qc: too many arguments; ",$[n like "* *"; "the configurable form is ",n; n," takes none"]]}   / a form with a space is configurable
@@ -49,7 +50,7 @@ dct:{$[99h<>type x; 0b; not 98h=type key x]}              / a dict, and not a ke
 rng:{r:$[type[x] within 100 112; x sz; x]; r:"j"$(),r; if[not count[r] in 2 3; '"qc: range: lo hi or lo hi origin expected, got ",.Q.s1 r];
   if[r[0]>r 1; '"qc: range: lo exceeds hi in ",.Q.s1 r]; $[2=count r; r,r[0]|r[1]&0; @[r;2;{y|z&x}[;r 0;r 1]]]}
 / ch[r;w]: draw a long in range r.  w hints the fresh-draw law: :: mixture, `u uniform, float p Bernoulli
-/ (0/1 ranges), float vector = weights over lo..hi.  Replay clamps into range; past the prefix while
+/ (0/1 ranges), float vector = weights over lo..hi, a long = that value.  Replay clamps into range; past the prefix while
 / shrinking is invalid; minimal mode returns the origin.  rand is called only by fresh and its helpers unif and mix, and by their vector forms freshn, unifn and mixn (M8).
 ch:{[r;w] r:rng r; lo:r 0; hi:r 1; o:r 2; j:i; i+:1;
   v:$[j<count P; $[cf`clamp; lo|hi&P j; (P j) within (lo;hi); P j; '"qc.misaligned"]; sh; '"qc.overrun"; mn; o; fresh[lo;hi;o;w]];
@@ -67,7 +68,7 @@ freshn:{[lo;hi;o;w;n] $[lo=hi; n#lo; -9h=type w; hi&lo+"j"$w>n?1f; 9h=type w; lo
 unifn:{[lo;hi;n] $[lo=hi; n#lo; 0<k:1+hi-lo; lo+n?k; ?[n?01b; lo+n?0W; hi-n?0W]]}   / (the vector conditional wants booleans: n?01b, not n?2 — pitfall 42)
 mixn:{[lo;hi;o;n] b:0=n?8; nb:(o;lo;hi;$[o<hi; o+1; o];$[o>lo; o-1; o]) n?5; sg:$[o=lo; n#1; o=hi; n#-1; (1 -1) n?2];
   ?[b;nb;lo|hi&"j"$("f"$o)+sg*(n?1f)*2 xexp n?1+bits hi-lo]}
-fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; 9h=type w; lo+sums[w] binr rand sum w;
+fresh:{[lo;hi;o;w] $[lo=hi; lo; -9h=type w; hi&lo+"j"$w>rand 1.0; -7h=type w; lo|hi&w; 9h=type w; lo+sums[w] binr rand sum w;   / a long: that value, and no number drawn for it, as none is for a range of one value (a state machine with one command that can run)
   w~`u; unif[lo;hi]; mix[lo;hi;o]]}
 / a width that overflows (null or negative) draws from [lo;lo+0W) or (hi-0W;hi]: on the full long range that misses 0 (mix reaches it as the origin); `u is only used on small ranges
 unif:{[lo;hi] $[lo=hi; lo; 0<n:1+hi-lo; lo+rand n; rand 2; lo+rand 0W; hi-rand 0W]}
@@ -235,8 +236,8 @@ rowd:{[cg;ks;d] r:(enlist `)!enlist (::); c:key cg; j:0;
 / probe g: its minimal value, drawn outside the example (choices, spans, cursor and mode saved and restored), so a
 / table with no rows can still type its columns from what they would have drawn. A generator that cannot give a
 / minimal value (a dep over an empty row, a filter) leaves its column untyped.
-probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US;sz;bs;N;LX); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
-unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11; sz::s 12; bs::s 13; N::s 14; LX::s 15;}   / what probe saved (the size too: a small that raises inside the probe would leave it halved; and the notes and labels, which a probe must not add to)
+probe:{[g] s:(C;E;st;i;nch;P;mn;sh;dp;CS;UR;US;sz;bs;N;LX;DV); P::`long$(); mn::1b; sh::0b; r:@[dr;g;{[s;e] unp s; (::)}[s]]; unp s; r}
+unp:{[s] C::s 0; E::s 1; st::s 2; i::s 3; nch::s 4; P::s 5; mn::s 6; sh::s 7; dp::s 8; CS::s 9; UR::s 10; US::s 11; sz::s 12; bs::s 13; N::s 14; LX::s 15; DV::s 16;}   / what probe saved (the size too: a small that raises inside the probe would leave it halved; and the notes and labels, which a probe must not add to)
 empties:{[xs] {[v] $[(::)~v; (); 0>type v; 0#enlist v; ()]} each xs}      / each probed value: an atom's typed empty (0# of a symbol atom is nyi; of a 1-vector it is fine), else general. (xs, not vs: vs is a keyword)
 emtab:{[cg;p] key[cg]!$[(::)~p; count[cg]#enlist (); empties value p]}     / typed empties from a probed row, or untyped when the probe failed
 / the table core: rows through lst; em gives typed empty columns (a schema knows them; a column dict probes them, so
@@ -277,6 +278,15 @@ schx:{[k;cg;em;at;d] dd[d;".qc.schema t"]; tb:tabx[0 0W;cg;em;at]; $[count k; k 
 / the defaults. Each step's span holds its decision bit, command index and input draw and nothing else (C13);
 / run, post and upd happen after it, then inv on the new model. A failed postcondition notes the trace and raises
 / qc.post, a failed invariant qc.inv: failure signals. A w column weights the choice among the available commands.
+/ The command a step chose is recorded as its place among ALL the commands, with the first that can run as its
+/ origin, and a command that cannot run stands for the next that can (the first, after the last). Recorded as a place among those that can run now, a number
+/ changed its meaning whenever a step before it was deleted and a command with a limit became available again
+/ (no more than five objects, no more than three renames), and the shrinker could not delete that step (A29).
+/ What is recorded is the command that ran, so a candidate's number that stood for another is put right in the
+/ record, and a shrink cannot end on a number that means what it does only while some other command cannot run.
+/ A fresh draw gives a command that cannot run the weight 0, and draws no number when one command can run, so it
+/ chooses as it did before. A run that tries every input in turn is told the commands that cannot run (DV), so
+/ it tries the traces it did before and no others
 smd:`pre`gen`run`post`upd!({[m] 1b};{[m] ::};{[a] ::};{[m;a;o] 1b};{[m;a;o] m})
 smh:`m0`init`fini`steps`inv!(::;{};{};0 0W;{[m] 1b})   / inv: an invariant of the model, checked after every step (M10)
 smt:([]step:`long$();cmd:`symbol$();arg:();res:();model:();ok:`boolean$())
@@ -298,7 +308,10 @@ sm:{[h;cmds;d] dd[d;".qc.sm[h] cmds"];
 smloop:{[h;c;lo;mx] m:h`m0; h[`init][]; R:(); n:0; go:1b;
   while[go; beg`step; av:where {[f;m] f m}[;m] each c`pre;
     go:$[0=count av; 1=ch[0 0 0;::]; more[n;lo;mx]];
-    $[go; [j:av ch[(0;-1+count av;0);c[av;`w]]; a:draw c[j;`gen] m; end[];   / weighted over the available commands; (a, not i: i is the cursor)
+    $[go; [en:$[mn; i<count P; 0b]; DV[count C]:til[count c] except av;   / which commands cannot run: a run that is trying every input does not try them, and the shrinker spends no attempt on a number that stands for the command it has
+        k:ch[(0;-1+count c;first av);$[1=count av; first av; @[count[c]#0f;av;:;c[av;`w]]]]; if[$[en; not k in av; 0b]; '"qc.discard"];   / weighted over the commands that can run (and if it tries one all the same, the commands that can run having changed between two runs of one prefix, the branch is dead)
+        j:$[k in av; k; count nx:av where av>k; first nx; first av]; if[not j=k; .[`.qc.C;(count[C]-1;`v);:;j]];   / the record says what ran: a number that stood for another command would change its meaning in its turn
+        a:draw c[j;`gen] m; end[];   / (a, not i: i is the cursor)
         o:@[c[j;`run];a;{[R;e] note smnote R; '"qc.run ",e}[R,enlist (n;c[j;`cmd];a;::;::;0b)]];   / an error in the system is a failure, not a generator bug; the trace shows the step that raised
         ok:@[c[j;`post][m;a;];o;{[R;e] note smnote R; '"qc.post ",e}[R,enlist (n;c[j;`cmd];a;o;::;0b)]]; ok:$[(::)~ok; 1b; all ok];
         m2:c[j;`upd][m;a;o]; R,:enlist (n;c[j;`cmd];a;o;m2;ok);
@@ -361,15 +374,18 @@ pick:{[m] r:TR m; o:r`o; d:0; while[d<=1+r`nx; if[(v:o+d) within r`lo`hi; if[not
 / the next input to try: descend from the root by pick until a child is absent. The prefix ends there; the rest
 / of the example is origins (minimal mode), so for a fixed structure the order is shortlex, simplest first
 nxt:{m:0; p:`long$(); go:1b; while[go; p,:v:pick m; $[null c:TX (m;v); go:0b; m:c]]; p}
+/ the values of a node that mean nothing there are children exhausted from the start, so that pick passes over them
+/ and the node is exhausted when the others are; its width in the product is the width of the others
+tdead:{[m;dv] {[m;v] TX[(m;v)]:count TR; TR,:(m;v;0N;0N;0N;1f;0;0;1b;`dead); TR[m;`nc]+:1; TR[m;`nx]+:1;}[m] each dv;}
 / record the example's choices as a path ending in conclusion s, and say whether enumeration goes on. It stops
 / when the tree contradicts the path — a range or an ending differs from what an earlier example found at the
 / same prefix, so the structure depended on something other than the choices and no claim is safe — or when the
 / product of the widths along the path exceeds the budget n: a tree whose every path has product <= n has at
 / most n leaves (the leaves' reciprocal products sum to at most 1), so while it holds the run will finish
 tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
-  while[ok and k<count V; r:TR m;
-    $[not `=r`c; ok:0b; null r`lo; [TR[m;`lo]:LO k; TR[m;`hi]:HI k; TR[m;`o]:O k; TR[m;`w]:wid[LO k;HI k]]; not (r[`lo]=LO k) and r[`hi]=HI k; ok:0b];
-    if[ok; pz*:TR[m;`w]; if[null c:TX (m;V k); c:count TR; TR,:(m;V k;0N;0N;0N;0n;0;0;0b;`); TX[(m;V k)]:c; TR[m;`nc]+:1]; m:c]; k+:1];
+  while[ok and k<count V; r:TR m; dv:DV k;
+    $[not `=r`c; ok:0b; null r`lo; [TR[m;`lo]:LO k; TR[m;`hi]:HI k; TR[m;`o]:O k; TR[m;`w]:wid[LO k;HI k]; tdead[m;dv]]; not (r[`lo]=LO k) and r[`hi]=HI k; ok:0b];
+    if[ok; pz*:TR[m;`w]-count dv; if[null c:TX (m;V k); c:count TR; TR,:(m;V k;0N;0N;0N;0n;0;0;0b;`); TX[(m;V k)]:c; TR[m;`nc]+:1]; m:c]; k+:1];
   if[ok; r:TR m; $[not null r`lo; ok:0b; not `=r`c; ::; [TR[m;`c]:s; TR[m;`x]:1b; TR[m;`w]:1f; p:r`p; go:1b;   / (a repeated input concludes nothing new)
     while[go and not null p; TR[p;`nx]+:1; $[TR[p;`nx]>=TR[p;`w]; [TR[p;`x]:1b; p:TR[p;`p]]; go:0b]]]]];
   ok and pz<=n}
@@ -378,7 +394,7 @@ tput:{[n;s] V:C`v; LO:C`lo; HI:C`hi; O:C`o; k:0; pz:1f; m:0; ok:1b;
 / minimal input; while every path through the choice tree fits the budget the run enumerates the space
 / (every input once, simplest first) and stops exhausted when the tree is; otherwise it samples.
 / the example boundary on the way out: flag, config, depth, spans, base size, and the shrinker's copies of the last failure (C9: a property closure must not outlive its run; K, the candidates tried, stays for t/bench.q to read)
-tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sgen::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; co::()!();}
+tidy:{run::0b; cf::cfg; dp::0; st::(); sz::bs::cfg`sz; sgen::(::); sprop::(::); cv::`long$(); cC::0#C; cE::0#E; cD::0#DV; cDv::`long$(); co::()!();}
 chk:{[c;gen;prop] if[run; '"qc: nested check"]; r:@[chk1[c;gen];prop;{tidy[]; 'x}]; tidy[]; r}
 chk1:{[c;gen;prop] c:conf c; cf::c; if[not (::)~prop; need[prop;"the property"]];
   if[(100h=type prop) and 0h=type gen; if[count[gen]<>count (value prop)[1]; '"qc: the property takes ",string[count (value prop)[1]]," arguments, the generator has ",string count gen]]; seed:$[null c`seed; "i"$1+.z.p mod 2147483646; "i"$c`seed]; system"S ",string seed;
@@ -435,17 +451,29 @@ dl:{[v;s;e] pt[v;s;e;()]}
 pt:{[v;s;e;w] (s#v),w,e _ v}
 / shrinker state: current vector, its choice and span tables, its outcome, the original error
 cv:`long$(); cC:C; cE:E; co:()!(); cerr:""; na:0; ns:0; cp:`; sgen:(::); sprop:(::)
+cD:DV; cDv:`long$()                                   / the values that meant nothing at each place of the run that recorded the current vector, and that vector: cD is used while cDv is cv
 K:(enlist 0#0)!enlist 0N                              / candidates already tried (seeded with a vector key)
 H:([]n:`long$();pass:`symbol$();len:`long$())         / history of accepted shrinks
 / tst: does the candidate fail as the original did? As a cond chain: identical, cached, budget, valid, same failure
 / (C2). One that fails and is strictly smaller becomes the current one. K remembers the answer: 0 did not fail, 1 did.
 / try: was the candidate taken? A pass that only goes downhill asks try; a search that must cross ground that is no
 / better before it reaches ground that is (the far side of an origin, the most two choices can be moved) asks tst
-tst:{[cand] cand:"j"$cand;
+/ can: a candidate as its replay will record it, as far as that can be told without the replay. Up to the first place
+/ where it differs from the current vector the replay is the current one's, so if the value there meant nothing in
+/ that run (a command that could not run) it stands for what it stood for then; and if that is the current value,
+/ the same goes for the next place. A candidate that comes to the current vector costs no attempt. This holds only
+/ of a vector recorded at the size the shrinker replays at (shr), and with clamping: a value out of its range is
+/ left as it is, to be refused
+can:{[cand] if[not cDv~cv; :cand]; ks:key[cD] except 0N; if[0=count ks; :cand]; n:count[cand]&count cv; go:1b;
+  while[go; w:first where not (n#cand)=n#cv;
+    $[null w; go:0b; not w in ks; go:0b; $[cf`clamp; 0b; not (cand w) within cC[`lo`hi] w]; go:0b; not (v:cC[`lo][w]|cC[`hi][w]&cand w) in dv:cD w; go:0b;
+      [lv:(cC[`lo][w]+til 1+cC[`hi][w]-cC[`lo] w) except dv; nx:lv where lv>v; cand[w]:$[count nx; first nx; first lv]]]];
+  cand}
+tst:{[cand] cand:can "j"$cand;
   $[cand~cv; 1b; not null r:K cand; 1=r; na>=cf`shrinks; 0b;
     [na+:1; reset[cand;bs;0b;1b]; r:run1[sgen;sprop];
      f:$[not `fail=r`st; 0b; (r`err) in ENG; 0b; cf`same; r[`err]~cerr; 1b];
-     if[f; if[less[skey[C`v;C`o];skey[cv;cC`o]]; cv::C`v; cC::C; cE::E; co::r; ns+:1; H,:(na;cp;count cv)]];
+     if[f; if[less[skey[C`v;C`o];skey[cv;cC`o]]; cv::C`v; cC::C; cE::E; cD::DV; cDv::cv; co::r; ns+:1; H,:(na;cp;count cv)]];
      K[cand]:"j"$f; f]]}
 try:{[cand] n:ns; tst cand; ns>n}
 spans:{`w xdesc update w:e-s from cE}                 / largest first
@@ -466,19 +494,22 @@ pdesc:{cp::`desc; p:0b; j:0; while[j<count tb:spans[]; s0:tb[j;`s]; e0:tb[j;`e];
 bkey:{[s;e] ix:s+til e-s; (e-s;zig dst[cv ix;cC[`o] ix])}    / shortlex key of one block
 ordr:{[ks] n:count ks; ix:til n; ii:0; while[ii<n-1; j:ii+1; while[j<n; if[less[ks ix j;ks ix ii]; ix[ii,j]:ix[j,ii]]; j+:1]; ii+:1]; ix}
 blk:{[c;ix] raze {[s;e] cv s+til e-s}'[c[ix;`s];c[ix;`e]]}
+zblk:{[c;ix] raze {[s;e] ix:s+til e-s; zig dst[cv ix;cC[`o] ix]}'[c[ix;`s];c[ix;`e]]}   / the blocks' distances in that order, as the order ranks them
 psort:{cp::`sort; p:0b; j:0;
   while[j<count tb:`s xasc cE; c:chain[tb[j;`s];tb[j;`l];tb[j;`d]];
     $[2>count c; j+:1;
       [ks:bkey'[c`s;c`e]; ix:ordr ks; ok:0b;
        if[not ix~til count ix; ok:try pt[cv;c[0;`s];last c`e;blk[c;ix]]];
-       ii:0; while[(ii<count[c]-1) and not ok; if[less[ks ii+1;ks ii]; ok:try pt[cv;c[ii;`s];c[ii+1;`e];blk[c;(ii+1;ii)]]]; ii+:1];
+       ii:0; while[$[ii>=count[c]-1; 0b; not ok]; if[$[less[ks ii+1;ks ii]; 1b; less[(0;zblk[c;(ii+1;ii)]);(0;zblk[c;(ii;ii+1)])]]; ok:try pt[cv;c[ii;`s];c[ii+1;`e];blk[c;(ii+1;ii)]]]; ii+:1];   / a swap of neighbours that brings the lesser block forward, or that makes the two simpler as they stand: a longer block with a lesser first choice (a quote before a rename). The first may make the two less simple as they stand and be taken all the same, where the steps of a state machine replay as fewer. No other is tried: it would be refused, at an attempt each (A29)
        $[ok; p:1b; j+:1]]]]; p}
 / the generator that made each choice: the label of the innermost span around it. The continue bits of a list are
 / the list's, its items their own generator's
 clb:{lb:count[cv]#0N; sp:`d`w xasc update w:s-e from cE; n:0; while[n<count sp; lb[sp[n;`s]+til sp[n;`e]-sp[n;`s]]:sp[n;`l]; n+:1]; lb}
-pdup:{cp::`dup; p:0b; ix:where cv<>cC`o; g:ix each value group (flip (cv;cC`lo;cC`hi;clb[])) ix; g:g where 1<count each g; j:0;   / same value, range and generator: two symbols that must agree are lowered together, without the bits that happen to equal them
-  while[j<count g; ps:g j; ok:try @[cv;ps;:;cC[`o] ps];
-    if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[go and all 1<abs d; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];   / distances in floats (C21)
+pdup:{cp::`dup; p:0b; n0:count cv; ix:where cv<>cC`o; g:ix each value group (flip (cv;clb[];2f<wid'[cC`lo;cC`hi])) ix; g:g where 1<count each g; j:0;   / same value and generator, whatever the range: two symbols that must agree are lowered together, without the bits that happen to equal them; and two steps that name one instrument, each from a list of its own length, are too (A29). A bit is kept from a number all the same: a step's continue bit and its command are both the step's
+  while[$[j>=count g; 0b; n0=count cv]; ps:g j; ok:try @[cv;ps;:;cC[`o] ps];   / (a shrink that changed the length leaves the groups' places stale: the pass returns, and the next cycle groups again)
+    if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; go:1b; while[$[not go; 0b; not n0=count cv; 0b; all 1<abs d]; d:floor d%2; go:try @[cv;ps;:;cC[`o][ps]+"j"$d]; ok:ok or go]];   / distances in floats (C21)
+    if[not ok; n:ns; fint {[ps;v;sd;d;n0;k] $[k<=0; 0b; k>=d; 0b; not n0=count cv; 0b; tst @[cv;ps;:;v-sd*k]]}[ps;cv ps;sdo each ps;min far each ps;n0]; ok:ns>n];   / and nearer their origins together, each from the side it is on, the most that still fails
+    if[not ok; d:("f"$cv ps)-"f"$cC[`o] ps; sd:"j"$signum d; k:1; while[$[ok; 0b; k>3; 0b; all k<abs d]; ok:try @[cv;ps;:;cC[`o][ps]+k*sd]; k+:1]];   / and the three places nearest their origins, for a failure that is not at every place between: C and C to B and B, where A and A passes
     if[ok; p:1b]; j+:1]; p}
 bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs first dst[b;a]; m:mid[a;b]; $[m in (a;b); a:b; try @[cv;j;:;m]; [b:m; p:1b]; a:m]]; p}
 / one choice at a time: its origin; then nearer its origin on the side it is on, by halves (bsr); then the other
@@ -487,7 +518,7 @@ bsr:{[j] a:cC[`o] j; b:cv j; p:0b; while[1<abs first dst[b;a]; m:mid[a;b]; $[m i
 far:{[j] "j"$9e18&abs first dst[cv j;cC[`o] j]}                       / how far choice j is from its origin, saturated (C21)
 vat:{[j;s;n] w:("f"$cC[`o] j)+s*"f"$n; $[w<"f"$cC[`lo] j; 0N; w>"f"$cC[`hi] j; 0N; cC[`o][j]+s*n]}   / the value n from the origin of choice j on side s (1 above, -1 below); null outside its range, judged in floats (C21)
 osd:{[j] s:$[cv[j]>cC[`o] j; -1; 1]; d:far j; n:ns;
-  f:{[j;s;k] $[null w:vat[j;s;k]; 0b; tst @[cv;j;:;w]]}[j;s];
+  f:{[j;s;k] $[j>=count cv; 0b; null w:vat[j;s;k]; 0b; tst @[cv;j;:;w]]}[j;s];
   $[f d; [lo:0; hi:d; while[1<hi-lo; m:lo+(hi-lo) div 2; $[f m; hi:m; lo:m]]]; [k:1; while[$[k>4; 0b; k<d]; $[f k; k:d; k+:1]]]];
   ns>n}
 pmin:{cp::`min; p:0b; j:0; while[j<count cv; $[cv[j]=cC[`o] j; j+:1; try @[cv;j;:;cC[`o] j]; p:1b; [if[bsr j; p:1b]; if[osd j; p:1b]; j+:1]]]; p}
@@ -503,9 +534,9 @@ fint:{[f] n:1; while[n<5; if[not f n; :n-1]; n+:1]; lo:4; hi:5; while[f hi; lo:h
 / all the way first, then the most that still fails. tgr: both moved by n the way that brings i nearer, for a
 / difference that must be kept; j may cross its origin (1 0 to 0 -1). (Hypothesis's redistribute_numeric_pairs
 / and lower_integers_together)
-rds:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; f:{[ii;j;s;d;vi;vj;k] $[k>d; 0b; null w:("f"$vj)+s*"f"$k; 0b; not inr[j;w]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj+s*k)]]}[ii;j;s;d;vi;vj];
+rds:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; f:{[ii;j;s;d;vi;vj;k] $[k<=0; 0b; k>d; 0b; j>=count cv; 0b; null w:("f"$vj)+s*"f"$k; 0b; not inr[j;w]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj+s*k)]]}[ii;j;s;d;vi;vj];
   if[not f d; fint f]; ns>n}
-tgr:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; fint {[ii;j;s;d;vi;vj;k] $[k>d; 0b; not inr[j;("f"$vj)-s*"f"$k]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj-s*k)]]}[ii;j;s;d;vi;vj]; ns>n}
+tgr:{[ii;j] s:sdo ii; d:far ii; vi:cv ii; vj:cv j; n:ns; fint {[ii;j;s;d;vi;vj;k] $[k<=0; 0b; k>d; 0b; j>=count cv; 0b; not inr[j;("f"$vj)-s*"f"$k]; 0b; tst @[cv;ii,j;:;(vi-s*k;vj-s*k)]]}[ii;j;s;d;vi;vj]; ns>n}
 ppr:{cp::`pair; p:0b; ii:0; while[ii<count[cv]-1;
   $[cv[ii]=cC[`o] ii; ii+:1;
     [n:ns; js:prt[ii;4]; k:0; while[$[k>=count js; 0b; ns>n; 0b; not cv[ii]=cC[`o] ii]; rds[ii;js k]; k+:1];
@@ -538,7 +569,7 @@ pblk:{cp::`blk; p:0b; bl:L`blk; if[null bl; :0b]; j:0;
       $[ok; [ok0:1b; g:2|g div 2]; g*:2]];
     if[ok0; p:1b]; j+:1]; p}
 / shrink a failing outcome: run every pass until a whole cycle makes no progress or the attempt budget is spent
-shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; co::o; cerr::o`err; na::0; ns::0;
+shr:{[gen;prop;o] sgen::gen; sprop::prop; cv::C`v; cC::C; cE::E; cD::DV; cDv::$[sz=cf`sz; cv; `long$()]; co::o; cerr::o`err; na::0; ns::0;
   K::(enlist 0#0)!enlist 0N; H::0#H; bs::cf`sz;
   while[$[na<cf`shrinks; any {x[]} each (pblk;pdisc;pdel;pzero;pdesc;psort;pdup;pmin;ppr;ptr;pnd); 0b]];   / cond, not and: passes are not free
   co,`shrinks`attempts`hist!(ns;na;H)}

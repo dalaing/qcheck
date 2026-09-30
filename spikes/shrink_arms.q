@@ -18,6 +18,10 @@
 / Hypothesis's passes are from its shrinker.py at commit 32ebeb2 (2026-09-27), written again for this engine. The
 / distances of every arm are the library's exact ones (dst): with distances in floats, as they were, no arm could
 / tell a timestamp from the one a nanosecond later.
+/ The passes that every arm shares are the library's as it now stands, so since A29 (every swap of neighbours
+/ in psort that make the two simpler; duplicates by value and generator in pdup, which lab, all and lib use; the
+/ record of a state machine's command; sm_chain in the sweep, 43 cases for 42) the figures of a run differ from
+/ those of A28's table in docs/DESIGN.md, which are of 77af2d9.
 \l spikes/h.q
 \l spikes/sweep.q
 SHOW:$[count .z.x; "show"~first .z.x; 0b]

@@ -107,7 +107,7 @@ The result of a check is a dict:
 | `choices` | the choices that reproduce the counterexample |
 | `hist` | the shrinks, in order |
 | `disc` | the discards, counted by cause |
-| `stale` | from `recheck`: `1b` when the choices given no longer fit the generator, which has changed since they were recorded |
+| `stale` | from `recheck`: `1b` when the choices given are not what the generator records for them: it has changed since they were recorded, or they name a command of a state machine that could not run where they name it |
 
 Signals that begin `qc.eq`, `qc.post`, `qc.run` or `qc.inv` are falsifications wherever they are raised. Five
 signals, spelled exactly, are the library's own, and each discards the example and is counted in `disc` under

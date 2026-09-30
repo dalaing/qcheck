@@ -11,5 +11,5 @@ show select name,runs,kinds,atref,attempts,top:60 sublist/:top from S
 .h.t["every case fails at most of the seeds, so that there is something to shrink"; all (NS*0.9)<=S`runs]
 .h.t["every case ends on one counterexample, whatever the seed"; all 1=S`kinds]
 .h.t["and that one is the simplest that any seed found"; all 1=S`atref]
-.h.t["the whole sweep takes under 70000 attempts (55 for each shrink)"; 70000>sum S`attempts]
+.h.t["the whole sweep takes under 71000 attempts (55 for each shrink)"; 71000>sum S`attempts]
 .h.done[]

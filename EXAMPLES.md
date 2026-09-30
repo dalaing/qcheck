@@ -388,7 +388,7 @@ values that do:
 
 ```q
 q).qc.check[.qc.tab `k`v!(.qc.uniq .qc.int 0 3; .qc.int 0 9); {20>sum x`v}];
-FAIL falsified after 42 tests, 10 shrinks (107 attempts, seed 7)
+FAIL falsified after 42 tests, 12 shrinks (114 attempts, seed 7)
 x:
   k v
   ---
@@ -750,21 +750,21 @@ looks at. `examples/suite.q` is a script of that shape:
 ```
 $ q examples/suite.q; echo "exit code $?"
 --- reverse_twice
-ok 100 tests (seed 181508577)
+ok 100 tests (seed 1521818691)
 --- sum_any_order
-ok 100 tests (seed 226457577)
+ok 100 tests (seed 1565486691)
 --- count_of_a_join
-ok 100 tests (seed 267768577)
+ok 100 tests (seed 1607639691)
 --- already_sorted
-FAIL falsified after 4 tests, 3 shrinks (28 attempts, seed 345368577)
+FAIL falsified after 4 tests, 8 shrinks (59 attempts, seed 1692669691)
 x: 1 0
 rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 name            ok why       stop n   shrinks seed
--------------------------------------------------------
-reverse_twice   1  ok        n    100 0       181508577
-sum_any_order   1  ok        n    100 0       226457577
-count_of_a_join 1  ok        n    100 0       267768577
-already_sorted  0  falsified fail 4   3       345368577
+--------------------------------------------------------
+reverse_twice   1  ok        n    100 0       1521818691
+sum_any_order   1  ok        n    100 0       1565486691
+count_of_a_join 1  ok        n    100 0       1607639691
+already_sorted  0  falsified fail 4   8       1692669691
 exit code 1
 ```
 
@@ -886,7 +886,7 @@ q)tbl:{[s;nm;g] .qc.tabr[1 0W] (`sym`time,nm)!(.qc.elem s; .qc.mono[.qc.int 0 9;
 q)pair:{[d] s:.qc.draw syms; `q`t!(.qc.draw tbl[s;`px;.qc.int 0 9]; .qc.draw tbl[s;`qty;.qc.int 0 9])}
 q)naive:{[t;q] f:{[q;s;tm] $[count r:exec px from q where sym=s,time<=tm; first r; 0N]}[q]; update px:"j"$f'[sym;time] from t}
 q).qc.check[pair; {.qc.eq[aj[`sym`time;x`t;x`q]; naive[x`t;x`q]]}];
-FAIL falsified after 1 tests, 8 shrinks (87 attempts, seed 7)
+FAIL falsified after 1 tests, 8 shrinks (88 attempts, seed 7)
 x:
   q:
     sym time px
@@ -927,7 +927,7 @@ step cmd  arg res model ok
 1    push 2   ::  1 2   1
 2    pop  ::  2   ,1    1
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 10 tests, 3 shrinks (57 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (55 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -969,7 +969,7 @@ time: a column left out takes its default. The model is the count there ought to
 ```
 $ q examples/sm_ipc.q
 a counter in another q process (it wraps after 3), reset over IPC before every sequence:
-FAIL falsified after 9 tests, 5 shrinks (24 attempts, seed 2121582113)
+FAIL falsified after 9 tests, 5 shrinks (32 attempts, seed 2121582113)
 qc.post
 step cmd arg res model ok
 -------------------------

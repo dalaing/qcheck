@@ -235,7 +235,8 @@ without affecting replay. The hints are a closed vocabulary, chosen deliberately
 | `::` | the integer mixture: a boundary value (`o lo hi o+1 o-1`) one time in eight, else a random magnitude with a sign only where the origin leaves room | `int`, `dbl`'s exponent and mantissa |
 | `` `u `` | uniform | `rec`'s node count, `one`/`elem`/`freq` indices, `flt`'s mantissa and fraction width, `spc`'s special index |
 | float `p` | Bernoulli on a 0/1 range | `bit`, list continue bits, `spc`'s kind |
-| float vector | weights over the range | `freq`, `rec`'s shape law |
+| float vector | weights over the range | `freq`, `rec`'s shape law, a state machine's choice among the commands that can run |
+| a long | that value, kept within the range, and no random number | a state machine's choice when one command can run |
  `ch` is the **only** call site of `rand`, behind two guards: `lo=hi` returns `lo`
 (`rand 0` silently returns an arbitrary long), and an overflowing width (`1+0W` is `0N` on this build) falls
 back to drawing a random half of the range (A5).
@@ -390,8 +391,15 @@ vector (q dicts accept vector keys, A1). The loop and every pass are iterative, 
 1. drop discarded spans; delete spans, largest first, with adaptive runs of adjacent siblings;
 2. zero a span (set every choice to its origin);
 3. replace a span by a descendant with the same label (collapses recursion);
-4. reorder sibling spans of the same label into sorted order (canonical lists);
-5. minimise duplicated values together (`group v`);
+4. reorder sibling spans of the same label into sorted order (canonical lists), and failing that swap a pair
+   of neighbours where the later is the lesser as a block, or where the two are simpler the other way round
+   as they stand: a longer step with a lesser first choice makes the whole simpler when it is brought forward
+   (A29). No other swap is tried. Tried, it costs an attempt to be refused, and the swaps of a list of 24
+   items spent the whole budget that way;
+5. minimise duplicated values together: choices of one value made by one generator, whatever their ranges, to
+   their origins, then nearer by halves until one passes, then nearer together by as much as still fails,
+   each from the side of its origin that it is on, and then to the three places nearest their origins, for a
+   failure that is not at every place between (A29);
 6. each choice by itself: its origin; then nearer its origin on the side it is on, by binary search; then the
    other side of the origin, at the same distance and nearer by halves if it fails there, or else at the four
    places nearest the origin. The order ranks 1 before −1, and a failure may lie nearer the origin on the far
@@ -413,10 +421,13 @@ Passes 6 to 9 are the result of an experiment (A28, below). 6, 7 and 9 are Hypot
 Each pass is a loop over the *current* structure that re-derives it after every accepted attempt (indices
 shift, so nothing is precomputed), and the shrinker cycles the passes until a whole cycle accepts nothing or
 the attempt budget is spent. Passes that need coordinated moves go by **the generator that made each choice**,
-which is the label of the innermost span around it (`clb`): duplicates are grouped by value, range *and*
-generator (a list's continue bits and its items can share a value, and two symbols that must agree are lowered
-together without the bits that happen to equal them); and the partners of a choice are the next few made by the
-same generator over the same range, however far off. Nearness by position served lists, whose items are one
+which is the label of the innermost span around it (`clb`): duplicates are grouped by value *and* generator
+(a list's continue bits and its items can share a value, and two symbols that must agree are lowered together
+without the bits that happen to equal them), and not by range, since two steps of a state machine that must
+name the same thing may each choose it from a list of a different length (A29), though a choice between two
+values is kept from a choice among more (a step's continue bit and its command are both the step's); and the
+partners of a choice
+are the next few made by the same generator over the same range, however far off. Nearness by position served lists, whose items are one
 bit apart, and failed state machines, where the inputs of two steps are three or more choices apart. The
 candidate cache is a dict keyed by choice vectors and must be seeded with a vector key — seeded with `::` it amends
 elementwise. Lists use continue bits rather than a length prefix so that deleting an element is one span
@@ -429,7 +440,8 @@ regardless. Clamp-on-misalignment and reject-on-misalignment reach the same mini
 is a valid input, which the state machines and the interactive `replay` rely on.
 
 **What the order can and cannot do.** Shortlex decides which of two *reachable* candidates is simpler; it does
-not make every simpler value reachable. The passes move one choice, or two of the same range and generator, so
+not make every simpler value reachable. The passes move one choice, or two of the same range and generator, or
+several of the same value and generator, so
 a value that is simpler under the order but needs two fields of *different* kinds to change at once is a local
 minimum: a float encoded as integer part plus fraction cannot get from −0.5 to −1, a NaN drawn on the special
 branch cannot cross to a normal value, and a float whose value is 1 but whose choices say 2^25/2^25 stays so
@@ -510,6 +522,87 @@ tried: an exhaustive finish, which would enumerate what is simpler than the coun
 stall. The sweep gives no case that needs it; a state machine with three inputs that must change together
 would.
 
+**A29 — state machines on a real system** (`spikes/explore/`, by hand; `spikes/sweep.q`'s `sm_chain`).
+The finish was explored next, and the exploration is kept in `spikes/explore/` with its own README. A scheme of
+searches, heuristics, gates and budgets that got every case of a harder sweep right was then run on six bugs
+and sabotages of the pipeline of `examples/mdp/`, and gained little there for 64% more attempts: the hard
+cases had been written after seeing what the shrinker got wrong, and the pipeline had causes that they did not
+contain. Three changes held up on both, and are in the library; none of them is a search.
+
+- *The record of a command.* A step recorded its command as a place among the commands that could run. When
+  a command has a limit (no more than five objects), deleting a step before the limit made it available
+  again, every later number meant another command, and the deletion was refused. It is now a place among all
+  the commands, with the first that can run as its origin; a number whose command cannot run stands for the
+  next that can, and the record is put right to say which ran (§1.7).
+- *Duplicates by value and generator* (pass 5), whatever the range: a rename and a quote that name the same
+  instrument choose it from lists of different lengths.
+- *Swaps of neighbours* (pass 4) wherever the two are simpler the other way round, and not only where the
+  later block is the lesser.
+
+"Kinds" is how many different counterexamples the seeds of a case ended on, summed over the six cases of the
+pipeline at twelve seeds each. The sweep of A28 has `sm_chain` added, 43 cases; the exploration's sweep has
+seven hard cases added, 49; both at sixty seeds:
+
+| | pipeline: kinds | pipeline: attempts, mean | 43 cases: always right | 43 cases: attempts | 49 cases: always right | 49 cases: attempts |
+|---|---|---|---|---|---|---|
+| the library of A28 | 32 | 204 | 42 | 129,438 | 43 | 161,298 |
+| the library | 14 | 192 | 43 | 128,677 | 45 | 160,626 |
+
+The A8 suite is unchanged, case by case. Six kinds is not to be had. By case the library ends on 3, 3, 3,
+2, 1 and 2, and the eight that are over are of three sorts: another failure of the same system, found first
+at that seed (a shrink keeps to the failure it began with); another way to the same failure that is not one or
+two choices from the simplest (a bust of a trade where a late trade would do, in a step more); and a deletion
+that needs a later choice put right at the same time (with a rename deleted, the name that the next rename
+gives is another, and the query must ask for that).
+
+What each change bought was measured with prototypes over the library of A28 (the README of
+`spikes/explore/` has the table): the record 32 kinds to 26, duplicates to 20, swaps to 14. Five things were
+found while the changes were put into the library and reviewed, and the figures above are of the library
+with them:
+
+- With the record left as the number the candidate gave, `sm_chain` was right at 57 seeds of 60 and
+  `sm_alias`, of the exploration's sweep, at 49: a shrink could lower a number to one that stood for the same
+  command, and that number changed its meaning in its turn when an earlier step was deleted. Hence the record
+  put right.
+- Every swap of neighbours, tried without asking first whether it would make the two simpler, cost an attempt
+  for each that was refused, and the cache did not help since the vector changed with every swap that was
+  taken. A list of 24 distinct values spent 2000 attempts on swaps and none on lowering a value. Hence the
+  question asked first. The question is of the candidate as it stands and not as its replay will record it,
+  so the swaps that A28 tried are tried whatever the answer: two steps of a state machine may replay as one.
+- With 0 as the origin of the choice, a step that had no choice of command (one could run, and not the first)
+  was a choice off its origin. Its number was part of what the steps are sorted by, so the inputs of thirty
+  such steps were never sorted; and every pass tried to lower it. Hence the first command that can run as the
+  origin, which is what 0 meant when the record was a place among those that could run.
+- A candidate that lowers a command's number to one that cannot run stands for the command it had, replays
+  as the vector in hand, and costs an attempt: 415 of 735 on twenty steps of a machine with one command that
+  can run at each. The shrinker keeps the commands that could not run at each place of the run that recorded
+  its vector (`cD`), puts such a candidate right before the cache is asked (`can`), and spends nothing on one
+  that comes to the vector in hand. This is exact only of a vector recorded at the size the shrinker replays
+  at, so it waits for the first accepted shrink when the failure was found at a smaller size.
+- A search that keeps the places of the choices it moves (`pdup`'s, and `rds`, `tgr` and `osd` before it)
+  raised when an accepted candidate recorded fewer choices. Each stops when the vector's length has changed.
+- A run that tries every input in turn (§1.4) saw a range of all the commands where it had seen a range of
+  those that could run, took a small machine for a large one and sampled it. It is now told which commands
+  cannot run (`DV`), counts the range without them and does not try them, and tries the traces it tried
+  before.
+
+A pass in the manner of Hedgehog was tried afterwards (`spikes/explore/drop.q`): when a deletion leaves a
+later step with a command that cannot run, delete that step too and try again. On the pipeline it ended on
+the same counterexamples at every seed in 13% fewer attempts (167 for 192); on the sweep of 49 it changed
+nothing (160,381 attempts for 160,626). It is not in the library. Taking the origin of a range for a
+replayed choice that is out of it, in place of the nearer bound, was tried with it and was worse: 43 cases
+of the 49 always right for 45, in 82% more attempts, the floats ending elsewhere at most seeds.
+
+Still open: the cases that need three or more choices moved together (`run3`, `run3_neg`, `run4` and
+`sm_kv` of the exploration's sweep), which is the question of the finish; and on the pipeline, another way
+to the same failure, and a deletion that needs a later choice put right with it.
+
+A consequence for anything saved: the choices of a state machine recorded before this change do not mean
+what they did, so a failure database or a `recheck` line from before it does not replay the failure it was
+saved for (`recheck` says `stale`). A fresh run is what it was at the same seed, tests and failure found:
+a command that cannot run has the weight 0, a choice of one command takes no random number, and the run
+that tries every input tries the same ones.
+
 ### 1.6 Rich output
 
 - **The formatter** (`.qc.fmt`) is a total dispatch over the eight shapes (C3): atoms, typed vectors and
@@ -567,7 +660,7 @@ q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
 q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
 q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
-FAIL falsified after 10 tests, 3 shrinks (57 attempts, seed 7)
+FAIL falsified after 10 tests, 3 shrinks (55 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
 --------------------------
@@ -600,9 +693,17 @@ trace and raises `qc.inv`, a failure signal like `qc.post`. A `w` column weights
 whose `pre` holds (positive numbers; the default is one each), through the `freq` law. (M10.)
 
 A step's span holds its decision bit, command index and input draw and nothing else (C13), so deleting a step
-is one span deletion and misaligned command indices clamp to available commands (steps therefore differ in
-length by command, the one exception to C12's rule, stated there); when no command is
-available a forced stop is still recorded (C7). A false postcondition notes the trace, with the failing row's
+is one span deletion (steps differ in length by command, the one exception to C12's rule, stated there); when
+no command is available a forced stop is still recorded (C7). The command index is a place among *all* the
+commands, in the order of the table, and its origin is the first that can run: a step that had no choice is
+as simple as it can be. A fresh draw gives the commands that cannot run the weight 0. On replay an index
+whose command cannot run stands for the next that can, the first after the last, and the record is amended
+to the index of the command that ran, so that the choices of an accepted shrink say what happened and no
+index depends for its meaning on another command's being unable to run (A29). Every step notes which
+indices cannot run there (`DV`). When the runner is trying every input in turn they are children of the
+choice tree's node that are exhausted from the start, which are not tried and do not count in its width, so
+that a small machine is still known to be small; and the shrinker uses them to spend no attempt on an index
+that stands for the command it has (`can`, §1.5). A false postcondition notes the trace, with the failing row's
 `ok` 0b, and raises `qc.post`; an error inside `run` or `post` notes the trace so far and raises `qc.run <e>`
 or `qc.post <e>`. These are **failure signals** (C14): although they arise while the generator is being drawn, they
 are falsifications, not generator errors, and they shrink like any other failure — the shrinker deletes steps
@@ -610,7 +711,7 @@ and shrinks inputs with the ordinary passes. The report prints the trace from th
 counterexample because the trace *is* the input.
 
 Measured (`examples/sm_table.q`, `examples/sm_ipc.q`): the stack bug above shrinks to the analytic minimum in
-46 attempts (three pushes with one distinct value, then a pop); a counter in a **second q process**, driven
+55 attempts at seed 7 (three pushes with one distinct value, then a pop); a counter in a **second q process**, driven
 and reset over IPC, wraps after three increments and shrinks to exactly four `inc` steps with the `get` steps
 deleted (A14).
 
@@ -631,10 +732,11 @@ qc.q            the library
 README.md       what property-based testing is, and usage; written for a q programmer new to it
 LICENSE         MIT; qc.q carries a one-line notice in its header, since it travels alone
 spikes/         one script per validated assumption; sh spikes/run.sh runs them all (shrink_arms.q, the experiment
-                behind A28, is run by hand: it takes three minutes)
+                behind A28, is run by hand: it takes three minutes). explore/ is the exploration behind A29, with
+                a README of its own, run by hand
 t/              q t/run.q — one table. families: 0gens (the generator registry), contracts (every contract
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
-                state after every exit), bench (the A8 minima with attempt caps), sweep (A28 at ten seeds), dist
+                state after every exit), bench (the A8 minima with attempt caps), sweep (A28 and A29 at ten seeds), dist
                 (distributions), reportx,
                 doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file and examples/mdp/LOG.md; QC_FAST=1
                 skips the state-machine blocks, most of the suite's time), docs (names in docs exist; WALKTHROUGH's
@@ -886,7 +988,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 | A17 | Uniform-over-shapes recursion is achievable with exact size and no rejection, as fresh-draw weights on the existing arity/share choices | `a17_uniform.q` 10/10 | ✅ | Counting tables give the Catalan numbers; size-4 shapes uniform within 15%; binary n=100 exact, depth median 29 (max 51) vs 13 (max 19) under the uniform cut; rose 0–4 exact at n=60 with no arity hack; tables for size 100 in 10–64 ms. `.qc.rec` defaults to this law; `.qc.recb` keeps the uniform cut. |
 | A6 | Continue-bit lists shrink better than length-prefixed lists | `a6_lists.q` 2/2 | ✅ | Same shrinker, nine list properties: continue bits 9/9 minima (357 attempts); length prefix 6/9 (275) — it cannot delete a middle element without also decrementing the length, so `sum100`, `bound5` and the filtered case stall on padded lists. |
 | A7 | Clamp-on-misalign beats reject-on-misalign | `a7_clamp.q` 2/2 | ✅ (a draw) | 18/18 minima either way, 546 vs 549 attempts; reject is ~2× faster per attempt (aborts early) and picks left chains where clamp picks right. Clamp kept: every prefix stays a valid input. `cfg`clamp` exists for experiments. |
-| A8 | Shrink quality: analytic minima on the classic suite | `a8_bench.q` 3/3 | ✅ | 18/18 minima, 546 attempts, 146 ms, worst case 79 attempts (table in §1.5). Hypothesis's attempt counts not measured. |
+| A8 | Shrink quality: analytic minima on the classic suite | `a8_bench.q` 3/3 | ✅ | 18/18 minima, 546 attempts, 146 ms, worst case 79 attempts (838, 218 ms and 160 since A28: table in §1.5). Hypothesis's attempt counts not measured. |
 | A13 | Float encoding shrinks to `0f`, small integers, dyadic fractions; can produce `0n 0w -0w` | `a13_float.q` 3/3 | ✅ after a redesign | Encoding for M4: `[kind; special; sign; e; m]`, value `sign·m·2^e`, all fields always drawn (uniform layout), exponent before mantissa. 8/8 cases: `x<100`→`100f`, exact `x+1=x`→`2^53`, `x<0.5`→`1f`, `x>=0`→`-1f`, `within 0.25 0.75`→`0.5`, NaN and `0w` reachable. The first layout (integer part + `num/2^k`, numerator drawn with the small-magnitude mixture) reached only 4/7: `-0.5` could not reach `-1`, and `0.5`-like values were almost never generated. Bonus finding: under q's tolerant `<>`, `x<>x+1` first fails near 2^43 (found `8.8e12`), not 2^53. |
 | A14 | State machine against a second q process over IPC, reset on every replay | `examples/sm_ipc.q` | ✅ | The example starts a child q on a random port, drives a counter over `hopen`, resets it with `init` before every example and replay, finds the wrap after three increments and shrinks to four `inc` steps in 23 attempts, then closes the child. |
 | A18 | A monotone table column: deltas in the choices vs sorting after the draw | `a18_sorted.q` 5/5 | ✅ | Both encodings reach the analytic minimum on four planted bugs (gap, bucket, running max, window) and no candidate was ever unsorted; deltas need fewer attempts (138 vs 199) because a shrink of one choice moves every later time together instead of permuting rows. Rows stay spans (C13) either way. Chosen for M7: deltas. |
@@ -899,6 +1001,7 @@ Run with `sh spikes/run.sh` from the repo root. Results below are from kdb+ 5.0 
 | A26 | Finite temporal generators: timestamps in a session as base plus deltas, dates in a range | `a26_time.q` 7/7 | ✅ | Timestamps never leave the session and are monotone in every example; a planted `xbar` bug (four in one minute) shrinks to four timestamps at the open; a date bug shrinks to the first failing date; `gtime ltime x` round-trips; the minimal list is empty and the minimal date the first. Defaults for M10: a session `09:30`–`16:00` on a given day, a calendar year of dates. |
 | A27 | An arbitrary q value from `rec` over the zoo with list, dict, table and keyed-table nodes | `a27_value.q` 5/5 | ✅ | At size 30, 1000 draws reach every one of the 18 atom types, typed vectors, general lists, dicts, tables and keyed tables (depth quartiles 5/7/10; 11/16/21 at size 100), and `-9!-8!x` round-trips every value. Two library facts surfaced: children that are dicts with different keys made `sub` and `lst` fail with `mismatch` (pitfall 30, fixed), and a node function receives conforming dict children as a table. |
 | A28 | A shrink ends on the same counterexample, the simplest, whatever the seed | `a28_sweep.q` 4/4; `shrink_arms.q` by hand | ✅ | 42 cases at 60 seeds. The passes as they were: 28 cases always right, 88.7% of runs. With each side of the origin searched, Hypothesis's two passes for pairs, a trade, partners and duplicates by generator, and runs of one or two choices deleted: 42 of 42 and 100%, for half as many attempts again (table in §1.5). Distances are exact wherever the long difference does not wrap: in floats a timestamp and the one a nanosecond later were the same. |
+| A29 | A state machine on a real system ends on few counterexamples: the record of a command, duplicates whatever their ranges, swaps of neighbours | `a28_sweep.q` 4/4 with `sm_chain`; `spikes/explore/` by hand | ✅ | Six bugs and sabotages of the pipeline at 12 seeds: 32 kinds of counterexample before, 14 after, for 6% fewer attempts. The sweep with `sm_chain`, 43 cases at 60 seeds: 42 always right before (`sm_chain` at 17 seeds of 60), 43 after, for 1% fewer attempts. The A8 suite is unchanged. A scheme of searches, gates and budgets that got a harder sweep wholly right gained little on the pipeline for 64% more attempts, and is not in the library; nor is a pass that drops the steps a deletion leaves unable to run, which saved 13% of the attempts on the pipeline and nothing on the sweep. State machine choices saved before the change do not replay (table and account in §1.5). |
 | A21 | A generator from a schema | `a21_meta.q` 3/3 | ✅ after a redesign | Reading `meta` fails on enumerations: its `f` names only keyed-table foreign keys, so an enumerated column looks plain. Reading a *sample table* works: the type from `type`, the enumeration domain from `key`, the attribute from `attr`, typed empties from `0#`, keys from `keys`. Six shapes (plain, keyed, nested, attributed, general, enumerated) round-trip `meta` and the enumerated column stays `20h`. `0#` of a table drops attributes while `0#` of a vector keeps them, so an empty table carries none. For M7: the schema generator takes a table; `tabr`'s own empty table has untyped columns, which a schema fixes. Spike lessons: `like` and `vs` are keywords; a lambda does not capture the enclosing locals. |
 
 ---

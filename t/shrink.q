@@ -58,4 +58,16 @@ r3:.qc.chk[qd;ints;{1b}]
 / a value below its origin is tried above it: 1 is simpler than -1, and the binary search makes no attempt at distance 1
 .t.t["a negative value shrinks to the positive one at the same distance where that still fails"; all {[s] 0 1~(.qc.chk[q,enlist[`seed]!enlist s;.qc.list .qc.int -99 99;{x~reverse x}])[`x]`x} each "i"$1+til 20]
 .t.t["and stays negative where the positive one passes"; all {[s] -5~(.qc.chk[q,enlist[`seed]!enlist s;.qc.int -99 99;{x>-5}])[`x]`x} each "i"$1+til 20]
+/ duplicates are lowered together whatever their ranges: two inputs that must be equal, each from a range of its own
+/ (A29). The ranges are too wide for every pair to be tried in turn, which would find 3 3 without a shrink
+.t.t["two equal values from different ranges are lowered together"; all {[s] 3 3~value (.qc.chk[q,`seed`n!(s;3000);(.qc.int 0 99;.qc.int 0 199);{[x;y] not (x=y) and x>2}])`x} each "i"$1+til 10]
+/ and on the side of their origins that they are on
+.t.t["two equal values below their origins are lowered together"; all {[s] 47 47~value (.qc.chk[q,`seed`n!(s;3000);(.qc.int 0 99 50;.qc.int 0 199 50);{[x;y] not (x=y) and x<48}])`x} each "i"$1+til 10]
+/ and by as much as still fails, however far that is
+eqv:{[s] r:.qc.chk[q,`seed`n!(s;3000);(.qc.int 0 99;.qc.int 0 199);{[x;y] not (x=y) and x>20}]; $[`falsified=r`why; value r`x; `long$()]} each "i"$1+til 10   / (a seed or two find no such pair in 3000)
+.t.t["two equal values from different ranges are lowered together to the least that fails"; (7<sum 0<count each eqv) and all {x~21 21} each eqv where 0<count each eqv]
+.t.t["and below their origins"; all {[s] 44 44~value (.qc.chk[q,`seed`n!(s;3000);(.qc.int 0 99 50;.qc.int 0 199 50);{[x;y] not (x=y) and x<45}])`x} each "i"$1+til 10]
+/ a swap of neighbours is tried only where it would make the two simpler: tried everywhere, the swaps of a list of 24
+/ spent the whole budget of attempts on candidates that were bound to be refused, and no value was ever lowered
+.t.t["a list of 24 distinct values shrinks to til 24"; (til 24)~(.qc.chk[q;.qc.list .qc.int 0 1000;{24>count distinct x}])[`x]`x]
 .t.rm d

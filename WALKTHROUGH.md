@@ -864,7 +864,7 @@ q).mdp.amend:{[d;f] t:f .mdp.past d; .mdp.save1[d;`trade;t]; system"l ",1_string
 q).qc.check[.qc.sm[.mdp.hooks] .mdp.cmds; ::];
 ok 100 tests (seed 7)
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 146 tests, 21 shrinks (152 attempts, seed 7)
+FAIL falsified after 146 tests, 23 shrinks (194 attempts, seed 7)
 qc.post qc.eq
 path why   a b
 --------------
@@ -875,7 +875,7 @@ bars count 0 1
   0    eod   ::                                      ::                                                             1
   1    late  (2024.01.02D09:30:00.000000000;`A;1f;1) "+`seq`time`sym`px`qty`bid`ask!(,0;,2024.01.02D09:30:00.00..." 1
   2    query (2024.01.02;`A;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(`symbol$();`..." 0
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 4 1 2 757503000000000000 0 0 0 1 1 1 5 1 0 0 0]
 ```
 
 **The machine passed a system that was known to be broken.** A hundred sequences of up to twenty steps did not
@@ -918,7 +918,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/20_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 117 tests, 24 shrinks (183 attempts, seed 7)
+FAIL falsified after 117 tests, 24 shrinks (188 attempts, seed 7)
 qc.inv
 step cmd    arg                 res ok
 --------------------------------------
@@ -926,7 +926,7 @@ step cmd    arg                 res ok
 1    rename (`A;`N0;2024.01.03) ::  1
 2    fill   (`N0;`sell;1;2f)    ::  1
 3    eod    ::                  ::  1
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 2 0 0 0 0 0 1 1 5 0 0 0 1 2 3 1 0 0 0 2 1 3]
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 0 0 0 0 0 1 1 7 0 0 0 1 3 3 1 0 0 0 2 1 4]
 ```
 
 Four steps.
@@ -970,7 +970,7 @@ q)system"l examples/mdp/steps/17_amend.q"
 q)system"l examples/mdp/steps/22_rename.q"
 q)system"l examples/mdp/steps/21_sm.q"
 q).qc.chk[300;.qc.sm[.mdp.hooks,enlist[`steps]!enlist 0 60] .mdp.cmds; ::];
-FAIL falsified after 186 tests, 22 shrinks (205 attempts, seed 7)
+FAIL falsified after 186 tests, 24 shrinks (190 attempts, seed 7)
 qc.post qc.eq
 path           why   a b
 ------------------------
@@ -979,18 +979,18 @@ path           why   a b
 0:
   step cmd    arg                                      res                                                            ok
   ----------------------------------------------------------------------------------------------------------------------
-  0    eod    ::                                       ::                                                             1
-  1    rename (`A;`N0;2024.01.04)                      ::                                                             1
-  2    quote  (2024.01.03D09:30:00.000000000;`A;1f;0f) ::                                                             1
-  3    eod    ::                                       ::                                                             1
-  4    trade  (2024.01.04D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.04D09:30:00.00..." 1
-  5    query  (2024.01.04;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0
-rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 3 1 6 0 0 0 1 0 757589400000000000 0 0 0 1 0 0 0 1 4 1 1 757675800000000000 0 0 0 1 1 1 5 0 3 0 0]
+  0    quote  (2024.01.02D09:30:00.000000000;`A;1f;0f) ::                                                             1
+  1    rename (`A;`N0;2024.01.03)                      ::                                                             1
+  2    eod    ::                                       ::                                                             1
+  3    trade  (2024.01.03D09:30:00.000000000;`A;1f;1)  "+`seq`time`sym`px`qty`bid`ask!(,1;,2024.01.03D09:30:00.00..." 1
+  4    query  (2024.01.03;`N0;0;0)                     "`bars`vwap`trades!(+`sym`minute`o`h`l`c`v`n!(,`N0;`s#,202..." 0
+rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 757503000000000000 0 0 0 1 0 0 0 1 7 0 0 0 1 4 1 1 757589400000000000 0 0 0 1 1 1 5 0 3 0 0]
 ```
 
-With the merge fixed the machine ran further and stopped on enrichment. On the second day, a rename of `A` to
-`N0`, in effect from the third, and then a quote for `A`. On the third day, a trade under the old name `A`. The system
-stores it as `N0` and enriches it from the cache, whose entry for `A` was rolled into `N0` at the close, as the
+With the merge fixed the machine ran further and stopped on enrichment. On the first day, a quote for `A`, and a
+rename of `A` to `N0` in effect from the second. After the close, on the second day, a trade under the old name
+`A`. The system stores it as `N0` and enriches it from the cache, whose entry for `A` was rolled into `N0` at
+the close, as the
 contract says. The oracle's batch join went by the names the events were stored under, found no quote for `N0`,
 and said null.
 
