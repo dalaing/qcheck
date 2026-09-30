@@ -18,8 +18,8 @@ o.cmds:([cmd:`new`ack`reject`cancel`fill`part`over]
   gen: ({[m] (.qc.const g.order[]; g.t)};                                              / (the tuple is drawn as the generator is built: one order per step)
         {[m] o.pick[m;`ack]}; {[m] o.pick[m;`rej]}; {[m] o.pick[m;`cxl]};
         {[m] o.pick[m;`fill]};
-        {[m] {[m] id:.qc.draw .qc.elem o.canp m; (id; .qc.draw .qc.int (1;-1+m[id;`leaves]))}[m]};                / an id that can take a partial fill, and a part of what is left
-        {[m] {[m] id:.qc.draw o.pick[m;`fill]; (id; .qc.draw .qc.int (1+m[id;`leaves];2*m[id;`leaves]))}[m]});   / more than is left
+        {[m] id:.qc.draw .qc.elem o.canp m; (id; .qc.draw .qc.int (1;-1+m[id;`leaves]))};                / an id that can take a partial fill, and a part of what is left
+        {[m] id:.qc.draw o.pick[m;`fill]; (id; .qc.draw .qc.int (1+m[id;`leaves];2*m[id;`leaves]))});   / more than is left
   run: ({[a] o:a 0; neworder[a 1;o 0;o 1;o 2;o 3]};
         {[id] ack id}; {[id] reject id}; {[id] cancel id};
         {[id] onfill[g.open;id;order[id;`leaves];order[id;`px]]; order[id;`st`leaves]};

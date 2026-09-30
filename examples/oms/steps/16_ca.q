@@ -11,6 +11,6 @@ ca:([]time:`timestamp$(); sym:`symbol$(); ratio:`long$())                       
 totick:{[side;p;tk] r:tk*?[(),`buy=side; (),floor p%tk; (),ceiling p%tk]; $[0>type p; first r; r]}   / a price put on the tick against the side, a buy down and a sell up; atoms or lists
 split:{[t;s;r] if[(r<2) or r<>"j"$r; '"oms: split ratio ",string[r]," is not a whole number of 2 or more"]; if[null inst[s;`ccy]; '"oms: unknown instrument ",string s];
   if[not null pos[s;`qty]; pos[s;`qty`cost]:(pos[s;`qty]*r; pos[s;`cost]%r)];
-  tk:inst[s;`tick]; order::![order;((=;`sym;enlist s);(in;`st;enlist `new`ack`part));0b;`qty`leaves`px`arr!((*;`qty;r);(*;`leaves;r);(.oms.totick;`side;(%;`px;r);tk);(%;`arr;r))];   / (functional: q-sql on the bare name would look for order in the root; and :: not :, which would make order a local)
+  tk:inst[s;`tick]; order::![order;((=;`sym;enlist s);(in;`st;enlist `new`ack`part));0b;`qty`leaves`px`arr!((*;`qty;r);(*;`leaves;r);(.oms.totick;`side;(%;`px;r);tk);(%;`arr;r))];   / (functional over the value, and :: not :, which would make order a local; update ... from order would do as well, with totick spelled .oms.totick, since a function named inside q-sql is looked up in the root)
   `.oms.ca insert (t;s;r);}
 \d .

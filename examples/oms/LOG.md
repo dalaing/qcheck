@@ -113,8 +113,9 @@ q).oms.tobase[2024.01.02D10:00;`EUR;100f]
 'type
 ```
 
-`'type`, not the message: `where null r` on the atom that `rate` returns for an atom asked gives an index into a
-list, and `distinct` of the atom it picks out fails. The rule said "refused", and any error is a refusal, so the
+`'type`, not the message: `where null r` on the atom that `rate` returns for an atom asked fails, since `where`
+takes a list *(corrected: this said `where` gave an index into a list and `distinct` failed on what it picked out;
+`where` on a boolean atom is itself the `type` error)*. The rule said "refused", and any error is a refusal, so the
 rule was happy. The rule that would have caught it says what the refusal must say:
 
 ```q
@@ -224,7 +225,10 @@ q).qc.check[(.oms.g.t;.oms.g.order;fq); {[t;a;fs] reset[]; id:.oms.neworder[t;a 
 ok 100 tests (seed 7)
 ```
 
-Two things went wrong before these ran, both in the test and not the piece. The generators for a quantity and a
+Two things went wrong before these ran, both in the test and not the piece. *(corrected: a third, found when the
+walkthrough was written from this log: the third rule's `select from .oms.fill where id=id` compares the column
+with itself, the column shadowing the local, and so selects every fill; with one order per run it made no
+difference, and the walkthrough's version of the rule names the order `oid`.)* The generators for a quantity and a
 limit price multiplied a generator by a number, `.qc.int[1 20]*lot`, which is a function times a long; a generator
 of your own that needs arithmetic on what it draws is a function that draws and then computes. And `fills` is a
 keyword (the forward fill), so a list of fills cannot be called that: `fq`.
@@ -389,10 +393,11 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 0 3 9 1 0 0 2 5 1 0 0 7 1 0 0 0
 
 `length` on the first example, an instrument with no orders: the split amended four columns of the keyed order table
 at once by index, `order[ids;`qty`leaves`px`arr]:...`, which q does not do. A functional update over the table's
-value does, `order::![order;...]`, with two things to get right in one line: q-sql on the bare name `order` inside
-the `.oms` namespace would look for `order` in the root, so the update is functional over the value; and the
-assignment is `::`, since `order:` anywhere in the function would make `order` a local and the read on the right a
-read of nothing.
+value does, `order::![order;...]`, with one thing to get right: the assignment is `::`, since `order:` anywhere in
+the function would make `order` a local and the read on the right a read of nothing. *(corrected: this said the
+update had to be functional because q-sql on the bare name `order` would look for it in the root. It would not: a
+table named in `from` is found in the namespace; it is a variable or function named inside the query, `totick`
+here, that is looked up in the root, and `update ... from order` with `.oms.totick` spelled out would have done.)*
 
 ```q
 q)system"l examples/oms/steps/04_ref.q"
@@ -954,7 +959,7 @@ q)system"rm -rf ",1_string .oms.hdb
 
 ```
 A hundred sequences hold and five hundred do not: two partial fills in yen, and the oracle's profit and the
-system's differ in the fourteenth digit. The oracle adds the fills up in one order and the system books them one
+system's differ in the thirteenth decimal place. The oracle adds the fills up in one order and the system books them one
 at a time; a profit in the base currency is compared to a millionth. With that, five hundred sequences, and a
 count of what they reach:
 

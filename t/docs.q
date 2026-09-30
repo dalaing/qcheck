@@ -9,6 +9,8 @@ missing:{[f] (names[f] except have) except `}
 .t.t["every .qc name in EXAMPLES.md exists"; 0=count missing `:EXAMPLES.md]
 .t.t["every .qc name in examples/mdp/LOG.md exists"; 0=count missing `:examples/mdp/LOG.md]
 .t.t["every .qc name in WALKTHROUGH.md exists"; 0=count missing `:WALKTHROUGH.md]
+.t.t["every .qc name in WALKTHROUGH2.md exists"; 0=count missing `:WALKTHROUGH2.md]
+if[count missing `:WALKTHROUGH2.md; -1 "  WALKTHROUGH2.md mentions: ",.Q.s1 missing `:WALKTHROUGH2.md]
 if[count missing `:WALKTHROUGH.md; -1 "  WALKTHROUGH.md mentions: ",.Q.s1 missing `:WALKTHROUGH.md]
 if[count missing `:docs/DESIGN.md; -1 "  docs/DESIGN.md mentions: ",.Q.s1 missing `:docs/DESIGN.md]
 if[count missing `:README.md; -1 "  README.md mentions: ",.Q.s1 missing `:README.md]
@@ -26,3 +28,6 @@ exok:{[b] $[not (first b) like "/ *"; 0b; @[{[b] all (1_b) in read0 hsym `$2_fir
 exb:excs `:WALKTHROUGH.md
 .t.t["every excerpt in WALKTHROUGH.md names its file and is in it, line for line"; (10<count exb) and all exok each exb]
 if[not all exok each exb; -1 "  not in its file: ",/:first each exb where not exok each exb]
+exo:excs `:WALKTHROUGH2.md
+.t.t["every excerpt in WALKTHROUGH2.md names its file and is in it, line for line"; (10<count exo) and all exok each exo]
+if[not all exok each exo; -1 "  not in its file: ",/:first each exo where not exok each exo]

@@ -753,7 +753,7 @@ t/              q t/run.q — one table. families: 0gens (the generator registry
                 over every registered generator), ranges (the range grid), outcomes (verdicts, signals, schema,
                 state after every exit), bench (the A8 minima with attempt caps), sweep (A28 and A29 at ten seeds), dist
                 (distributions), reportx,
-                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, this file, examples/mdp/LOG.md and examples/oms/LOG.md; QC_FAST=1
+                doctest (every q) transcript in README, EXAMPLES, COOKBOOK, WALKTHROUGH, WALKTHROUGH2, this file, examples/mdp/LOG.md and examples/oms/LOG.md; QC_FAST=1
                 skips the state-machine blocks, most of the suite's time), docs (names in docs exist; WALKTHROUGH's
                 excerpts are in their files),
                 names (reserved words, shadowing), readme (README and DESIGN code blocks load), examples (each
@@ -764,9 +764,12 @@ COOKBOOK.md     recipes for kdb tasks, each a planted bug found and shrunk, ever
 WALKTHROUGH.md  the pipeline of examples/mdp/ as a narrative for readers, drawn from its log; doctested
 examples/mdp/   a market data pipeline built in pieces with a doctested development log, LOG.md (M12), left as
                 it was written; walk.q holds what WALKTHROUGH.md's sessions load
+WALKTHROUGH2.md  the execution system of examples/oms/ as a narrative for a reader new to property-based testing,
+                paced a concept at a time with a glossary; doctested, excerpts checked (t/docs.q)
 examples/oms/   an execution and positions system (orders, fills, quotes and FX as of a time, positions and PnL in a
                 base currency, a split, end of day to a partitioned database) built the same way from the same brief,
-                for comparison: steps/, LOG.md (doctested), oms.q, props.q, sm.q, run.q; no walkthrough yet
+                for comparison: steps/, LOG.md (doctested), oms.q, props.q, sm.q, run.q; walk.q holds what
+                WALKTHROUGH2.md's sessions load
 tools/          doc_child.q, the REPL-imitating child that t/doctest.q runs
 docs/           DESIGN.md (this document), HISTORY.md (the milestone plan and the review rounds, once §3 and §5 here),
                 AUDIT.md, AUDIT2.md and REVIEW.md (the review after M12 with its checklist), all three closed

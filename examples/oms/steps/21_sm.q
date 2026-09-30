@@ -38,9 +38,9 @@ sys.cmds:([cmd:`fx`quote`new`ack`cancel`fill`split`eod]
   pre: ({[m] 1b}; {[m] 1b}; {[m] 0<count sys.qs m}; {[m] 0<count sys.can[m;`ack]}; {[m] 0<count sys.can[m;`cxl]}; {[m] 0<count sys.canf m}; {[m] m`fresh}; {[m] not m`fresh});
   gen: ({[m] (sys.tg m; .qc.elem g.ccys)};                                           / (the rate itself is drawn in run: step 24 moves it here)
         {[m] (sys.tg m; .qc.elem g.syms)};
-        {[m] {[m] sy:.qc.draw .qc.elem sys.qs m; (sys.tg m; .qc.const (sy; .qc.draw g.side; g.qty sy; g.lim sy))}[m]};   / (drawn as the generator is built, as in the lifecycle test)
+        {[m] sy:.qc.draw .qc.elem sys.qs m; (sys.tg m; .qc.const (sy; .qc.draw g.side; g.qty sy; g.lim sy))};   / (drawn as the generator is built, as in the lifecycle test)
         {[m] sys.pick[m;`ack]}; {[m] sys.pick[m;`cxl]};
-        {[m] {[m] id:.qc.draw .qc.elem sys.canf m; (sys.tg m; .qc.const id; .qc.int (1;m[`o;id;`leaves]); .qc.flt g.px m[`o;id;`sym])}[m]};
+        {[m] id:.qc.draw .qc.elem sys.canf m; (sys.tg m; .qc.const id; .qc.int (1;m[`o;id;`leaves]); .qc.flt g.px m[`o;id;`sym])};
         {[m] (.qc.const opn m`day; .qc.elem g.syms; .qc.int 2 4)};
         {[m] .qc.const m`day});
   run: ({[a] t:a 0; r:.qc.draw g.rate a 1; onfx[t;a 1;r]; (t;r)};

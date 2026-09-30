@@ -29,11 +29,11 @@ sys.canf:{[m] exec id from m[`o] where not null .oms.o.nx[st;`fill], not null .o
 sys.cmds:([cmd:`fx`quote`new`ack`cancel`fill`split`eod]
   w:   2 4 3 3 1 3 1 1f;
   pre: ({[m] 1b}; {[m] 1b}; {[m] 0<count sys.qs m}; {[m] 0<count sys.can[m;`ack]}; {[m] 0<count sys.can[m;`cxl]}; {[m] 0<count sys.canf m}; {[m] m`fresh}; {[m] not m`fresh});
-  gen: ({[m] {[m] c:.qc.draw .qc.elem g.ccys; (sys.tg m; .qc.const c; g.rate c)}[m]};      / everything a step draws is drawn here, in gen: a draw in run would fall outside the step
-        {[m] {[m] sy:.qc.draw .qc.elem g.syms; (sys.tg m; .qc.const sy; .qc.const g.quote sy)}[m]};
-        {[m] {[m] sy:.qc.draw .qc.elem sys.qs m; (sys.tg m; .qc.const (sy; .qc.draw g.side; g.qty sy; g.lim sy))}[m]};   / (drawn as the generator is built, as in the lifecycle test)
+  gen: ({[m] c:.qc.draw .qc.elem g.ccys; (sys.tg m; .qc.const c; g.rate c)};      / everything a step draws is drawn here, in gen, where the model sees it and post and upd can read it
+        {[m] sy:.qc.draw .qc.elem g.syms; (sys.tg m; .qc.const sy; .qc.const g.quote sy)};
+        {[m] sy:.qc.draw .qc.elem sys.qs m; (sys.tg m; .qc.const (sy; .qc.draw g.side; g.qty sy; g.lim sy))};   / (drawn as the generator is built, as in the lifecycle test)
         {[m] sys.pick[m;`ack]}; {[m] sys.pick[m;`cxl]};
-        {[m] {[m] id:.qc.draw .qc.elem sys.canf m; (sys.tg m; .qc.const id; .qc.int (1;m[`o;id;`leaves]); .qc.flt g.px m[`o;id;`sym])}[m]};
+        {[m] id:.qc.draw .qc.elem sys.canf m; (sys.tg m; .qc.const id; .qc.int (1;m[`o;id;`leaves]); .qc.flt g.px m[`o;id;`sym])};
         {[m] (.qc.const opn m`day; .qc.elem g.syms; .qc.int 2 4)};
         {[m] .qc.const m`day});
   run: ({[a] onfx[a 0;a 1;a 2]; a 2};
