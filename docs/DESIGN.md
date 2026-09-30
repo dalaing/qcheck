@@ -670,8 +670,8 @@ machine; the postconditions are the property":
 q)S:([]v:`long$())
 q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
-q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
-q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
+q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:`push`pop; post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
+q).qc.check[.qc.sm[`m0`init!(`long$();{`S set 0#S})] cmds; ::];
 FAIL falsified after 10 tests, 3 shrinks (55 attempts, seed 7)
 qc.post
 step cmd  arg res model ok

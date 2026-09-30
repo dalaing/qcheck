@@ -919,14 +919,14 @@ is, how to call the system, what the answer should have been, and how the model 
 q)S:([]v:`long$())
 q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
-q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
-q).qc.draw .qc.sm[`m0`init`steps!(`long$();{S::0#S};3 3)] cmds
+q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:`push`pop; post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
+q).qc.draw .qc.sm[`m0`init`steps!(`long$();{`S set 0#S};3 3)] cmds
 step cmd  arg res model ok
 --------------------------
 0    push 1   ::  ,1    1
 1    push 2   ::  1 2   1
 2    pop  ::  2   ,1    1
-q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
+q).qc.check[.qc.sm[`m0`init!(`long$();{`S set 0#S})] cmds; ::];
 FAIL falsified after 10 tests, 3 shrinks (55 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
@@ -952,7 +952,7 @@ is the simplest three values that do, and the script ends on them whatever its s
 *As a script: `examples/sm_ipc.q`, which is not run as a session here because it starts a second q.*
 
 Nothing about a stateful test needs the system to be in the same process. The commands of this one send their
-calls down a handle, to a counter that wraps to zero when it passes three:
+calls as synchronous messages down a connection handle, to a counter that wraps to zero when it passes three:
 
 ```
 h "n:0; inc:{n::n+1; if[n>3; n::0]; n}; rd:{n}; rst:{n::0}"

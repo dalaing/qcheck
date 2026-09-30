@@ -236,8 +236,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0 0 0 0 1 75750300000000000
 ```
 
 One trade and no quotes, and the two sides differ in their `count`: the incremental side has no rows and the
-batch side has one. No row was lost by the piece. `replay0` lost it. The inner lambda appends to `out`, and a
-lambda in q does not see the locals of the function around it, so `out,:` made a *global* called `out` and
+batch side has one. No row was lost by the piece. `replay0` lost it. The inner function appends to `out`, and a
+function in q does not see the locals of the function around it, so `out,:` made a *global* called `out` and
 appended to that, and `replay0` returned its own `out`, still empty.
 
 The smallest stream that has a trade in it found a bug in six lines of test code. The replay becomes a fold,
@@ -1110,7 +1110,7 @@ Twelve findings in the system and its oracle:
 | renames, late trades and enrichment | the stateful test | the oracle used the names of the trade's day, not of the day it arrived |
 
 Beside them were about as many mistakes in the tests: properties with the wrong number of parameters, a vector
-compared with a dict, a lambda reaching for a local it could not see, keywords used as parameter names, a
+compared with a dict, a function reaching for a local it could not see, keywords used as parameter names, a
 tolerance missing from a comparison of floats, a reset that left a stale map, and a delete that removed
 everything.
 

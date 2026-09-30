@@ -22,9 +22,16 @@ It passes, and it says nothing about the empty list, a list of nulls, or the inp
 
 A property-based test states a rule and leaves the library to look for an input that breaks it. It has two parts:
 
-- a **generator**, which describes the inputs: `.qc.list .qc.int 0 100` is "any list of longs from 0 to 100";
+- a **generator**, which describes the inputs: `.qc.list .qc.int 0 100` is "any list of longs from 0 to 100", the
+  empty list included;
 - a **property**, a function of one such input that returns `1b` when the rule holds: `{x~asc x}` is "the list
   is already sorted".
+
+q programmers already make test data with `?`: `10?100` is ten random numbers. A generator is that idea made to
+stand for *every* input the rule speaks of, so it draws what one `10?100` does not: the empty list, a list of one
+item, nulls and infinities where the type has them, the ends of a range, and lists that grow as the run goes on. And a
+run that finds a failure does two things `?` cannot: it cuts the input down to the simplest one that still fails,
+and it gives you a line that reproduces it.
 
 `.qc.check[g;prop]` draws *examples* from the generator `g`, the simplest ones first and then random ones that
 grow, and calls the property on each; one call is a *test*. A hundred passing tests print a line that begins
@@ -62,7 +69,8 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 0 0 0]
 ```
 
 `.qc.t"j"` draws any long, nulls and infinities included, and a list that starts with a null has nothing to fill
-it from.
+it from. q answers many small mistakes with a null rather than an error: indexing past the end of a list, or a
+dict by a key it lacks, gives `0N`, so an off-by-one shows up in a report as `0N` too.
 
 ### Finding properties
 
@@ -79,7 +87,9 @@ ints:.qc.list .qc.int -9 9
 ```
 
 For code of your own the oracle is often the place to start: a naive version that is too slow for production is
-fast enough for a test, and easy to believe (`COOKBOOK.md` tests an as-of join this way).
+fast enough for a test, and easy to believe (`COOKBOOK.md` tests an as-of join this way). Three of q's own
+classes of function come with a law: a *uniform* function keeps the count (`count[f x]=count x`), an *aggregate*
+turns a list into an atom, and an *atomic* one works item by item (`(f x)~f each x`).
 
 ## Getting started
 
@@ -97,7 +107,8 @@ The licence is MIT: see `LICENSE`. `qc.q` carries the notice in its header, sinc
 ## Generators
 
 A generator is anything `.qc.draw` can draw a value from. The library's generators are functions, most of which
-take a range or a setting first: `.qc.int` is the function and `.qc.int 0 9` the generator. A list of generators
+take a range or a setting first: `.qc.int` is the function and `.qc.int 0 9` the generator, a projection of
+it. A list of generators
 is a generator of tuples, a dict of generators is a generator of records, and any other value is a generator of
 itself.
 
@@ -124,7 +135,7 @@ itself.
 .qc.schema ([]time:`s#09:30 09:31; sym:`a`b; px:1.5 2.5)   / tables shaped like a sample: types, keys, attributes, enumerations, foreign keys
 .qc.atr[`s] .qc.list .qc.int 0 9         / a sorted vector carrying s#
 .qc.bulk[0 99;0 1000000]                 / a long vector drawn as one block, for large data; .qc.btab[nr] cols a table of them
-.qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: arity range, leaf, node of its children (values)
+.qc.rec[2 2; .qc.int 0 9; {(x 0;x 1)}] / a binary tree: children per node, leaf, node of its children (values)
 ```
 
 `.qc.draw g` draws a value from a generator, and `.qc.minimal g` gives its simplest value, which is where
@@ -145,7 +156,10 @@ digit:.qc.int 0 9; prop:{x<10}
 ```
 
 A property passes if it returns `1b`, a boolean list that is all `1b` (an empty list counts), or `::`. Any other
-value fails it, the long `1` included, and so does an error, which is reported with its message.
+value fails it, the long `1` included, and so does an error: the check runs the property under protected
+evaluation, and reports the message. A list of generators gives the property one argument each, as above. A
+generator of your own that returns a pair hands the property one value, so a property of two parameters over it
+is applied with `.`: `.qc.check[g; {[s;n] n<10} .]`.
 
 A run draws `n` examples, 100 unless you say otherwise. When a generator has few enough choices to make that
 every input can be tried within `n` tests, the run tries them all, simplest first, and says so:
@@ -175,7 +189,10 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 1 1 0 0]
 ```
 
 `check` returns its result as a dict (`REFERENCE.md` lists the keys), and the report is made from it:
-`.qc.report r` returns the lines, and `.j.j r` is JSON.
+`.qc.report r` returns the lines, and `.j.j r` is JSON. `r[`x]` is a dict: `` `x `` to the value for a single
+generator, the inputs by parameter name for a list or a dict of generators. A check traps every error the
+property raises, so q's debugger never opens on one; to step through the property yourself, call it on the
+counterexample: `prop r[`x;`x]`, or `prop . r[`x] (value prop)[1]` for named inputs.
 
 Inside another test framework, `.qc.must[g;prop]` returns the result when the property passes and otherwise
 signals the whole report as one error (`'qc: FAIL falsified after 3 tests…`), whose first line is the verdict.
@@ -185,6 +202,11 @@ property looks like in each. `.qc.main d` runs a suite and exits with the number
 A check sets the seed of the process (`\S`) and, on q 4.1 and later, puts the random state back when it returns,
 so your own stream of random numbers goes on as if the check had not run. On older q the earlier state cannot be
 recovered: set `\S` again after a check. `-S` on the command line does not pin a check; the `seed` setting does.
+
+Two things a check cannot do. It cannot stop a property that never returns: there is no timeout, and a property
+that loops hangs the run without a report, so a call that might loop needs a bound of its own, or to run in
+another process over a handle, where `\T` can bound it. And it cannot run in a secondary thread: the library's
+state is global, so `.qc.draw`, `.qc.note` and the rest signal `noupdate` inside `peach`.
 
 ## Stateful testing
 
@@ -197,7 +219,8 @@ The model is a plain q value that holds what the system ought to contain, in the
 the questions asked of it: a list for a stack kept in a table, a dict for a keyed table, a row count for a
 tickerplant's log. One-line functions update it, so it is easy to believe; the real system is the thing in doubt.
 
-Each call the test may make is a *command*, a row of a keyed table whose columns are functions:
+Each call the test may make is a *command*, a row of a keyed table whose columns are functions, or the names of
+functions:
 
 | column | arguments | what it answers |
 |---|---|---|
@@ -214,10 +237,10 @@ pop:{r:last S`v; delete from `S where i=count[S]-1; r}
 cmds:([cmd:`push`pop]
   pre: ({1b};             {0<count x});                     / model -> can this command run?
   gen: ({.qc.int 0 9};    {::});                            / model -> the generator of its input
-  run: (push;             pop);                             / input -> output, on the real system
+  run: `push`pop;                                           / input -> output, on the real system, named so that a fix is seen
   post:({[m;i;o] 1b};     {[m;i;o] o=last m});              / model before, input, output -> ok?
   upd: ({[m;i;o] m,i};    {[m;i;o] -1_m}))                  / model before, input, output -> model after
-.qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::]
+.qc.check[.qc.sm[`m0`init!(`long$();{`S set 0#S})] cmds; ::]
 ```
 
 `.qc.sm[h] cmds` is a generator like any other, and drawing an example from it runs one sequence. `init` resets
@@ -234,8 +257,8 @@ three are stacked, and the same commands find it (`examples/sm_table.q` is this 
 q)S:([]v:`long$())
 q)push:{`S insert enlist x;}
 q)pop:{r:$[2<count S; first S`v; last S`v]; delete from `S where i=count[S]-1; r}
-q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:(push;pop); post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
-q).qc.check[.qc.sm[`m0`init!(`long$();{S::0#S})] cmds; ::];
+q)cmds:([cmd:`push`pop] pre:({1b};{0<count x}); gen:({.qc.int 0 9};{::}); run:`push`pop; post:({[m;i;o] 1b};{[m;i;o] o=last m}); upd:({[m;i;o] m,i};{[m;i;o] -1_m}))
+q).qc.check[.qc.sm[`m0`init!(`long$();{`S set 0#S})] cmds; ::];
 FAIL falsified after 10 tests, 3 shrinks (55 attempts, seed 7)
 qc.post
 step cmd  arg res model ok
@@ -263,10 +286,11 @@ pushes a 1 because a 0 popped from `0 0 0` would have looked right.
   valid one (`{.qc.int 0,x`balance}` for a withdrawal) instead of drawing anything and filtering.
 - **`post` checks one answer; an invariant checks the system.** `h` may carry an `inv`, a function of the model
   that is checked after every step, which is where "the table has as many rows as the model has counted" goes:
-  `` `m0`init`inv!(0; {TBL::0#TBL}; {[m] m=count TBL}) ``. A false one reports `qc.inv` with the trace.
+  `` `m0`init`inv!(0; {`TBL set 0#TBL}; {[m] m=count TBL}) ``. A false one reports `qc.inv` with the trace.
 - **`init` must reset everything.** It runs before every example, every shrink attempt and every replay, and a
   failure that depends on state left over from an earlier sequence cannot be replayed. A system in another
-  process is reset over its handle (`examples/sm_ipc.q`).
+  process is reset over its handle (`examples/sm_ipc.q`). Reset a global by name, `` {`S set 0#S} ``: inside a
+  function `S::0#S` does the same, but typed at the console it turns `S` into a view, not a reset.
 - **Name the functions you mean to fix.** A cell of `pre`, `gen`, `run`, `post` or `upd` may be a symbol, `` run:`push`pop ``,
   and the function of that name is looked up each time it is called. A function given by value is captured as it
   was, so after you fix it `.qc.again[]` would still run the old one.

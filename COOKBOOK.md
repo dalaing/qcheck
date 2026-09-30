@@ -194,7 +194,8 @@ ok 100 tests (seed 7)
 
 **The report.** The rule fails on the first example, and the counterexample is a table with no rows: the
 difference is one of type, so no row is needed to show it. The `sym` column went in as symbols (type 11) and came
-back as an enumeration (type 20), which is what `.Q.en` is for. The two tables look the same at the console and
+back as an enumeration (type 20), which is what `.Q.en` is for: it enumerates every symbol column over the
+`sym` file in the database root, writing the file as it goes. The two tables look the same at the console and
 join the same. They are not the same to `~`, and so not to any caller, or test, that compares what it read back
 with what it wrote.
 
@@ -216,7 +217,7 @@ one batch or in two, loses a row.
 q)TBL:([]sym:`symbol$(); px:`float$())
 q)upd:{[t;x] TBL::0!(`sym xkey TBL) upsert x}
 q)cmds:([cmd:enlist `upd] gen:enlist {[m] .qc.tabr[1 5] `sym`px!(.qc.symc["ab";1 1]; .qc.flt 0 9)}; run:enlist {[x] upd[`trade;x]}; upd:enlist {[m;a;o] m+count a})
-q).qc.check[.qc.sm[`m0`init`inv!(0; {TBL::0#TBL}; {[m] m=count TBL})] cmds; ::];
+q).qc.check[.qc.sm[`m0`init`inv!(0; {`TBL set 0#TBL}; {[m] m=count TBL})] cmds; ::];
 FAIL falsified after 4 tests, 6 shrinks (68 attempts, seed 7)
 qc.inv
 step cmd arg                  res model ok
@@ -238,7 +239,7 @@ rerun: .qc.again[]  or  .qc.recheck[gen;prop;1 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0]
 every sequence; `inv` is the invariant, a function of the model that may look at the real system.
 
 **The report.** `qc.inv` says the invariant was false, and the trace is one step long: one batch of two rows for
-the same symbol. The `arg` column shows the batch as q prints a table on one line, a flipped dict of columns.
+the same symbol. The `arg` column shows the batch as q prints a table on one line, as the flip (`+`) of a column dictionary, which is what a table is.
 The `model` column says 2, and the table had one row.
 
 **The fix** is to append, and the invariant then holds over every sequence of batches drawn.
@@ -247,7 +248,7 @@ The `model` column says 2, and the table had one row.
 q)TBL:([]sym:`symbol$(); px:`float$())
 q)upd:{[t;x] TBL,:x}
 q)cmds:([cmd:enlist `upd] gen:enlist {[m] .qc.tabr[1 5] `sym`px!(.qc.symc["ab";1 1]; .qc.flt 0 9)}; run:enlist {[x] upd[`trade;x]}; upd:enlist {[m;a;o] m+count a})
-q).qc.check[.qc.sm[`m0`init`inv!(0; {TBL::0#TBL}; {[m] m=count TBL})] cmds; ::];
+q).qc.check[.qc.sm[`m0`init`inv!(0; {`TBL set 0#TBL}; {[m] m=count TBL})] cmds; ::];
 ok 100 tests (seed 7)
 ```
 

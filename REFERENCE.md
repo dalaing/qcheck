@@ -19,7 +19,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `str`, `strc` | `.qc.str`, `.qc.strc[s;r]` | a string, typed even when empty; alphabet `s`, length range `r` |
 | `sym`, `symc` | `.qc.sym`, `.qc.symc[s;r]` | a symbol over a bounded alphabet (default `"abcd"`, lengths 0–3); the null symbol simplest |
 | `gid`, `gidf` | `.qc.gid`, `.qc.gidf` | a guid; `gidf` is never null, and its simplest value is `00000000-0000-0000-0000-000000000001` |
-| `t`, `tf` | `.qc.t c`, `.qc.tf c` | an atom of type char `c`, drawn widely (any long; dates a century either side of 2000; chars and symbols as `chr` and `sym`): `t` with the null and the infinities of the type, `tf` without |
+| `t`, `tf` | `.qc.t c`, `.qc.tf c` | an atom of type char `c`, drawn widely (any long; dates a century either side of 2000; timespans some thirty years either side of 0; a minute, second or time within one day; chars and symbols as `chr` and `sym`): `t` with the null and the infinities of the type where it has them (a boolean and a byte have none), `tf` without |
 | `ts`, `dates` | `.qc.ts[from;to]`, `.qc.dates[from;to]` | a timestamp or a date in a window, the start simplest |
 | `const` | `.qc.const x` | the value `x` (for a value that would otherwise be taken for a generator, such as a list of functions) |
 | `elem` | `.qc.elem xs` | an element of the constant list `xs` |
@@ -27,7 +27,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `such` | `.qc.such[p] g` | `g` filtered by the predicate `p`: it draws up to `tries` times, then discards the example |
 | `spc` | `.qc.spc[specials] g` | `g`, or one of `specials` (nulls, infinities, bounds) some of the time |
 | `small`, `sized` | `.qc.small g`, `.qc.sized f` | `g` at half the size budget; `f` of the size, returning a generator |
-| `list`, `lst` | `.qc.list g`, `.qc.lst[r] g` | a list of `g`, length in `r` (default `0 0W`, capped by size); homogeneous atoms become a vector |
+| `list`, `lst` | `.qc.list g`, `.qc.lst[r] g` | a list of `g`, length in `r` (default `0 0W`, capped by size); atoms of one type become a vector (a simple list), records a table; the empty list is the general `()` |
 | `vec` | `.qc.vec[r] c` | a typed vector of `.qc.t c`, typed even when empty |
 | `tab`, `tabr`, `ktab` | `.qc.tab cols`, `.qc.tabr[r] cols`, `.qc.ktab[k;r] cols` | a table from a column dictionary of generators, row count in `r`, keyed on `k` (a compound key's combinations are distinct; a key column may repeat); in the empty table a column of atoms has its type |
 | `mono`, `uniq`, `dep` | `.qc.mono[base;delta]`, `.qc.uniq g`, `.qc.dep f` | column constraints `tab` recognises: non-decreasing from `base` by `delta`; distinct; `f` of the row so far |
