@@ -5,7 +5,7 @@
 \d .qc
 
 / ---- configuration ----------------------------------------------------------------------------------
-cfg:`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v!(100;0N;0Ni;100;2000;10;50;200;8192;1b;1b;`:.qc;`;20;1)
+cfg:`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v`rerun!(100;0N;0Ni;100;2000;10;50;200;8192;1b;1b;`:.qc;`;20;1;1b)
 cf:cfg                                                / effective config of the current run
 
 / ---- engine state: global, reset per example --------------------------------------------------------
@@ -643,7 +643,7 @@ report:{[r] c:cf; s:$[r`ok; enlist "ok ",string[r`n]," tests",$[(r`stop) in key 
   (enlist "FAIL ",string[r`why]," after ",string[r`n]," tests, ",string[r`shrinks]," shrinks (",string[r`attempts]," attempts, seed ",string[r`seed],")"),
    $[(::)~r`x; (); enlist fmt r`x],$[(r`err)~"false"; (); enlist r`err],(fmt each r`notes),$[c[`v]>1; enlist r`bt; ()],
    $[r`stale; enlist "stale: the generator has changed since these choices were recorded"; ()],
-   enlist rerun r`choices];
+   $[c`rerun; enlist rerun r`choices; ()]];   / (the rerun line can be left out of a report: a document that shows many, or a log that has no use for it)
   s,$[count r`cover; enlist ftab r`cover; ()]}
 rep:{-1 "\n" sv report x;}
 

@@ -23,6 +23,8 @@ r:.qc.chk[q,enlist[`disc]!enlist 1;.qc.int 0 9;{if[x>2; .qc.discard[]]; 1b}]
 .t.t["cfg disc: one discard per test stops the run short of its budget"; (0<(r`disc)`discard) and (r`n)<100]
 r:.qc.chk[q;.qc.tabr[30 30] enlist[`a]!enlist .qc.int 0 9;{0b}]
 .qc.cf[`rows]:5; lines:.qc.report r; .qc.cf[`rows]:20                                    / (report reads the run's config, cf; after the run it is the defaults again)
+.qc.cf[`rerun]:0b; lines0:.qc.report r; .qc.cf[`rerun]:1b
+.t.t["cfg rerun 0b leaves the rerun line out of the report, and 1b keeps it"; (not any lines0 like "rerun: *") and 1=sum .qc.report[r] like "rerun: *"]
 .t.t["cfg rows: a 30-row table in a report shows 5 and says 25 more"; any lines like "*... 25 more rows*"]
 r:.qc.chk[q;.qc.int 0 9;{if[x>3; '"boom"]; 1b}]
 .qc.cf[`v]:2; lines:.qc.report r; .qc.cf[`v]:0

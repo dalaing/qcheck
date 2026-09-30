@@ -996,7 +996,7 @@ ok 1000 tests (seed 42)
 q).qc.chk[20; .qc.list .qc.int 0 9; {x~reverse reverse x}];
 ok 20 tests (seed 7)
 q)key .qc.cfg
-`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v
+`n`nmax`seed`sz`shrinks`disc`tries`depth`choices`same`clamp`db`name`rows`v`re..
 ```
 
 The ones you are most likely to change are `n`, the number of tests; `seed`, which is taken from the clock when

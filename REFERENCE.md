@@ -87,6 +87,7 @@ first, the second is `lst`, `chk` and `chks` for `list`, `check` and `checks`, a
 | `name` | `` ` `` | the name a failure is saved under; null for a hash of the generator and the property |
 | `rows` | 20 | how many rows of a table a report shows |
 | `v` | 1 | 0 prints nothing, 1 the report, 2 adds the backtrace of an error |
+| `rerun` | `1b` | whether a failure's report ends with the `rerun:` line (`.qc.again[]`, and `.qc.recheck` with the recorded choices); `0b` leaves it out |
 
 ## Results and signals
 
