@@ -1,0 +1,36 @@
+/ M8: bulk vectors and tables (A22). loaded by t/run.q. The timings are printed as information, not asserted:
+/ a wall-clock bound is a fact about the machine.
+system"S 7"
+ms:{[f;x] t0:.z.p; r:f x; (r;(.z.p-t0)%1000000)}
+/ generation
+g:ms[.qc.draw;.qc.bulk[0 99;1000000 1000000]]
+.t.t["bulk: a million longs in range"; (1000000=count g 0) and all (g 0) within 0 99]
+-1 "  info: a million longs drawn in ",string[g 1]," ms (spike: 9 ms)";
+.t.t["bulk: one block is one unit of the choice budget"; 2=.qc.nch]
+.t.t["bulk: the length varies with the range and never exceeds it"; all (count each .qc.draw 50#enlist .qc.bulk[0 9;0 20]) within 0 20]
+.t.t["bulk: minimal is empty"; (`long$())~.qc.minimal .qc.bulk[0 99;0 1000]]
+.t.t["bulk: replays its own choices"; (v~.qc.replay[.qc.C`v] .qc.bulk[0 99;0 1000]) and 1000>=count v:.qc.draw .qc.bulk[0 99;0 1000]]
+.t.t["bulk: a block past the prefix is qc.overrun under strict replay"; "qc.overrun"~@[.qc.strict[enlist 5];.qc.bulk[0 99;0 1000];{x}]]
+/ the fresh-draw laws, vectorised, on the ranges people use
+v:.qc.draw .qc.bulk[0 1000;100000 100000]
+.t.t["bulk: zeros under 20%, the bound present, large values present (C17)"; (0.2>avg 0=v) and (any v=1000) and 0.03<avg 500<v]
+v:.qc.draw .qc.bulk[-1000 1000;100000 100000]
+.t.t["bulk: symmetric range has both signs"; (0.4<avg v>0) and 0.4<avg v<0]
+.t.t["bulk: full long range stays in bounds"; all within[;(-0W;0W)] .qc.draw .qc.bulk[-0W 0W;1000 1000]]
+.t.t["unifn on a range whose width overflows draws from both halves (AUDIT2: the conditional was given longs)"; (all within[;(-0W;0W)] v) and (any v<0) and any 0<v:.qc.unifn[-0W;0W;2000]]
+/ shrinking: the minimum is not a prefix, and block deletion reaches it fast
+r:ms[{.qc.chk[q;x;{x~asc x}]};.qc.bulk[0 99;0 100000]]
+.t.t["bulk: x~asc x over up to 1e5 elements shrinks to 1 0"; 1 0~r[0][`x]`x]
+.t.t["bulk: in under 100 attempts (spike: 44)"; 100>r[0]`attempts]
+-1 "  info: shrunk in ",string[r 1]," ms (spike: 3 ms)";
+r:.qc.chk[q;.qc.bulk[0 99;0 100000];{100>sum x}]
+.t.t["bulk: a global bug (sum >= 100) shrinks to at most three elements within the budget"; (100<=sum r[`x]`x) and 3>=count r[`x]`x]
+/ btab
+tb:.qc.draw .qc.btab[5 5] `a`b`c!(0 9;("d";0 9);("f";0 9))
+.t.t["btab: typed columns, one row count"; (5=count tb) and (7h=type tb`a) and (14h=type tb`b) and 9h=type tb`c]
+r:.qc.chk[q;.qc.btab[0 10000] `k`v!(0 9;0 9);{not any 5<x`v}]
+.t.t["btab: a planted bug shrinks to one row (the chunk is deleted from every column block)"; (1=count r[`x]`x) and 6<=first r[`x][`x;`v]]
+r:.qc.chk[q;.qc.btab[0 100000] `k`v!(0 9;("d";0 9));{all x[`v]<2000.01.09}]
+.t.t["btab: over up to 1e5 rows, a date bug shrinks to one row at the boundary"; (1=count r[`x]`x) and 2000.01.09=first r[`x][`x;`v]]
+.t.t["btab refuses a non-dict"; (@[.qc.draw;.qc.btab[1 1] 5;{x}]) like "qc: btab*"]
+.t.t["bulk: the length cap does not wrap near 0W (the range stays valid; C21)"; 0W=(.qc.rng[(0W-5;0W)]) 1]
