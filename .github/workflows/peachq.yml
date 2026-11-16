@@ -1,0 +1,30 @@
+# Optional: not a required check.
+name: peachq
+on: [push, pull_request]
+jobs:
+  tests:
+    name: tests (optional)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: peachq-org/setup-peachq@v1.0.0
+        with:
+          version: 0.92.20261116
+          add-to-path: true
+          args: -classic
+      - shell: bash
+        run: |
+          skip() { awk -v p="$2" 'index($0,p){s=1;next} s&&/^ /{next} {s=0;print}' "t/$1" > t.tmp && mv t.tmp "t/$1"; }
+          rm t/doctest.q                                     # transcripts pin kdb's seeded random draws
+          sed -i '/^res:/a res:select from res where name<>`bound5' t/bench.q # depends on kdb's seeded random draws
+          skip gaps.q 'val: a table-typed failure'           # depends on kdb's seeded random draws
+          skip outcomes.q 'outcomes exercised:'              # depends on kdb's seeded random draws
+          skip reportx.q 'report: one first line per outcome' # depends on kdb's seeded random draws
+          skip stop.q 'cover: an open question extends'      # depends on kdb's seeded random draws
+          skip types.q 't f: x<1e308 shrinks to 0w'          # depends on kdb's seeded random draws
+          skip review.q 'flt: a huge range does not error'   # peachq: floor 1e300 is 0N
+          skip examples.q 'examples/pubsub.q: skipped'       # peachq: hclose sends pending async messages
+          trap 'grep -E "^[0-9]+/[0-9]+ passed$" out.txt >> "$GITHUB_STEP_SUMMARY"' EXIT
+          q t/run.q | tee out.txt
